@@ -35,11 +35,15 @@
     display: flex; align-items: center; gap: 18px;
   }
   .topnav .brand {
-    font-family: "Segoe UI", system-ui, sans-serif; font-style: italic;
-    font-size: 30px; font-weight: 800; letter-spacing: -0.5px;
-    color: #2323d8; text-decoration: none; flex: 0 0 auto;
+    display: inline-flex; align-items: center; flex: 0 0 auto;
+    text-decoration: none; line-height: 0;
   }
-  .topnav .brand:hover { color: #1a1aa8; }
+  .topnav .brand-logo {
+    height: 52px; width: auto; display: block;
+    mix-blend-mode: multiply;   /* fond blanc du JPG fondu dans le fond clair de la page */
+    transition: opacity .12s;
+  }
+  .topnav .brand:hover .brand-logo { opacity: .85; }
   .topnav .nav-btn {
     padding: 12px 26px; border-radius: 999px; text-decoration: none;
     font-size: 15px; font-weight: 700; background: var(--accent); color: #fff;
@@ -265,6 +269,7 @@
   table.bom th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--steel-500); }
   table.bom td.q { text-align: center; font-family: var(--mono); font-weight: 700; }
   table.bom td.ref { font-family: var(--mono); font-weight: 700; color: var(--steel-500); white-space: nowrap; }
+  table.bom td.ral { font-family: var(--mono); color: var(--steel-500); white-space: nowrap; }
 
   /* Contact + envoi */
   .send-card { grid-column: 1; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
@@ -302,7 +307,9 @@
 <body>
 
 <nav class="topnav">
-  <a class="brand" href="https://rsl.eu/" target="_blank" rel="noopener">RSL</a>
+  <a class="brand" href="https://rsl.eu/" target="_blank" rel="noopener" aria-label="RSL — accueil">
+    <img src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL" class="brand-logo">
+  </a>
   <a class="nav-btn" href="https://rsl.eu/demande-de-devis/" target="_blank" rel="noopener">Devis par produits</a>
 </nav>
 
@@ -422,7 +429,7 @@
     <div class="pieces-body">
       <div class="empty" id="bomEmpty">Ajoutez une gondole pour voir la nomenclature.</div>
       <table class="bom" id="bomTable" style="display:none">
-        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th></tr></thead>
+        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Coloris</th></tr></thead>
         <tbody id="bomBody"></tbody>
       </table>
     </div>
@@ -617,12 +624,14 @@ function designationText(nbg, face, color, h, p, len, f, plinthes, profs, chap) 
 // ---- Nomenclature (quantités uniquement) ----
 function buildBom() {
   const map = new Map();
-  const add = (ref, qty) => {
-    if (!ref || qty <= 0) return;
-    const cur = map.get(ref[0]) || { code: ref[0], des: ref[1], qty: 0 };
-    cur.qty += qty; map.set(ref[0], cur);
-  };
   demande.forEach(l => {
+    const ral = (COLORIS[l.color] || COLORIS.blanc).ral;
+    const add = (ref, qty) => {
+      if (!ref || qty <= 0) return;
+      const key = ref[0] + "|" + ral;
+      const cur = map.get(key) || { code: ref[0], des: ref[1], ral: ral, qty: 0 };
+      cur.qty += qty; map.set(key, cur);
+    };
     const df = l.face === "DF" ? 2 : 1;
     const nbMontants = (l.len + 1) * l.nbg;
     add(REF.montant[l.h], nbMontants);
@@ -651,7 +660,10 @@ function buildBom() {
   const ordre = ["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D",
                  "S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D",
                  "S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
-  return [...map.values()].sort((a, b) => ordre.indexOf(a.code) - ordre.indexOf(b.code));
+  return [...map.values()].sort((a, b) => {
+    const d = ordre.indexOf(a.code) - ordre.indexOf(b.code);
+    return d !== 0 ? d : a.ral.localeCompare(b.ral);
+  });
 }
 
 // ---- Ajout / suppression ----
@@ -695,7 +707,7 @@ function renderBom() {
   table.style.display = ""; empty.style.display = "none";
   bom.forEach(item => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="ref">${item.code}</td><td>${item.des}</td><td class="q">${item.qty}</td>`;
+    tr.innerHTML = `<td class="ref">${item.code}</td><td>${item.des}</td><td class="q">${item.qty}</td><td class="ral">${item.ral}</td>`;
     body.appendChild(tr);
   });
 }
@@ -705,7 +717,6 @@ function buildRequestText() {
   const lignes = demande.map((l, i) =>
     `${i + 1}. ${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}  (x${l.nbg})`
   );
-  const bom = buildBom().map(i => `   - ${i.code} — ${i.des} : ${i.qty}`);
   const c = {
     nom: document.getElementById("cNom").value.trim(),
     soc: document.getElementById("cSociete").value.trim(),
@@ -718,8 +729,64 @@ function buildRequestText() {
   t += `  Nom : ${c.nom || "-"}\n  Société : ${c.soc || "-"}\n  Email : ${c.mail || "-"}\n  Téléphone : ${c.tel || "-"}\n`;
   if (c.msg) t += `  Message : ${c.msg}\n`;
   t += "\nConfigurations demandées :\n" + (lignes.length ? lignes.join("\n") : "  (aucune)") + "\n";
-  t += "\nDétail des pièces (pour chiffrage) :\n" + (bom.length ? bom.join("\n") : "  (aucune)") + "\n";
+  t += "\nDétail des pièces (pour chiffrage) :\n" + buildBomTable() + "\n";
   return t;
+}
+
+// Tableau texte aligné (police à chasse fixe) : Réf. | Désignation | Qté | Coloris
+function buildBomTable() {
+  const bom = buildBom();
+  if (bom.length === 0) return "  (aucune)";
+  const rows = bom.map(i => [i.code, i.des, String(i.qty), i.ral]);
+  const head = ["Réf.", "Désignation", "Qté", "Coloris"];
+  const all = [head, ...rows];
+  const wRef = Math.max(...all.map(r => r[0].length));
+  const wDes = Math.max(...all.map(r => r[1].length));
+  const wQty = Math.max(...all.map(r => r[2].length));
+  const pad = (s, w) => s + " ".repeat(w - s.length);
+  const padL = (s, w) => " ".repeat(w - s.length) + s;
+  const line = r => `${pad(r[0], wRef)}  ${pad(r[1], wDes)}  ${padL(r[2], wQty)}  ${r[3]}`;
+  const sep = `${"-".repeat(wRef)}  ${"-".repeat(wDes)}  ${"-".repeat(wQty)}  ${"-".repeat(7)}`;
+  return [line(head), sep, ...rows.map(line)].join("\n");
+}
+
+// Version HTML de la demande (vrai tableau) — utilisée pour la copie riche vers Word/Gmail
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function buildRequestHTML() {
+  const c = {
+    nom: document.getElementById("cNom").value.trim(),
+    soc: document.getElementById("cSociete").value.trim(),
+    mail: document.getElementById("cEmail").value.trim(),
+    tel: document.getElementById("cTel").value.trim(),
+    msg: document.getElementById("cMsg").value.trim()
+  };
+  const lignes = demande.map((l, i) =>
+    `${i + 1}. ${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)} (x${l.nbg})`
+  );
+  const bom = buildBom();
+  let h = `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1c2430">`;
+  h += `<h2 style="margin:0 0 8px">DEMANDE DE DEVIS — GONDOLES RSL</h2>`;
+  h += `<p style="margin:0 0 4px"><b>Client :</b><br>`;
+  h += `Nom : ${esc(c.nom||"-")}<br>Société : ${esc(c.soc||"-")}<br>Email : ${esc(c.mail||"-")}<br>Téléphone : ${esc(c.tel||"-")}`;
+  if (c.msg) h += `<br>Message : ${esc(c.msg)}`;
+  h += `</p>`;
+  h += `<p style="margin:12px 0 4px"><b>Configurations demandées :</b></p>`;
+  h += `<ol style="margin:0 0 12px;padding-left:18px">` + lignes.map(l => `<li>${esc(l.replace(/^\d+\.\s/,""))}</li>`).join("") + `</ol>`;
+  h += `<p style="margin:12px 0 4px"><b>Détail des pièces (pour chiffrage) :</b></p>`;
+  h += `<table style="border-collapse:collapse;font-size:12.5px" border="1" cellpadding="5">`;
+  h += `<thead><tr style="background:#f0f2f5">`;
+  ["Réf.","Désignation","Qté","Coloris"].forEach(t => h += `<th style="border:1px solid #b8c0ca;text-align:left;padding:5px 8px">${t}</th>`);
+  h += `</tr></thead><tbody>`;
+  bom.forEach(i => {
+    h += `<tr>`;
+    h += `<td style="border:1px solid #d4dae0;padding:4px 8px;font-family:Consolas,monospace">${esc(i.code)}</td>`;
+    h += `<td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.des)}</td>`;
+    h += `<td style="border:1px solid #d4dae0;padding:4px 8px;text-align:center">${i.qty}</td>`;
+    h += `<td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.ral)}</td>`;
+    h += `</tr>`;
+  });
+  h += `</tbody></table></div>`;
+  return h;
 }
 
 // ---- Copie (avec repli synchrone si l'API Clipboard est bloquée) ----
@@ -734,11 +801,26 @@ function execCopyText(text) {
 document.getElementById("btnCopy").addEventListener("click", () => {
   if (demande.length === 0) { alert("Ajoutez au moins une gondole à votre demande."); return; }
   const text = buildRequestText();
+  const html = buildRequestHTML();
   const btn = document.getElementById("btnCopy");
   const done = () => { btn.textContent = "✓ Copié !"; btn.classList.add("done"); setTimeout(() => { btn.textContent = "Copier ma demande"; btn.classList.remove("done"); }, 1800); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(() => { if (execCopyText(text)) done(); });
-  } else if (execCopyText(text)) { done(); }
+  const fallbackText = () => { if (execCopyText(text)) done(); };
+  // Copie riche : HTML (Word/Gmail voient un vrai tableau) + texte brut en repli
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" })
+      });
+      navigator.clipboard.write([item]).then(done).catch(() => {
+        navigator.clipboard.writeText(text).then(done).catch(fallbackText);
+      });
+    } catch (e) {
+      navigator.clipboard.writeText(text).then(done).catch(fallbackText);
+    }
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallbackText);
+  } else { fallbackText(); }
 });
 
 // ---- Envoi email (mailto pré-rempli) ----
@@ -789,7 +871,7 @@ function draw() {
   const cutW = isDF ? cutHalf * 2 : cutHalf;
   const cutGap = 70;                             // espace entre les deux vues
   const cutAxisX = faceRight + cutGap + (isDF ? cutHalf : 8); // position du montant dans la coupe
-  const cutRightMargin = 46;
+  const cutRightMargin = 44;
   const W = cutAxisX + (isDF ? cutHalf : cutW) + cutRightMargin;
 
   viz.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -914,7 +996,7 @@ function draw() {
 
   // (tablette de base non représentée en coupe — posée sur le piétement ; comptée en nomenclature)
 
-  // tablettes intermédiaires (coupe) : chacune à sa profondeur
+  // tablettes intermédiaires (coupe) : chacune à sa profondeur, avec cote P.xxx en petit au bout
   for (let idx = 0; idx < nT; idx++) {
     const y = tabY(idx);
     const dpt = DPT[profs[idx]];
@@ -923,6 +1005,9 @@ function draw() {
       const x1 = cutAxisX + s * dpt;
       viz.appendChild(E("rect", {x: Math.min(x0,x1), y:y-2, width:dpt, height:4, fill:C.base, stroke:C.edge, "stroke-width":.9}));
     });
+    // profondeur en petit, près du début de la tablette (côté montant), au-dessus
+    const xLabel = cutAxisX + 6;
+    viz.appendChild(E("text", {x:xLabel, y:y-4, "text-anchor":"start", "font-family":"Segoe UI, sans-serif", "font-size":9, fill:"#9fb0c2"}, "P."+profs[idx]));
   }
 
   // piétement (coupe) : traverse horizontale basse posée sur 2 vérins (un au montant, un à l'avant)
@@ -955,7 +1040,7 @@ function draw() {
     viz.appendChild(E("line", {x1:xEnd, y1:yb-3, x2:xEnd, y2:yb+3, stroke:"#c3ccd5", "stroke-width":1}));
     viz.appendChild(E("text", {x:(cutAxisX+xEnd)/2, y:yb+13, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":9.5, fill:"#55677d"}, "P."+state.p));
   });
-  viz.appendChild(E("text", {x:cutAxisX, y:groundY+34, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":10.5, "font-weight":700, fill:"#9fb0c2", "letter-spacing":"1px"}, isDF ? "COUPE — DOUBLE-FACE" : "COUPE — SIMPLE-FACE"));
+  // (libellé simple/double-face retiré — le visuel suffit)
 
   // séparateur discret entre les deux vues
   const sepX = faceRight + cutGap/2;
