@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurez vos gondoles — RSL</title>
+<style>
+  :root {
+    --steel-900: #1c2430;
+    --steel-700: #2e3a4a;
+    --steel-500: #55677d;
+    --steel-300: #9fb0c2;
+    --steel-100: #e8edf2;
+    --paper: #f5f7f9;
+    --accent: #e63f1e;
+    --accent-dark: #c23213;
+    --ok: #1c7c46;
+    --ok-bg: #e7f4ec;
+    --radius: 10px;
+    --mono: "Consolas", "Menlo", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--steel-900);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 16px 48px;
+  }
+
+  .topnav {
+    width: 100%; max-width: 1180px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .topnav .brand {
+    font-family: "Segoe UI", system-ui, sans-serif; font-style: italic;
+    font-size: 30px; font-weight: 800; letter-spacing: -0.5px;
+    color: #2323d8; text-decoration: none; flex: 0 0 auto;
+  }
+  .topnav .brand:hover { color: #1a1aa8; }
+  .topnav .nav-btn {
+    padding: 12px 26px; border-radius: 999px; text-decoration: none;
+    font-size: 15px; font-weight: 700; background: var(--accent); color: #fff;
+    box-shadow: 0 2px 8px rgba(230,63,30,.30); transition: background .12s, transform .08s;
+  }
+  .topnav .nav-btn:hover { background: var(--accent-dark); }
+  .topnav .nav-btn:active { transform: scale(.98); }
+
+  header { width: 100%; max-width: 1180px; margin-bottom: 12px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: 6px;
+  }
+  h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: -0.5px; }
+  h1 span { color: var(--steel-500); font-weight: 400; }
+  .intro {
+    width: 100%; max-width: 1180px; margin-bottom: 24px;
+    font-size: 15px; color: var(--steel-500); line-height: 1.5;
+  }
+
+  .app {
+    width: 100%; max-width: 1180px;
+    display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start;
+  }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .sticky-col { position: static; grid-row: auto; grid-column: 1; }
+  }
+
+  .card {
+    background: #fff; border: 1px solid var(--steel-100);
+    border-radius: var(--radius); box-shadow: 0 1px 3px rgba(28,36,48,.06);
+  }
+
+  .selectors { padding: 22px; display: flex; flex-direction: column; gap: 20px; }
+  .field label, .field .lbl {
+    display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px;
+    font-weight: 700; color: var(--steel-500); margin-bottom: 8px;
+  }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button {
+    flex: 1 1 auto; min-width: 64px; padding: 10px 8px;
+    border: 1.5px solid var(--steel-100); background: #fff; border-radius: 8px;
+    font-size: 14px; font-weight: 600; color: var(--steel-700); cursor: pointer;
+    transition: border-color .12s, background .12s, color .12s;
+  }
+  #selFace button { flex: 0 1 auto; }
+  .seg button:hover { border-color: var(--steel-300); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .seg button.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .seg button.is-disabled {
+    opacity: .38; cursor: not-allowed; background: var(--steel-100);
+    color: var(--steel-300); border-color: var(--steel-100);
+  }
+  .seg button.is-disabled:hover { border-color: var(--steel-100); }
+  .seg.grid-h { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .hint { font-size: 12px; color: var(--steel-300); margin-top: 5px; }
+
+  /* Coloris */
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch {
+    width: 92px; height: 52px; border-radius: 8px; cursor: pointer; border: 3px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.10); transition: border-color .12s, transform .08s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .3px; text-align: center;
+  }
+  .swatch:hover { transform: translateY(-1px); }
+  .swatch.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(0,0,0,.10), 0 0 0 1px var(--accent); }
+
+  .len-ctrl { display: flex; align-items: center; gap: 10px; }
+  .len-ctrl button {
+    width: 38px; height: 38px; border: 1.5px solid var(--steel-100); background: #fff;
+    border-radius: 8px; font-size: 18px; font-weight: 700; color: var(--steel-700); cursor: pointer;
+  }
+  .len-ctrl button:hover { border-color: var(--steel-300); }
+  .len-ctrl input {
+    width: 70px; text-align: center; padding: 9px 4px;
+    border: 1.5px solid var(--steel-100); border-radius: 8px;
+    font-size: 17px; font-weight: 700; font-family: var(--mono);
+  }
+  .len-ctrl .unit { font-size: 14px; color: var(--steel-500); font-weight: 600; }
+
+  .tab-levels { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .tab-lvl { display: flex; align-items: center; gap: 10px; }
+  .tab-lvl .lvl-name {
+    font-size: 12.5px; font-weight: 700; color: var(--steel-500);
+    flex: 0 0 70px; white-space: nowrap;
+  }
+  .tab-lvl .lvl-seg { display: flex; gap: 5px; flex: 1 1 auto; }
+  .tab-lvl .lvl-seg button {
+    flex: 1 1 auto; padding: 7px 6px; border: 1.5px solid var(--steel-100); background: #fff;
+    border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--steel-700); cursor: pointer;
+    transition: border-color .12s, background .12s, color .12s;
+  }
+  .tab-lvl .lvl-seg button:hover { border-color: var(--steel-300); }
+  .tab-lvl .lvl-seg button.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .tab-lvl .lvl-seg button.is-disabled {
+    opacity: .35; cursor: not-allowed; background: var(--steel-100);
+    color: var(--steel-300); border-color: var(--steel-100);
+  }
+  .tab-lvl .lvl-seg button.is-disabled:hover { border-color: var(--steel-100); }
+
+  .schema { margin-top: 12px; display: flex; gap: 3px; flex-wrap: wrap; }
+  .schema .mod {
+    height: 40px; min-width: 52px; flex: 0 0 52px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .5px; color: #fff;
+  }
+  .schema .mod.dep { background: var(--accent); }
+  .schema .mod.sui { background: var(--steel-500); }
+  .schema-legend { font-size: 12px; color: var(--steel-500); margin-top: 6px; }
+  .schema-legend b.d { color: var(--accent); }
+  .schema-legend b.s { color: var(--steel-500); }
+
+  .check-row {
+    display: flex !important; align-items: center; gap: 10px; cursor: pointer;
+    text-transform: none !important; letter-spacing: 0 !important; margin-bottom: 0 !important;
+  }
+  .check-row input { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
+  .check-row .check-label { font-size: 14.5px; font-weight: 600; color: var(--steel-900); }
+  .check-row .check-label small { font-weight: 400; color: var(--steel-500); }
+  .field.disabled { opacity: .40; pointer-events: none; }
+
+  .tab-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tab-row input {
+    width: 66px; text-align: center; padding: 9px 4px;
+    border: 1.5px solid var(--steel-100); border-radius: 8px;
+    font-size: 16px; font-weight: 700; font-family: var(--mono);
+  }
+  .tab-row .op { font-size: 14px; color: var(--steel-500); font-weight: 600; }
+  .tab-row .tab-total {
+    font-family: var(--mono); font-size: 15px; font-weight: 700;
+    background: var(--steel-100); border-radius: 6px; padding: 8px 12px;
+  }
+
+  /* Colonne collante : aperçu + sélection en cours */
+  .sticky-col {
+    grid-column: 2; grid-row: 1 / -1; position: sticky; top: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  .stage { padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .stage-title { align-self: flex-start; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: var(--steel-500); }
+  .viz { width: 100%; border-radius: 10px; }
+  .caption { font-size: 13.5px; color: var(--steel-500); text-align: center; line-height: 1.5; }
+  .caption b { color: var(--steel-900); }
+
+  .result { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .result .label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+    font-weight: 700; color: var(--steel-500);
+  }
+  .designation {
+    font-size: 14.5px; font-weight: 700; line-height: 1.45;
+    background: var(--steel-100); border-radius: 8px; padding: 12px 14px;
+  }
+  .compo {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; font-size: 13.5px;
+    border-top: 1px dashed var(--steel-100); padding-top: 12px;
+  }
+  .compo .k { color: var(--steel-500); }
+  .compo .v { font-family: var(--mono); font-weight: 700; text-align: right; }
+
+  .nbg-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border-top: 1px dashed var(--steel-100); padding-top: 12px;
+  }
+  .nbg-row label { font-size: 13.5px; color: var(--steel-500); }
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-ctrl button {
+    width: 30px; height: 30px; border: 1.5px solid var(--steel-100); background: #fff;
+    border-radius: 6px; font-size: 16px; font-weight: 700; color: var(--steel-700); cursor: pointer;
+  }
+  .qty-ctrl button:hover { border-color: var(--steel-300); }
+  .qty-ctrl input {
+    width: 56px; text-align: center; padding: 6px 4px;
+    border: 1.5px solid var(--steel-100); border-radius: 6px;
+    font-size: 15px; font-weight: 700; font-family: var(--mono);
+  }
+
+  .btn-add {
+    padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: background .12s, transform .08s;
+  }
+  .btn-add:hover { background: var(--accent-dark); }
+  .btn-add:active { transform: scale(.985); }
+  .btn-add:focus-visible { outline: 2px solid var(--steel-900); outline-offset: 2px; }
+
+  .list-card { grid-column: 1; padding: 22px; }
+  .list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .list-head h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .list-head h2::before { content: ""; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+
+  .empty {
+    text-align: center; padding: 34px 10px; color: var(--steel-300); font-size: 14px;
+    border: 1.5px dashed var(--steel-100); border-radius: 8px;
+  }
+  table.list { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.list th, table.list td {
+    border-bottom: 1px solid var(--steel-100); padding: 10px 10px; text-align: left; vertical-align: top;
+  }
+  table.list th {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--steel-500); border-bottom: 2px solid var(--steel-100);
+  }
+  table.list td.desig { font-weight: 600; }
+  table.list td.qty { text-align: center; font-family: var(--mono); white-space: nowrap; }
+  .btn-del {
+    width: 28px; height: 28px; border: 1.5px solid var(--steel-100); background: #fff;
+    border-radius: 6px; color: var(--steel-500); font-size: 14px; cursor: pointer;
+  }
+  .btn-del:hover { border-color: var(--accent); color: var(--accent); }
+
+  details.pieces { grid-column: 1; }
+  details.pieces summary {
+    cursor: pointer; padding: 14px 22px; font-size: 14px; font-weight: 700; color: var(--steel-700); list-style: none;
+  }
+  details.pieces summary::before { content: "▸ "; color: var(--accent); }
+  details.pieces[open] summary::before { content: "▾ "; }
+  .pieces-body { padding: 0 22px 22px; }
+  table.bom { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.bom th, table.bom td { border-bottom: 1px solid var(--steel-100); padding: 8px 10px; text-align: left; }
+  table.bom th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--steel-500); }
+  table.bom td.q { text-align: center; font-family: var(--mono); font-weight: 700; }
+  table.bom td.ref { font-family: var(--mono); font-weight: 700; color: var(--steel-500); white-space: nowrap; }
+
+  /* Contact + envoi */
+  .send-card { grid-column: 1; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .send-card h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .send-card h2::before { content: ""; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--steel-500); }
+  .form-field input, .form-field textarea {
+    border: 1.5px solid var(--steel-100); border-radius: 8px; padding: 10px 12px;
+    font-size: 14px; font-family: inherit; color: var(--steel-900);
+  }
+  .form-field input:focus, .form-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  .form-field textarea { resize: vertical; min-height: 64px; }
+
+  .send-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-send {
+    flex: 1 1 auto; padding: 14px 18px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center;
+    text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .12s;
+  }
+  .btn-send:hover { background: var(--accent-dark); }
+  .btn-copy {
+    flex: 1 1 auto; padding: 14px 18px; background: #fff; color: var(--steel-700);
+    border: 1.5px solid var(--steel-100); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-copy:hover { border-color: var(--steel-300); }
+  .btn-copy.done { border-color: var(--ok); color: var(--ok); background: var(--ok-bg); }
+  .send-note { font-size: 12.5px; color: var(--steel-300); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="brand" href="https://rsl.eu/" target="_blank" rel="noopener">RSL</a>
+  <a class="nav-btn" href="https://rsl.eu/demande-de-devis/" target="_blank" rel="noopener">Devis par produits</a>
+</nav>
+
+<header>
+  <div class="eyebrow">Rayonnages Services Lorraine</div>
+  <h1>Configurez vos gondoles <span>· demande de devis</span></h1>
+</header>
+<p class="intro">
+  Composez vos gondoles (simple ou double-face), visualisez l'aperçu en temps réel, ajoutez-les à votre demande,
+  puis envoyez-nous le détail. Nous vous établissons le devis chiffré en retour. Aucun prix n'est affiché ici — c'est une demande, pas une commande.
+</p>
+
+<div class="app">
+
+  <!-- Configurateur -->
+  <div class="card selectors">
+    <div class="field">
+      <label>Type de gondole</label>
+      <div class="seg" id="selFace"></div>
+    </div>
+    <div class="field">
+      <span class="lbl">Coloris</span>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <div class="field">
+      <label>Hauteur (mm)</label>
+      <div class="seg grid-h" id="selHauteur"></div>
+    </div>
+    <div class="field">
+      <label>Profondeur (mm)</label>
+      <div class="seg grid-h" id="selProfondeur"></div>
+    </div>
+    <div class="field">
+      <label>Fonds</label>
+      <div class="seg grid-h" id="selFonds"></div>
+    </div>
+    <div class="field">
+      <span class="lbl">Longueur (modules de 1000 mm)</span>
+      <div class="len-ctrl">
+        <button type="button" id="lenMinus" aria-label="Diminuer la longueur">−</button>
+        <input type="number" id="lenInput" value="4" min="1" max="30">
+        <span class="unit" id="lenUnit">× 1000 = 4,00 ml</span>
+      </div>
+      <div class="schema" id="schema" aria-hidden="true"></div>
+      <div class="schema-legend">
+        Composition : <b class="d">1 DÉPART</b> + <b class="s" id="legSuites">3 SUITES</b> — une suite ne va jamais sans départ.
+      </div>
+    </div>
+    <div class="field">
+      <label class="check-row" for="chkPlinthes">
+        <input type="checkbox" id="chkPlinthes">
+        <span class="check-label">Avec plinthes <small id="plintheInfo"></small></span>
+      </label>
+      <div class="hint">1 plinthe par élément en simple-face, 2 par élément en double-face.</div>
+    </div>
+    <div class="field" id="fieldChapiteau">
+      <label class="check-row" for="chkChapiteau">
+        <input type="checkbox" id="chkChapiteau">
+        <span class="check-label">Avec chapiteaux <small id="chapInfo"></small></span>
+      </label>
+      <div class="hint">Double-face uniquement, jusqu'à H.1700 — 1 par élément.</div>
+    </div>
+    <div class="field">
+      <span class="lbl">Tablettes intermédiaires</span>
+      <div class="len-ctrl">
+        <button type="button" id="tabMinus" aria-label="Diminuer">−</button>
+        <input type="number" id="tabNiv" value="0" min="0" max="8">
+        <button type="button" id="tabPlus" aria-label="Augmenter">+</button>
+        <span class="unit" id="tabInfo">niveau(x)</span>
+      </div>
+      <div class="tab-levels" id="tabLevels"></div>
+      <div class="hint">Chaque niveau peut avoir sa propre profondeur (≤ tablette de base). Le niveau 1 est juste au-dessus de la base ; le dernier est tout en haut. Comptées sur toute la longueur de la gondole.</div>
+    </div>
+  </div>
+
+  <!-- Colonne collante : aperçu + sélection en cours -->
+  <div class="sticky-col">
+
+    <div class="card stage">
+      <div class="stage-title">Aperçu</div>
+      <svg class="viz" id="viz" viewBox="0 0 560 460" role="img" aria-label="Aperçu de la gondole"></svg>
+      <div class="caption" id="caption"></div>
+    </div>
+
+    <div class="card result">
+      <div class="label">Ma sélection</div>
+      <div class="designation" id="designation">—</div>
+      <div class="compo" id="compo"></div>
+      <div class="nbg-row">
+        <label for="nbg">Nombre de gondoles identiques</label>
+        <div class="qty-ctrl">
+          <button type="button" id="nbgMinus" aria-label="Diminuer">−</button>
+          <input type="number" id="nbg" value="1" min="1" max="99">
+          <button type="button" id="nbgPlus" aria-label="Augmenter">+</button>
+        </div>
+      </div>
+      <button type="button" class="btn-add" id="btnAdd">+ Ajouter à ma demande</button>
+    </div>
+
+  </div>
+
+  <!-- Liste demande -->
+  <div class="card list-card">
+    <div class="list-head"><h2>Ma demande</h2></div>
+    <div id="listZone">
+      <div class="empty" id="listEmpty">Aucune gondole ajoutée pour l'instant.</div>
+      <table class="list" id="listTable" style="display:none">
+        <thead><tr><th>#</th><th>Configuration</th><th>Qté</th><th></th></tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Détail des pièces -->
+  <details class="card pieces">
+    <summary>Détail des pièces (nomenclature pour chiffrage)</summary>
+    <div class="pieces-body">
+      <div class="empty" id="bomEmpty">Ajoutez une gondole pour voir la nomenclature.</div>
+      <table class="bom" id="bomTable" style="display:none">
+        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th></tr></thead>
+        <tbody id="bomBody"></tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- Contact & envoi -->
+  <div class="card send-card">
+    <h2>Vos coordonnées &amp; envoi</h2>
+    <div class="form-grid">
+      <div class="form-field"><label for="cNom">Nom</label><input type="text" id="cNom" placeholder="Votre nom"></div>
+      <div class="form-field"><label for="cSociete">Société</label><input type="text" id="cSociete" placeholder="Votre société"></div>
+      <div class="form-field"><label for="cEmail">Email</label><input type="email" id="cEmail" placeholder="vous@exemple.fr"></div>
+      <div class="form-field"><label for="cTel">Téléphone</label><input type="tel" id="cTel" placeholder="Facultatif"></div>
+      <div class="form-field full"><label for="cMsg">Message (facultatif)</label><textarea id="cMsg" placeholder="Précisions, délai souhaité, lieu de livraison…"></textarea></div>
+    </div>
+    <div class="send-actions">
+      <a href="#" class="btn-send" id="btnEmail">✉ Envoyer ma demande par email</a>
+      <button type="button" class="btn-copy" id="btnCopy">Copier ma demande</button>
+    </div>
+    <p class="send-note">Le bouton email ouvre votre messagerie avec la demande pré-remplie, adressée à RSL. Si rien ne s'ouvre, utilisez « Copier ma demande » et collez le contenu dans un email à s.degardin@rsl.eu.</p>
+  </div>
+
+</div>
+
+<script>
+// ===================== Paramètres (AUCUN PRIX) =====================
+const DEST_EMAIL = "s.degardin@rsl.eu";
+
+const HAUTEURS = [1200, 1400, 1600, 1700, 1800, 2100, 2400, 2500];
+const PROFONDEURS = [370, 470, 570];
+const FONDS = [{ code: "FL", label: "Lisses" }, { code: "FP", label: "Perforés" }];
+const FACES = [{ code: "SF", label: "Simple-face" }, { code: "DF", label: "Double-face" }];
+
+// Répartition des fonds par élément de 1000 selon la hauteur des montants
+const FONDS_H = {
+  1200: {100:0, 300:1, 400:2}, 1400: {100:1, 300:0, 400:3}, 1600: {100:0, 300:1, 400:3},
+  1700: {100:0, 300:0, 400:4}, 1800: {100:1, 300:0, 400:4}, 2100: {100:0, 300:0, 400:5},
+  2400: {100:0, 300:1, 400:5}, 2500: {100:0, 300:0, 400:6}
+};
+
+// Références articles (désignations only — pas de prix)
+const REF = {
+  montant: {1200:["S4273D","Montant 1200x60x30"],1400:["S4274D","Montant 1400x60x30"],
+            1600:["S4275D","Montant 1600x60x30"],1700:["S6500D","Montant 1700x60x30"],
+            1800:["S4276D","Montant 1800x60x30"],2100:["S4277D","Montant 2100x60x30"],
+            2400:["S4278D","Montant 2400x80x30"],2500:["S1642D","Montant 2500x80x30"]},
+  pietement: {370:["S4282D","Piétement 370x160"],470:["S4283D","Piétement 470x160"],570:["S4284D","Piétement 570x160"]},
+  fond: {100:["S4267D","Fond lisse 1000x100"],300:["S4269D","Fond lisse 1000x300"],400:["S4270D","Fond lisse 1000x400"]},
+  perfo: ["S4281D","Panneau perforé 1000x400 RL"],
+  tablette: {370:["S4290D","Tablette 1000x370"],470:["S4291D","Tablette 1000x470"],570:["S4292D","Tablette 1000x570"]},
+  console: {370:["S4253D","Console 370 - 2C (la paire)"],470:["S4254D","Console 470 - 2C (la paire)"],570:["S4258D","Console 570 - 3C renforcée (la paire)"]},
+  pe: ["S5738","Porte-étiquettes 2 positions L1000 H40"],
+  plinthe: ["S4286D","Plinthe 1000x160 - Blanc"],
+  chapiteau: ["S4248D","Chapiteau 1000x80 (col.60)"]
+};
+
+// 3 coloris du modèle : blanc, anthracite, gris clair (informatif — n'influe pas la nomenclature)
+const COLORIS = {
+  blanc:      {label:"Blanc",      ral:"RAL 9001", ink:"#1c2430", base:"#fdf4e3", light:"#fffdf6", mid:"#f6ecd9", dark:"#ece0c8", edge:"#dccfb2", metal:"#efe6d2", metalDk:"#cbbd9f"},
+  anthracite: {label:"Anthracite", ral:"RAL 7015", ink:"#ffffff", base:"#484d53", light:"#5c6268", mid:"#3f4247", dark:"#2c2f33", edge:"#23262a", metal:"#565b61", metalDk:"#3a3d42"},
+  gris:       {label:"Gris clair", ral:"RAL 9006", ink:"#1c2430", base:"#c9ced3", light:"#dfe3e7", mid:"#bcc2c8", dark:"#a3abb2", edge:"#8f979f", metal:"#b3bac1", metalDk:"#949ba2"}
+};
+
+const state = { face:"SF", color:"blanc", h:2100, p:470, f:"FL", len:4, nbg:1, plinthes:false, tabProfs:[], chapiteau:false };
+let demande = [];
+let nextId = 1;
+
+const faceLabel = face => face === "SF" ? "simple-face" : "double-face";
+const fondsLabel = f => f === "FL" ? "lisses" : "perforés";
+const plinthesParGondole = (face, len) => (face === "SF" ? 1 : 2) * len;
+const chapiteauPossible = (face, h) => face === "DF" && h <= 1700;
+
+// ---- Sélecteurs ----
+function buildSeg(id, items, getVal, setVal) {
+  const el = document.getElementById(id);
+  items.forEach(item => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = item.label ?? item;
+    b.dataset.value = item.code ?? item;
+    b.addEventListener("click", () => { setVal(b.dataset.value); render(); });
+    el.appendChild(b);
+  });
+  return () => [...el.children].forEach(b =>
+    b.classList.toggle("active", String(b.dataset.value) === String(getVal())));
+}
+const syncFace = buildSeg("selFace", FACES, () => state.face, v => state.face = v);
+const syncH = buildSeg("selHauteur", HAUTEURS, () => state.h, v => state.h = Number(v));
+const syncP = buildSeg("selProfondeur", PROFONDEURS, () => state.p, v => { state.p = Number(v); });
+const syncF = buildSeg("selFonds", FONDS, () => state.f, v => state.f = v);
+
+// ---- Coloris ----
+const swatchesEl = document.getElementById("swatches");
+Object.entries(COLORIS).forEach(([k, c]) => {
+  const d = document.createElement("div");
+  d.className = "swatch"; d.dataset.v = k; d.title = c.label + " — " + c.ral;
+  d.style.background = `linear-gradient(135deg, ${c.light}, ${c.dark})`;
+  d.style.color = c.ink;
+  d.textContent = c.ral;
+  d.addEventListener("click", () => { state.color = k; render(); });
+  swatchesEl.appendChild(d);
+});
+const syncSwatch = () => [...swatchesEl.children].forEach(d => d.classList.toggle("active", d.dataset.v === state.color));
+
+// ---- Longueur ----
+const lenInput = document.getElementById("lenInput");
+document.getElementById("lenMinus").addEventListener("click", () => { state.len = Math.max(1, state.len - 1); lenInput.value = state.len; render(); });
+lenInput.addEventListener("input", () => {
+  const v = parseInt(lenInput.value, 10);
+  state.len = (isNaN(v) || v < 1) ? 1 : Math.min(30, v);
+  render();
+});
+(() => {
+  const plus = document.createElement("button");
+  plus.type = "button"; plus.textContent = "+"; plus.setAttribute("aria-label", "Augmenter la longueur");
+  plus.addEventListener("click", () => { state.len = Math.min(30, state.len + 1); lenInput.value = state.len; render(); });
+  lenInput.after(plus);
+})();
+
+// ---- Options ----
+document.getElementById("chkPlinthes").addEventListener("change", e => { state.plinthes = e.target.checked; render(); });
+document.getElementById("chkChapiteau").addEventListener("change", e => { state.chapiteau = e.target.checked; render(); });
+const chapOn = () => state.chapiteau && chapiteauPossible(state.face, state.h);
+const nbChapiteaux = () => chapOn() ? state.len : 0;
+
+// ---- Tablettes ----
+const tabNivInput = document.getElementById("tabNiv");
+function setNbNiveaux(n) {
+  n = Math.max(0, Math.min(8, n));
+  const cur = state.tabProfs.length;
+  if (n > cur) { for (let i = cur; i < n; i++) state.tabProfs.push(state.p); }   // nouveaux = profondeur de base
+  else if (n < cur) { state.tabProfs.length = n; }
+  render();
+}
+tabNivInput.addEventListener("input", () => {
+  const v = parseInt(tabNivInput.value, 10);
+  setNbNiveaux(isNaN(v) ? 0 : v);
+});
+document.getElementById("tabMinus").addEventListener("click", () => setNbNiveaux(state.tabProfs.length - 1));
+document.getElementById("tabPlus").addEventListener("click", () => setNbNiveaux(state.tabProfs.length + 1));
+
+// Construit la liste "niveau par niveau" avec sélecteur de profondeur (≤ base)
+function buildTabLevels() {
+  const box = document.getElementById("tabLevels");
+  box.innerHTML = "";
+  state.tabProfs.forEach((prof, idx) => {
+    const row = document.createElement("div"); row.className = "tab-lvl";
+    const name = document.createElement("span"); name.className = "lvl-name";
+    name.textContent = "Niveau " + (idx + 1); row.appendChild(name);
+    const seg = document.createElement("div"); seg.className = "lvl-seg";
+    PROFONDEURS.forEach(pf => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = pf;
+      const trop = pf > state.p;
+      if (trop) b.classList.add("is-disabled");
+      if (pf === prof) b.classList.add("active");
+      b.addEventListener("click", () => { if (pf > state.p) return; state.tabProfs[idx] = pf; render(); });
+      seg.appendChild(b);
+    });
+    row.appendChild(seg); box.appendChild(row);
+  });
+}
+
+// ---- Nombre de gondoles ----
+const nbgInput = document.getElementById("nbg");
+document.getElementById("nbgMinus").addEventListener("click", () => { state.nbg = Math.max(1, state.nbg - 1); nbgInput.value = state.nbg; render(); });
+document.getElementById("nbgPlus").addEventListener("click", () => { state.nbg = Math.min(99, state.nbg + 1); nbgInput.value = state.nbg; render(); });
+nbgInput.addEventListener("input", () => {
+  const v = parseInt(nbgInput.value, 10);
+  state.nbg = (isNaN(v) || v < 1) ? 1 : Math.min(99, v);
+  render();
+});
+
+// ---- Désignation ----
+function tabResume(profs) {
+  if (!profs || profs.length === 0) return "";
+  const counts = {};
+  profs.forEach(p => counts[p] = (counts[p] || 0) + 1);
+  const parts = Object.keys(counts).sort((a, b) => b - a).map(p => counts[p] + "×" + p);
+  return `${profs.length} tablette${profs.length > 1 ? "s" : ""} interm. (${parts.join(", ")})`;
+}
+function designationText(nbg, face, color, h, p, len, f, plinthes, profs, chap) {
+  const g = nbg > 1 ? nbg + " gondoles" : "1 gondole";
+  const col = COLORIS[color] || COLORIS.blanc;
+  let t = `${g} ${faceLabel(face)} ${col.label} (${col.ral}) H.${h} P.${p} L.${len}x1000 - Fonds ${fondsLabel(f)}`;
+  if (plinthes) t += " - Avec plinthes";
+  if (chap) t += " - Avec chapiteaux";
+  const rt = tabResume(profs);
+  if (rt) t += " - " + rt;
+  return t;
+}
+
+// ---- Nomenclature (quantités uniquement) ----
+function buildBom() {
+  const map = new Map();
+  const add = (ref, qty) => {
+    if (!ref || qty <= 0) return;
+    const cur = map.get(ref[0]) || { code: ref[0], des: ref[1], qty: 0 };
+    cur.qty += qty; map.set(ref[0], cur);
+  };
+  demande.forEach(l => {
+    const df = l.face === "DF" ? 2 : 1;
+    const nbMontants = (l.len + 1) * l.nbg;
+    add(REF.montant[l.h], nbMontants);
+    add(REF.pietement[l.p], nbMontants * df);
+    const elems = l.len * df * l.nbg;
+    const rep = FONDS_H[l.h];
+    add(REF.fond[100], rep[100] * elems);
+    add(REF.fond[300], rep[300] * elems);
+    add(l.f === "FP" ? REF.perfo : REF.fond[400], rep[400] * elems);
+    add(REF.tablette[l.p], elems);
+    add(REF.pe, elems);
+    // Tablettes intermédiaires : chaque niveau = 1 tablette + 1 paire consoles + 1 porte-étiquettes, à sa profondeur, par module et par face
+    if (l.tabProfs && l.tabProfs.length) {
+      const counts = {};
+      l.tabProfs.forEach(p => counts[p] = (counts[p] || 0) + 1);
+      Object.keys(counts).forEach(pf => {
+        const q = counts[pf] * elems;
+        add(REF.tablette[pf], q);
+        add(REF.console[pf], q);
+        add(REF.pe, q);
+      });
+    }
+    if (l.nbPlinthes > 0) add(REF.plinthe, l.nbPlinthes * l.nbg);
+    if (l.nbChapiteaux > 0) add(REF.chapiteau, l.nbChapiteaux * l.nbg);
+  });
+  const ordre = ["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D",
+                 "S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D",
+                 "S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
+  return [...map.values()].sort((a, b) => ordre.indexOf(a.code) - ordre.indexOf(b.code));
+}
+
+// ---- Ajout / suppression ----
+document.getElementById("btnAdd").addEventListener("click", () => {
+  demande.push({
+    id: nextId++, face: state.face, color: state.color, h: state.h, p: state.p, f: state.f, len: state.len, nbg: state.nbg,
+    plinthes: state.plinthes, nbPlinthes: state.plinthes ? plinthesParGondole(state.face, state.len) : 0,
+    tabProfs: state.tabProfs.slice(), chapiteau: chapOn(), nbChapiteaux: nbChapiteaux()
+  });
+  renderList();
+});
+
+function renderList() {
+  renderBom();
+  const table = document.getElementById("listTable");
+  const empty = document.getElementById("listEmpty");
+  const body = document.getElementById("listBody");
+  body.innerHTML = "";
+  if (demande.length === 0) { table.style.display = "none"; empty.style.display = ""; return; }
+  table.style.display = ""; empty.style.display = "none";
+  demande.forEach((l, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td class="qty">${idx + 1}</td>` +
+      `<td class="desig">${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}</td>` +
+      `<td class="qty">${l.nbg}</td>` +
+      `<td><button type="button" class="btn-del" aria-label="Retirer" data-id="${l.id}">✕</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll(".btn-del").forEach(b =>
+    b.addEventListener("click", () => { demande = demande.filter(l => l.id !== Number(b.dataset.id)); renderList(); }));
+}
+
+function renderBom() {
+  const bom = buildBom();
+  const table = document.getElementById("bomTable");
+  const empty = document.getElementById("bomEmpty");
+  const body = document.getElementById("bomBody");
+  body.innerHTML = "";
+  if (bom.length === 0) { table.style.display = "none"; empty.style.display = ""; return; }
+  table.style.display = ""; empty.style.display = "none";
+  bom.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="ref">${item.code}</td><td>${item.des}</td><td class="q">${item.qty}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ---- Assemblage de la demande (texte) ----
+function buildRequestText() {
+  const lignes = demande.map((l, i) =>
+    `${i + 1}. ${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}  (x${l.nbg})`
+  );
+  const bom = buildBom().map(i => `   - ${i.code} — ${i.des} : ${i.qty}`);
+  const c = {
+    nom: document.getElementById("cNom").value.trim(),
+    soc: document.getElementById("cSociete").value.trim(),
+    mail: document.getElementById("cEmail").value.trim(),
+    tel: document.getElementById("cTel").value.trim(),
+    msg: document.getElementById("cMsg").value.trim()
+  };
+  let t = "DEMANDE DE DEVIS — GONDOLES RSL\n\n";
+  t += "Client :\n";
+  t += `  Nom : ${c.nom || "-"}\n  Société : ${c.soc || "-"}\n  Email : ${c.mail || "-"}\n  Téléphone : ${c.tel || "-"}\n`;
+  if (c.msg) t += `  Message : ${c.msg}\n`;
+  t += "\nConfigurations demandées :\n" + (lignes.length ? lignes.join("\n") : "  (aucune)") + "\n";
+  t += "\nDétail des pièces (pour chiffrage) :\n" + (bom.length ? bom.join("\n") : "  (aucune)") + "\n";
+  return t;
+}
+
+// ---- Copie (avec repli synchrone si l'API Clipboard est bloquée) ----
+function execCopyText(text) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.top = "-9999px"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    const ok = document.execCommand("copy"); document.body.removeChild(ta); return ok;
+  } catch (e) { return false; }
+}
+document.getElementById("btnCopy").addEventListener("click", () => {
+  if (demande.length === 0) { alert("Ajoutez au moins une gondole à votre demande."); return; }
+  const text = buildRequestText();
+  const btn = document.getElementById("btnCopy");
+  const done = () => { btn.textContent = "✓ Copié !"; btn.classList.add("done"); setTimeout(() => { btn.textContent = "Copier ma demande"; btn.classList.remove("done"); }, 1800); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => { if (execCopyText(text)) done(); });
+  } else if (execCopyText(text)) { done(); }
+});
+
+// ---- Envoi email (mailto pré-rempli) ----
+document.getElementById("btnEmail").addEventListener("click", (e) => {
+  e.preventDefault();
+  if (demande.length === 0) { alert("Ajoutez au moins une gondole à votre demande."); return; }
+  const soc = document.getElementById("cSociete").value.trim();
+  const subject = "Demande de devis gondoles" + (soc ? " — " + soc : "");
+  const body = buildRequestText();
+  window.location.href = `mailto:${DEST_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+});
+
+// ===================== Aperçu SVG (dessin dynamique) =====================
+const NS = "http://www.w3.org/2000/svg";
+function E(n, a, txt) { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; }
+
+function draw() {
+  const chapPossible = chapiteauPossible(state.face, state.h);
+  const chapActive = state.chapiteau && chapPossible;
+  const viz = document.getElementById("viz"); viz.innerHTML = "";
+  const C = COLORIS[state.color];
+  const isDF = state.face === "DF";
+  const nMods = state.len;
+  const profs = state.tabProfs || [];
+  const nT = profs.length;
+  const rep = FONDS_H[state.h];
+  const DPT = {370:34, 470:46, 570:58};
+
+  // ---------- Cadre global : face à gauche, coupe à droite ----------
+  const H = 460;
+  const groundY = 396, topPad = 40;
+  const usableH = groundY - topPad;
+  const hRatio = 0.5 + 0.5 * ((state.h - 1200) / (2500 - 1200));
+  const gondH = usableH * hRatio;
+  const topY = groundY - gondH;
+  const scale = gondH / state.h;
+
+  // Largeur de la vue de face
+  const modW = 1000 * scale * 0.9;
+  const backW = modW * nMods;
+  const faceLeftMargin = 60;
+  const faceX = faceLeftMargin;                 // bord gauche du fond, vue de face
+  const faceRight = faceX + backW;
+
+  // Largeur de la coupe (profondeur base, en px), dédoublée si DF
+  const baseDpt = DPT[state.p];
+  const cutHalf = baseDpt;                       // demi-largeur px = profondeur base
+  const cutW = isDF ? cutHalf * 2 : cutHalf;
+  const cutGap = 70;                             // espace entre les deux vues
+  const cutAxisX = faceRight + cutGap + (isDF ? cutHalf : 8); // position du montant dans la coupe
+  const cutRightMargin = 46;
+  const W = cutAxisX + (isDF ? cutHalf : cutW) + cutRightMargin;
+
+  viz.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  // dégradés
+  const gid = "grad-" + state.color;
+  const defs = E("defs", {});
+  const lg = E("linearGradient", {id:gid, x1:"0", y1:"0", x2:"1", y2:"0"});
+  lg.appendChild(E("stop", {offset:"0%", "stop-color":C.mid}));
+  lg.appendChild(E("stop", {offset:"45%", "stop-color":C.light}));
+  lg.appendChild(E("stop", {offset:"100%", "stop-color":C.dark}));
+  defs.appendChild(lg); viz.appendChild(defs);
+
+  // sol commun
+  viz.appendChild(E("line", {x1:24, y1:groundY, x2:W-24, y2:groundY, stroke:"#dbe1e7", "stroke-width":2}));
+
+  // hauteurs de fond / base / tablettes (partagées entre les deux vues)
+  const jourSol = 5;                          // petit jour au sol pour les vérins de réglage
+  const traH = 9, verinH = jourSol + 4;       // traverse piétement + vérins
+  const pietTop = groundY - verinH - traH;    // sommet du piétement (= 100 mm du montant, à l'échelle)
+  const backTopY = topY;
+  const fondBottom = pietTop;                 // les fonds descendent jusqu'au piétement, sans jour
+  const regionH = fondBottom - backTopY;
+  const totalMm = state.h - 100;
+
+  // Positions verticales des tablettes intermédiaires (communes aux 2 vues)
+  const tabTop = backTopY + (chapActive ? 18 : 14);
+  const tabSpan = pietTop - tabTop;
+  const tabY = idx => pietTop - (tabSpan * (idx + 1) / (nT + 1));
+
+  // ============================================================
+  // VUE DE FACE (plate, sans perspective)
+  // ============================================================
+  const segs = [];
+  for (let k = 0; k < rep[400]; k++) segs.push(400);
+  for (let k = 0; k < rep[300]; k++) segs.push(300);
+  for (let k = 0; k < rep[100]; k++) segs.push(100);
+  let yCur = backTopY;
+  segs.forEach(mm => {
+    const ph = regionH * (mm / totalMm);
+    viz.appendChild(E("rect", {x:faceX, y:yCur, width:backW, height:ph, fill:`url(#${gid})`, stroke:C.edge, "stroke-width":1}));
+    viz.appendChild(E("rect", {x:faceX, y:yCur + ph*0.16, width:backW, height:Math.min(ph*0.18, 9), fill:"#ffffff", opacity:.10}));
+    if (state.f === "FP" && mm === 400) {
+      for (let yy = yCur+8; yy < yCur+ph-5; yy += 10)
+        for (let xx = faceX+8; xx < faceX+backW-5; xx += 10)
+          viz.appendChild(E("circle", {cx:xx, cy:yy, r:1.3, fill:C.edge, opacity:.55}));
+    }
+    yCur += ph;
+  });
+
+  // chapiteau (face)
+  if (chapActive) {
+    viz.appendChild(E("rect", {x:faceX-2, y:backTopY-13, width:backW+4, height:13, fill:C.metalDk, rx:2}));
+    viz.appendChild(E("rect", {x:faceX-2, y:backTopY-13, width:backW+4, height:5, fill:"#ffffff", opacity:.12, rx:2}));
+  }
+
+  // montants perforés (face) — s'arrêtent au sommet du piétement
+  const upW = 7;
+  const upH = pietTop - backTopY;
+  for (let i = 0; i <= nMods; i++) {
+    const mx = faceX + i * modW;
+    viz.appendChild(E("rect", {x:mx-upW/2, y:backTopY, width:upW, height:upH, fill:C.metal, stroke:C.metalDk, "stroke-width":1, rx:1.5}));
+    for (let yy = backTopY+8; yy < pietTop-6; yy += 11) {
+      viz.appendChild(E("rect", {x:mx-2.4, y:yy, width:1.6, height:4, fill:C.metalDk, rx:.6}));
+      viz.appendChild(E("rect", {x:mx+0.9, y:yy, width:1.6, height:4, fill:C.metalDk, rx:.6}));
+    }
+  }
+
+  // tablettes intermédiaires (face, plates)
+  for (let idx = 0; idx < nT; idx++) {
+    const y = tabY(idx);
+    viz.appendChild(E("rect", {x:faceX, y:y-2, width:backW, height:4, fill:C.dark, stroke:C.edge, "stroke-width":.8}));
+  }
+
+  // (tablette de base non représentée — posée sur le piétement ; toujours comptée en nomenclature)
+
+  // piétement (face) : traverses vues par la tranche (~30 mm) sous chaque montant — pas un bandeau continu
+  const fTraTop = pietTop;
+  const traFaceW = Math.max(6, 30 * scale);      // largeur façade de la traverse (~30 mm à l'échelle)
+  for (let i = 0; i <= nMods; i++) {
+    const px = faceX + i * modW;
+    viz.appendChild(E("rect", {x:px-traFaceW/2, y:fTraTop, width:traFaceW, height:traH, fill:`url(#${gid})`, stroke:C.edge, "stroke-width":1}));
+    viz.appendChild(E("rect", {x:px-traFaceW/2, y:fTraTop, width:traFaceW, height:3, fill:"#ffffff", opacity:.12}));
+    viz.appendChild(E("rect", {x:px-2, y:fTraTop+traH, width:4, height:verinH-3, fill:C.metalDk, rx:1}));   // tige vérin
+    viz.appendChild(E("ellipse", {cx:px, cy:groundY-1, rx:7, ry:2.5, fill:C.metalDk}));                    // patin réglable
+  }
+  // plinthe (face) : elle, court sur toute la longueur en façade
+  if (state.plinthes) {
+    viz.appendChild(E("rect", {x:faceX, y:fTraTop, width:backW, height:traH, fill:C.mid, opacity:.75, stroke:C.edge, "stroke-width":.8}));
+  }
+
+  // cote hauteur (face)
+  viz.appendChild(E("line", {x1:faceX-22, y1:topY, x2:faceX-22, y2:groundY, stroke:"#c3ccd5", "stroke-width":1}));
+  viz.appendChild(E("line", {x1:faceX-25, y1:topY, x2:faceX-19, y2:topY, stroke:"#c3ccd5", "stroke-width":1}));
+  viz.appendChild(E("line", {x1:faceX-25, y1:groundY, x2:faceX-19, y2:groundY, stroke:"#c3ccd5", "stroke-width":1}));
+  const midY = (topY + groundY) / 2;
+  viz.appendChild(E("text", {x:faceX-28, y:midY, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#55677d", transform:`rotate(-90 ${faceX-28} ${midY})`}, `H.${state.h}`));
+  viz.appendChild(E("text", {x:faceX+backW/2, y:topY-(chapActive?20:8), "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#9fb0c2"}, `L = ${nMods} x 1000`));
+  viz.appendChild(E("text", {x:faceX+backW/2, y:groundY+22, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":10.5, "font-weight":700, fill:"#9fb0c2", "letter-spacing":"1px"}, "VUE DE FACE"));
+
+  // ============================================================
+  // COUPE DE CÔTÉ (droite) — montre SF/DF + profondeurs
+  // ============================================================
+  // axe = montant central. Côté(s) : SF = un seul côté (droite), DF = les deux.
+  const sides = isDF ? [1, -1] : [1];
+
+  // montant (coupe) — lisse : les perforations ne sont qu'en façade (non visibles de côté)
+  const cutUpH = pietTop - backTopY;
+  viz.appendChild(E("rect", {x:cutAxisX-3.5, y:backTopY, width:7, height:cutUpH, fill:C.metal, stroke:C.metalDk, "stroke-width":1, rx:1.5}));
+  viz.appendChild(E("rect", {x:cutAxisX-3.5, y:backTopY, width:2.5, height:cutUpH, fill:"#ffffff", opacity:.10, rx:1}));
+
+  // chapiteau (coupe)
+  if (chapActive) {
+    sides.forEach(s => viz.appendChild(E("rect", {x: s>0 ? cutAxisX : cutAxisX-baseDpt, y:backTopY-11, width:baseDpt, height:11, fill:C.metalDk, rx:1.5})));
+  }
+
+  // fonds (coupe) : ligne verticale épaisse le long du montant, hauteur = région de fond
+  sides.forEach(s => {
+    const fx = cutAxisX + (s>0 ? 2 : -2);
+    viz.appendChild(E("line", {x1:fx, y1:backTopY, x2:fx, y2:fondBottom, stroke:C.dark, "stroke-width":3}));
+  });
+
+  // (tablette de base non représentée en coupe — posée sur le piétement ; comptée en nomenclature)
+
+  // tablettes intermédiaires (coupe) : chacune à sa profondeur
+  for (let idx = 0; idx < nT; idx++) {
+    const y = tabY(idx);
+    const dpt = DPT[profs[idx]];
+    sides.forEach(s => {
+      const x0 = cutAxisX;
+      const x1 = cutAxisX + s * dpt;
+      viz.appendChild(E("rect", {x: Math.min(x0,x1), y:y-2, width:dpt, height:4, fill:C.base, stroke:C.edge, "stroke-width":.9}));
+    });
+  }
+
+  // piétement (coupe) : traverse horizontale basse posée sur 2 vérins (un au montant, un à l'avant)
+  const traTop = pietTop;                           // haut de la traverse (défini plus haut)
+  sides.forEach(s => {
+    const xIn = cutAxisX;                           // côté montant
+    const xOut = cutAxisX + s * baseDpt;            // extrémité avant (à la profondeur du piétement)
+    const xL = Math.min(xIn, xOut);
+    // traverse
+    viz.appendChild(E("rect", {x:xL, y:traTop, width:baseDpt, height:traH, fill:`url(#${gid})`, stroke:C.edge, "stroke-width":1}));
+    viz.appendChild(E("rect", {x:xL, y:traTop, width:baseDpt, height:3, fill:"#ffffff", opacity:.12}));
+    // vérin avant (toujours à l'extrémité = profondeur piétement) + vérin arrière (au montant)
+    [xOut, xIn].forEach(vx => {
+      viz.appendChild(E("rect", {x:vx-2, y:traTop+traH, width:4, height:verinH-3, fill:C.metalDk, rx:1}));   // tige
+      viz.appendChild(E("ellipse", {cx:vx, cy:groundY-1, rx:6, ry:2.5, fill:C.metalDk}));                    // patin réglable
+    });
+  });
+
+  // plinthe (coupe) : petite façade verticale devant, si cochée
+  if (state.plinthes) {
+    sides.forEach(s => viz.appendChild(E("rect", {x: s>0 ? cutAxisX+baseDpt-3 : cutAxisX-baseDpt, y:traTop-2, width:3, height:traH+verinH, fill:C.mid, stroke:C.edge, "stroke-width":.8})));
+  }
+
+  // cotes de profondeur (coupe)
+  sides.forEach(s => {
+    const yb = groundY + 10;
+    const xEnd = cutAxisX + s * baseDpt;
+    viz.appendChild(E("line", {x1:cutAxisX, y1:yb, x2:xEnd, y2:yb, stroke:"#c3ccd5", "stroke-width":1}));
+    viz.appendChild(E("line", {x1:cutAxisX, y1:yb-3, x2:cutAxisX, y2:yb+3, stroke:"#c3ccd5", "stroke-width":1}));
+    viz.appendChild(E("line", {x1:xEnd, y1:yb-3, x2:xEnd, y2:yb+3, stroke:"#c3ccd5", "stroke-width":1}));
+    viz.appendChild(E("text", {x:(cutAxisX+xEnd)/2, y:yb+13, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":9.5, fill:"#55677d"}, "P."+state.p));
+  });
+  viz.appendChild(E("text", {x:cutAxisX, y:groundY+34, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":10.5, "font-weight":700, fill:"#9fb0c2", "letter-spacing":"1px"}, isDF ? "COUPE — DOUBLE-FACE" : "COUPE — SIMPLE-FACE"));
+
+  // séparateur discret entre les deux vues
+  const sepX = faceRight + cutGap/2;
+  viz.appendChild(E("line", {x1:sepX, y1:topY-6, x2:sepX, y2:groundY+6, stroke:"#e4e9ee", "stroke-width":1, "stroke-dasharray":"3 4"}));
+
+  // ---------- légende ----------
+  const suites = state.len - 1;
+  const parts = [
+    `<b>${FACES.find(x => x.code === state.face).label}</b>`,
+    `<b>${C.label} — ${C.ral}</b>`,
+    `H.${state.h}`, `P.${state.p}`,
+    `fonds ${state.f === "FL" ? "lisses" : "perforés"}`,
+    `${state.len}×1000 (1 départ${suites>0 ? ` + ${suites} suite${suites>1?"s":""}` : ""})`
+  ];
+  if (state.plinthes) parts.push("plinthes");
+  if (chapActive) parts.push("chapiteaux");
+  if (nT > 0) parts.push(tabResume(state.tabProfs));
+  document.getElementById("caption").innerHTML = parts.join(" · ");
+
+  viz.style.background = `linear-gradient(#fbfcfd, ${state.color === "anthracite" ? "#eceef0" : "#eef2f6"})`;
+  viz.style.border = "1px solid var(--steel-100)";
+}
+
+// ---- Rendu global (état + nomenclature + aperçu) ----
+function render() {
+  syncFace(); syncH(); syncP(); syncF(); syncSwatch();
+
+  const suites = state.len - 1;
+  document.getElementById("lenUnit").textContent = "× 1000 = " + state.len.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) + " ml";
+
+  const schema = document.getElementById("schema");
+  schema.innerHTML = "";
+  const dep = document.createElement("div"); dep.className = "mod dep"; dep.textContent = "DÉPART"; schema.appendChild(dep);
+  for (let i = 0; i < Math.min(suites, 19); i++) { const m = document.createElement("div"); m.className = "mod sui"; m.textContent = "SUITE"; schema.appendChild(m); }
+  if (suites > 19) { const m = document.createElement("div"); m.className = "mod sui"; m.textContent = "+" + (suites - 19); schema.appendChild(m); }
+  document.getElementById("legSuites").textContent = suites === 0 ? "0 SUITE" : suites + " SUITE" + (suites > 1 ? "S" : "");
+
+  // plinthes / chapiteaux
+  document.getElementById("plintheInfo").textContent = "(" + plinthesParGondole(state.face, state.len) + " plinthes pour cette gondole)";
+  document.getElementById("chkPlinthes").checked = state.plinthes;
+  const chapPossible = chapiteauPossible(state.face, state.h);
+  document.getElementById("fieldChapiteau").classList.toggle("disabled", !chapPossible);
+  document.getElementById("chkChapiteau").checked = state.chapiteau && chapPossible;
+  document.getElementById("chapInfo").textContent = chapPossible
+    ? "(" + state.len + " chapiteau" + (state.len > 1 ? "x" : "") + " pour cette gondole)"
+    : "(indisponible pour cette configuration)";
+
+  document.getElementById("tabNiv").value = state.tabProfs.length;
+  // Clamp : toute tablette plus profonde que la base retombe à la base
+  state.tabProfs = state.tabProfs.map(pf => pf > state.p ? state.p : pf);
+  buildTabLevels();
+
+  document.getElementById("designation").textContent =
+    designationText(state.nbg, state.face, state.color, state.h, state.p, state.len, state.f, state.plinthes, state.tabProfs, chapOn());
+
+  // Composition (quantités, sans prix)
+  const nbPl = state.plinthes ? plinthesParGondole(state.face, state.len) : 0;
+  const nbChap = nbChapiteaux();
+  const col = COLORIS[state.color];
+  const rt = tabResume(state.tabProfs);
+  const compo = document.getElementById("compo");
+  compo.innerHTML =
+    `<span class="k">Coloris</span><span class="v">${col.label} — ${col.ral}</span>` +
+    `<span class="k">Éléments</span><span class="v">1 départ${suites > 0 ? " + " + suites + " suite" + (suites > 1 ? "s" : "") : ""}</span>` +
+    (nbPl > 0 ? `<span class="k">Plinthes</span><span class="v">${nbPl}</span>` : "") +
+    (nbChap > 0 ? `<span class="k">Chapiteaux</span><span class="v">${nbChap}</span>` : "") +
+    (rt ? `<span class="k">Tablettes interm.</span><span class="v">${state.tabProfs.length}</span>` : "");
+
+  draw();
+}
+
+render();
+renderList();
+
+// ---- Auto-redimensionnement en iframe (Webflow / WordPress) ----
+(function () {
+  function postHeight() {
+    var h = document.documentElement.scrollHeight;
+    if (window.parent !== window) window.parent.postMessage({ type: "rsl-configurateur-height", height: h }, "*");
+  }
+  window.addEventListener("load", postHeight);
+  if (window.ResizeObserver) { var ro = new ResizeObserver(postHeight); ro.observe(document.body); }
+  document.addEventListener("click", function () { setTimeout(postHeight, 60); });
+  document.addEventListener("input", function () { setTimeout(postHeight, 60); });
+})();
+</script>
+</body>
+</html>
