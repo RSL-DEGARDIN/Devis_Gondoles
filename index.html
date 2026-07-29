@@ -901,9 +901,9 @@ function draw() {
   viz.appendChild(E("rect", {x:cutAxisX-3.5, y:backTopY, width:7, height:cutUpH, fill:C.metal, stroke:C.metalDk, "stroke-width":1, rx:1.5}));
   viz.appendChild(E("rect", {x:cutAxisX-3.5, y:backTopY, width:2.5, height:cutUpH, fill:"#ffffff", opacity:.10, rx:1}));
 
-  // chapiteau (coupe)
+  // chapiteau (coupe) : couvre uniquement la largeur du montant (petit capuchon), ne dépasse pas en profondeur
   if (chapActive) {
-    sides.forEach(s => viz.appendChild(E("rect", {x: s>0 ? cutAxisX : cutAxisX-baseDpt, y:backTopY-11, width:baseDpt, height:11, fill:C.metalDk, rx:1.5})));
+    viz.appendChild(E("rect", {x:cutAxisX-4.5, y:backTopY-9, width:9, height:9, fill:C.metalDk, rx:1.5}));
   }
 
   // fonds (coupe) : ligne verticale épaisse le long du montant, hauteur = région de fond
