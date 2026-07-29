@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan d'implantation gondoles — RSL</title>
+<style>
+  :root {
+    --steel-900:#1c2430; --steel-700:#2e3a4a; --steel-500:#55677d; --steel-300:#9fb0c2;
+    --steel-100:#e8edf2; --paper:#f5f7f9; --accent:#e63f1e; --accent-dark:#c23213;
+    --ok:#1c7c46; --ok-bg:#e7f4ec; --radius:10px; --mono:"Consolas","Menlo",monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--paper); color:var(--steel-900); padding:24px 16px 48px; }
+  header { max-width:1320px; margin:0 auto 6px; }
+  .eyebrow { font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:6px; }
+  h1 { font-size:clamp(22px,3.5vw,30px); font-weight:800; letter-spacing:-.5px; }
+  h1 span { color:var(--steel-500); font-weight:400; }
+  .intro { max-width:1320px; margin:0 auto 18px; font-size:14.5px; color:var(--steel-500); line-height:1.5; }
+  .proto { display:inline-block; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent); background:#fde8e2; padding:3px 9px; border-radius:5px; margin-left:8px; vertical-align:middle; }
+
+  .app { max-width:1320px; margin:0 auto; display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
+  @media (max-width:920px){ .app{ grid-template-columns:1fr; } }
+
+  .card { background:#fff; border:1px solid var(--steel-100); border-radius:var(--radius); box-shadow:0 1px 3px rgba(28,36,48,.06); }
+
+  .toolbar { padding:14px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-bottom:1px solid var(--steel-100); }
+  .toolbar .grp { display:flex; align-items:center; gap:6px; }
+  .toolbar button { padding:9px 14px; border:1.5px solid var(--steel-100); background:#fff; border-radius:8px; font-size:13.5px; font-weight:600; color:var(--steel-700); cursor:pointer; }
+  .toolbar button:hover { border-color:var(--steel-300); }
+  .toolbar button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .toolbar button.primary:hover { background:var(--accent-dark); }
+  .toolbar .sep { width:1px; height:26px; background:var(--steel-100); }
+  .toolbar .hint { font-size:12.5px; color:var(--steel-300); }
+
+  .stage-wrap { padding:0; overflow:hidden; border-radius:0 0 var(--radius) var(--radius); }
+  #plan { display:block; width:100%; height:auto; background:#fbfcfd; touch-action:none; cursor:crosshair; }
+
+  .side { display:flex; flex-direction:column; gap:16px; position:sticky; top:16px; }
+  .panel { padding:16px; }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:1.3px; color:var(--steel-500); font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .panel h2::before { content:""; width:9px; height:9px; background:var(--accent); border-radius:2px; }
+
+  .field { margin-bottom:13px; }
+  .field label { display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:1px; font-weight:700; color:var(--steel-500); margin-bottom:6px; }
+  .seg { display:flex; flex-wrap:wrap; gap:5px; }
+  .seg.g3 { display:grid; grid-template-columns:repeat(3,1fr); }
+  .seg button { flex:1 1 auto; padding:8px 6px; border:1.5px solid var(--steel-100); background:#fff; border-radius:7px; font-size:13px; font-weight:600; color:var(--steel-700); cursor:pointer; }
+  .seg button:hover { border-color:var(--steel-300); }
+  .seg button.active { border-color:var(--accent); background:var(--accent); color:#fff; }
+  .len-ctrl { display:flex; align-items:center; gap:8px; }
+  .len-ctrl button { width:34px; height:34px; border:1.5px solid var(--steel-100); background:#fff; border-radius:7px; font-size:17px; font-weight:700; color:var(--steel-700); cursor:pointer; }
+  .len-ctrl input { width:56px; text-align:center; padding:8px 4px; border:1.5px solid var(--steel-100); border-radius:7px; font-size:15px; font-weight:700; font-family:var(--mono); }
+  .len-ctrl .u { font-size:12.5px; color:var(--steel-500); }
+  .chk { display:flex; align-items:center; gap:9px; cursor:pointer; }
+  .chk input { width:18px; height:18px; accent-color:var(--accent); }
+  .chk span { font-size:13.5px; font-weight:600; }
+  .empty-sel { font-size:13px; color:var(--steel-300); text-align:center; padding:20px 8px; border:1.5px dashed var(--steel-100); border-radius:8px; }
+  .btn-dup { width:100%; padding:9px; border:1.5px solid var(--steel-100); background:#fff; border-radius:8px; font-size:13px; font-weight:600; color:var(--steel-700); cursor:pointer; margin-top:2px; }
+  .btn-dup:hover { border-color:var(--steel-300); }
+  .btn-del { width:100%; padding:9px; border:1.5px solid var(--steel-100); background:#fff; border-radius:8px; font-size:13px; font-weight:600; color:var(--accent); cursor:pointer; margin-top:8px; }
+  .btn-del:hover { border-color:var(--accent); }
+
+  .totrow { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; }
+  .totrow .k { color:var(--steel-500); }
+  .totrow .v { font-family:var(--mono); font-weight:700; }
+
+  .bom-card { max-width:1320px; margin:16px auto 0; }
+  details.bom summary { cursor:pointer; padding:14px 18px; font-size:14px; font-weight:700; color:var(--steel-700); list-style:none; }
+  details.bom summary::before { content:"▸ "; color:var(--accent); }
+  details.bom[open] summary::before { content:"▾ "; }
+  .bom-body { padding:0 18px 18px; }
+  table.bom { border-collapse:collapse; width:100%; font-size:13px; }
+  table.bom th, table.bom td { border-bottom:1px solid var(--steel-100); padding:8px 10px; text-align:left; }
+  table.bom th { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--steel-500); }
+  table.bom td.ref { font-family:var(--mono); font-weight:700; color:var(--steel-500); white-space:nowrap; }
+  table.bom td.q { text-align:center; font-family:var(--mono); font-weight:700; }
+  .bom-empty { text-align:center; padding:24px; color:var(--steel-300); font-size:13.5px; border:1.5px dashed var(--steel-100); border-radius:8px; }
+  .legend { padding:10px 18px 16px; font-size:12.5px; color:var(--steel-500); display:flex; gap:18px; flex-wrap:wrap; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:16px; height:11px; border-radius:2px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Rayonnages Services Lorraine</div>
+  <h1>Plan d'implantation <span>· vue de dessus</span><span class="proto">Prototype</span></h1>
+</header>
+<p class="intro">
+  Posez vos gondoles sur la grille (1 carreau = 1 m), déplacez-les, faites-les pivoter et configurez chacune (hauteur, profondeur, équipements).
+  La nomenclature complète du plan se cumule automatiquement en bas. Chiffrage à faire ensuite côté RSL sur la base de cette nomenclature.
+</p>
+
+<div class="app">
+
+  <!-- Zone plan -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="grp">
+        <button class="primary" id="btnAdd">+ Ajouter une gondole</button>
+        <button id="btnRotate">⟳ Pivoter (R)</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grp">
+        <button id="btnZoomOut">−</button>
+        <button id="btnZoomIn">+</button>
+        <button id="btnFit">Ajuster</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grp"><button id="btnClear">Tout effacer</button></div>
+      <div class="sep"></div>
+      <div class="grp"><a href="index.html" style="text-decoration:none"><button type="button">◧ Ouvrir le configurateur</button></a></div>
+      <span class="hint">Glissez pour déplacer · Suppr pour retirer · molette = zoom</span>
+    </div>
+    <div class="stage-wrap">
+      <svg id="plan" viewBox="0 0 1000 640" role="img" aria-label="Plan d'implantation"></svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:#f6ecd9;border:1.5px solid #cbbd9f"></i> Simple-face</span>
+      <span><i style="background:#dfe3e7;border:1.5px solid #949ba2"></i> Double-face</span>
+      <span><i style="background:#fde8e2;border:1.5px solid #e63f1e"></i> Sélectionnée</span>
+      <span>Trait épais = façade (côté client)</span>
+    </div>
+  </div>
+
+  <!-- Panneau latéral -->
+  <div class="side">
+    <div class="card panel">
+      <h2>Gondole sélectionnée</h2>
+      <div id="selEmpty" class="empty-sel">Cliquez sur une gondole pour la configurer, ou ajoutez-en une.</div>
+      <div id="selForm" style="display:none">
+        <div class="field">
+          <label>Type</label>
+          <div class="seg" id="fFace"></div>
+        </div>
+        <div class="field">
+          <label>Longueur (× 1000 mm)</label>
+          <div class="len-ctrl">
+            <button id="lenM">−</button>
+            <input type="number" id="lenI" min="1" max="30" value="4">
+            <button id="lenP">+</button>
+            <span class="u" id="lenU"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Hauteur (mm)</label>
+          <div class="seg g3" id="fH"></div>
+        </div>
+        <div class="field">
+          <label>Profondeur (mm)</label>
+          <div class="seg g3" id="fP"></div>
+        </div>
+        <div class="field">
+          <label>Fonds</label>
+          <div class="seg g3" id="fF"></div>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="fPlinthe"><span>Avec plinthes</span></label>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="fChap"><span>Avec chapiteaux <small id="chapNote" style="color:var(--steel-500);font-weight:400"></small></span></label>
+        </div>
+        <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
+        <button class="btn-del" id="btnDelSel">✕ Supprimer cette gondole</button>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <h2>Récapitulatif du plan</h2>
+      <div class="totrow"><span class="k">Gondoles posées</span><span class="v" id="tGond">0</span></div>
+      <div class="totrow"><span class="k">Métrage linéaire total</span><span class="v" id="tML">0 ml</span></div>
+      <div class="totrow"><span class="k">Dont simple-face</span><span class="v" id="tSF">0 ml</span></div>
+      <div class="totrow"><span class="k">Dont double-face</span><span class="v" id="tDF">0 ml</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Nomenclature cumulée -->
+<div class="card bom-card">
+  <details class="bom" open>
+    <summary>Nomenclature complète du plan (pour chiffrage)</summary>
+    <div class="bom-body">
+      <div class="bom-empty" id="bomEmpty">Ajoutez des gondoles au plan pour voir la nomenclature.</div>
+      <table class="bom" id="bomTable" style="display:none">
+        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th></tr></thead>
+        <tbody id="bomBody"></tbody>
+      </table>
+    </div>
+  </details>
+</div>
+
+<script>
+// ============ Données (identiques au configurateur) ============
+const HAUTEURS=[1200,1400,1600,1700,1800,2100,2400,2500];
+const PROFONDEURS=[370,470,570];
+const FONDS=[{code:"FL",label:"Lisses"},{code:"FP",label:"Perforés"}];
+const FACES=[{code:"SF",label:"Simple-face"},{code:"DF",label:"Double-face"}];
+const FONDS_H={1200:{100:0,300:1,400:2},1400:{100:1,300:0,400:3},1600:{100:0,300:1,400:3},1700:{100:0,300:0,400:4},1800:{100:1,300:0,400:4},2100:{100:0,300:0,400:5},2400:{100:0,300:1,400:5},2500:{100:0,300:0,400:6}};
+const REF={
+  montant:{1200:["S4273D","Montant 1200x60x30"],1400:["S4274D","Montant 1400x60x30"],1600:["S4275D","Montant 1600x60x30"],1700:["S6500D","Montant 1700x60x30"],1800:["S4276D","Montant 1800x60x30"],2100:["S4277D","Montant 2100x60x30"],2400:["S4278D","Montant 2400x80x30"],2500:["S1642D","Montant 2500x80x30"]},
+  pietement:{370:["S4282D","Piétement 370x160"],470:["S4283D","Piétement 470x160"],570:["S4284D","Piétement 570x160"]},
+  fond:{100:["S4267D","Fond lisse 1000x100"],300:["S4269D","Fond lisse 1000x300"],400:["S4270D","Fond lisse 1000x400"]},
+  perfo:["S4281D","Panneau perforé 1000x400 RL"],
+  tablette:{370:["S4290D","Tablette 1000x370"],470:["S4291D","Tablette 1000x470"],570:["S4292D","Tablette 1000x570"]},
+  console:{370:["S4253D","Console 370 - 2C (la paire)"],470:["S4254D","Console 470 - 2C (la paire)"],570:["S4258D","Console 570 - 3C renforcée (la paire)"]},
+  pe:["S5738","Porte-étiquettes 2 positions L1000 H40"],
+  plinthe:["S4286D","Plinthe 1000x160 - Blanc"],
+  chapiteau:["S4248D","Chapiteau 1000x80 (col.60)"]
+};
+const chapiteauPossible=(face,h)=>face==="DF"&&h<=1700;
+
+// ============ Modèle du plan ============
+// Chaque gondole : position (x,y en mètres, coin haut-gauche), orientation (0/90/180/270),
+// et configuration. Longueur = len (m). Profondeur = p/1000 (×2 si DF).
+let gondoles=[];
+let nextId=1;
+let selId=null;
+
+const MM=1000; // 1 module = 1000 mm
+function gLenM(g){ return g.len; }                       // longueur en m
+function gDepM(g){ return (g.face==="DF"?2:1)*g.p/1000; } // profondeur totale en m
+
+function newGondole(x,y){
+  return { id:nextId++, x, y, rot:0, face:"SF", h:2100, p:470, f:"FL", len:4, plinthes:false, chapiteau:false, color:"blanc", nbg:1, tabProfs:[] };
+}
+
+// ============ Nomenclature (même logique que le configurateur) ============
+function buildBom(){
+  const map=new Map();
+  const add=(ref,qty)=>{ if(!ref||qty<=0)return; const c=map.get(ref[0])||{code:ref[0],des:ref[1],qty:0}; c.qty+=qty; map.set(ref[0],c); };
+  gondoles.forEach(g=>{
+    const df=g.face==="DF"?2:1;
+    const nbMontants=g.len+1;
+    add(REF.montant[g.h],nbMontants);
+    add(REF.pietement[g.p],nbMontants*df);
+    const elems=g.len*df;
+    const rep=FONDS_H[g.h];
+    add(REF.fond[100],rep[100]*elems);
+    add(REF.fond[300],rep[300]*elems);
+    add(g.f==="FP"?REF.perfo:REF.fond[400],rep[400]*elems);
+    add(REF.tablette[g.p],elems);
+    add(REF.pe,elems);
+    if(g.plinthes) add(REF.plinthe,(g.face==="SF"?1:2)*g.len);
+    if(g.chapiteau&&chapiteauPossible(g.face,g.h)) add(REF.chapiteau,g.len);
+  });
+  const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
+  return [...map.values()].sort((a,b)=>ordre.indexOf(a.code)-ordre.indexOf(b.code));
+}
+
+// ============ Vue (SVG) ============
+const NS="http://www.w3.org/2000/svg";
+function E(n,a,t){ const e=document.createElementNS(NS,n); for(const k in a)e.setAttribute(k,a[k]); if(t!=null)e.textContent=t; return e; }
+const svg=document.getElementById("plan");
+
+let view={ ox:60, oy:60, ppm:52 };  // origine px + pixels par mètre
+const W=1000, Hn=640;
+
+function worldToPx(mx,my){ return [view.ox+mx*view.ppm, view.oy+my*view.ppm]; }
+function pxToWorld(px,py){ return [(px-view.ox)/view.ppm, (py-view.oy)/view.ppm]; }
+
+// dimensions occupées par une gondole selon rotation (en m)
+function footprint(g){
+  const L=gLenM(g), D=gDepM(g);
+  return (g.rot%180===0) ? {w:L,h:D} : {w:D,h:L};
+}
+
+function drawGrid(){
+  const g=E("g",{});
+  const stepM=1;
+  const maxX=(W-view.ox)/view.ppm+2, maxY=(Hn-view.oy)/view.ppm+2;
+  const minX=Math.floor(-view.ox/view.ppm)-1, minY=Math.floor(-view.oy/view.ppm)-1;
+  for(let i=minX;i<=maxX;i++){ const [x]=worldToPx(i,0); g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke: i%5===0?"#d7dee6":"#eef2f6","stroke-width":i%5===0?1:0.7})); }
+  for(let j=minY;j<=maxY;j++){ const [,y]=worldToPx(0,j); g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke: j%5===0?"#d7dee6":"#eef2f6","stroke-width":j%5===0?1:0.7})); }
+  // échelle
+  const [sx,sy]=worldToPx(0,0);
+  g.appendChild(E("line",{x1:sx,y1:Hn-24,x2:sx+view.ppm,y2:Hn-24,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("line",{x1:sx,y1:Hn-27,x2:sx,y2:Hn-21,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("line",{x1:sx+view.ppm,y1:Hn-27,x2:sx+view.ppm,y2:Hn-21,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("text",{x:sx+view.ppm/2,y:Hn-10,"text-anchor":"middle","font-size":11,fill:"#55677d"},"1 m"));
+  return g;
+}
+
+function drawGondole(g){
+  const fp=footprint(g);
+  const [x,y]=worldToPx(g.x,g.y);
+  const w=fp.w*view.ppm, h=fp.h*view.ppm;
+  const sel=g.id===selId;
+  const isDF=g.face==="DF";
+  const grp=E("g",{class:"gondole","data-id":g.id,style:"cursor:move"});
+
+  const fill = sel ? "#fde8e2" : (isDF ? "#dfe3e7" : "#f6ecd9");
+  const stroke = sel ? "#e63f1e" : (isDF ? "#949ba2" : "#cbbd9f");
+  grp.appendChild(E("rect",{x,y,width:w,height:h,fill,stroke,"stroke-width":sel?2.5:1.5,rx:2}));
+
+  // façade (côté client) = trait épais. Pour SF, façade = côté "avant" selon rotation. Pour DF, 2 façades.
+  const edge = sel ? "#e63f1e" : "#8f979f";
+  const facades=[];
+  // rot 0 : longueur horizontale, façade en bas (SF) / haut+bas (DF)
+  if(g.rot%180===0){
+    facades.push([x,y+h,x+w,y+h]);           // bas
+    if(isDF) facades.push([x,y,x+w,y]);       // haut
+  } else {
+    facades.push([x,y,x,y+h]);               // gauche
+    if(isDF) facades.push([x+w,y,x+w,y+h]);   // droite
+  }
+  facades.forEach(f=>grp.appendChild(E("line",{x1:f[0],y1:f[1],x2:f[2],y2:f[3],stroke:edge,"stroke-width":sel?4:3,"stroke-linecap":"round"})));
+
+  // séparations de modules (le long de la longueur)
+  const along = g.rot%180===0 ? "h":"v";
+  for(let m=1;m<g.len;m++){
+    const t=m/g.len;
+    if(along==="h"){ const mx=x+t*w; grp.appendChild(E("line",{x1:mx,y1:y,x2:mx,y2:y+h,stroke,"stroke-width":.8,opacity:.6})); }
+    else { const my=y+t*h; grp.appendChild(E("line",{x1:x,y1:my,x2:x+w,y2:my,stroke,"stroke-width":.8,opacity:.6})); }
+  }
+
+  // étiquette
+  const cx=x+w/2, cy=y+h/2;
+  const label=`${g.len}×1000 · H.${g.h}`;
+  const sub=`${FACES.find(f=>f.code===g.face).label} · P.${g.p}`;
+  grp.appendChild(E("text",{x:cx,y:cy-3,"text-anchor":"middle","font-size":11.5,"font-weight":700,fill:"#1c2430","pointer-events":"none"},label));
+  grp.appendChild(E("text",{x:cx,y:cy+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},sub));
+
+  return grp;
+}
+
+function render(){
+  svg.innerHTML="";
+  svg.appendChild(drawGrid());
+  gondoles.forEach(g=>svg.appendChild(drawGondole(g)));
+  renderSel(); renderTotals(); renderBom();
+  savePlan();
+}
+
+// ============ Interaction : drag ============
+let drag=null;
+function svgPoint(evt){
+  const r=svg.getBoundingClientRect();
+  const sx=(evt.clientX-r.left)*(W/r.width);
+  const sy=(evt.clientY-r.top)*(Hn/r.height);
+  return [sx,sy];
+}
+svg.addEventListener("pointerdown",e=>{
+  const [sx,sy]=svgPoint(e);
+  const el=e.target.closest(".gondole");
+  if(el){
+    const id=Number(el.dataset.id); selId=id;
+    const g=gondoles.find(x=>x.id===id);
+    const [wx,wy]=pxToWorld(sx,sy);
+    drag={id, dx:wx-g.x, dy:wy-g.y};
+    svg.setPointerCapture(e.pointerId);
+    render();
+  } else { selId=null; render(); }
+});
+svg.addEventListener("pointermove",e=>{
+  if(!drag)return;
+  const [sx,sy]=svgPoint(e);
+  const [wx,wy]=pxToWorld(sx,sy);
+  const g=gondoles.find(x=>x.id===drag.id);
+  // magnétisme 0,25 m
+  g.x=Math.round((wx-drag.dx)*4)/4;
+  g.y=Math.round((wy-drag.dy)*4)/4;
+  render();
+});
+svg.addEventListener("pointerup",e=>{ drag=null; try{svg.releasePointerCapture(e.pointerId);}catch(_){}} );
+
+// molette = zoom
+svg.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const [sx,sy]=svgPoint(e);
+  const [wx,wy]=pxToWorld(sx,sy);
+  const factor=e.deltaY<0?1.1:0.9;
+  view.ppm=Math.max(18,Math.min(120,view.ppm*factor));
+  // garder le point sous le curseur
+  view.ox=sx-wx*view.ppm; view.oy=sy-wy*view.ppm;
+  render();
+},{passive:false});
+
+// clavier
+window.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT")return;
+  if((e.key==="Delete"||e.key==="Backspace")&&selId!=null){ gondoles=gondoles.filter(g=>g.id!==selId); selId=null; render(); }
+  if(e.key==="r"||e.key==="R"){ rotateSel(); }
+});
+
+// ============ Barre d'outils ============
+document.getElementById("btnAdd").addEventListener("click",()=>{
+  // pose au centre visible
+  const [wx,wy]=pxToWorld(W*0.4,Hn*0.4);
+  const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
+  gondoles.push(g); selId=g.id; render();
+});
+function rotateSel(){ const g=gondoles.find(x=>x.id===selId); if(!g)return; g.rot=(g.rot+90)%360; render(); }
+document.getElementById("btnRotate").addEventListener("click",rotateSel);
+document.getElementById("btnZoomIn").addEventListener("click",()=>{ view.ppm=Math.min(120,view.ppm*1.15); render(); });
+document.getElementById("btnZoomOut").addEventListener("click",()=>{ view.ppm=Math.max(18,view.ppm*0.87); render(); });
+document.getElementById("btnFit").addEventListener("click",fitView);
+document.getElementById("btnClear").addEventListener("click",()=>{ if(gondoles.length&&confirm("Effacer tout le plan ?")){ gondoles=[]; selId=null; render(); } });
+
+function fitView(){
+  if(gondoles.length===0){ view={ox:60,oy:60,ppm:52}; render(); return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  gondoles.forEach(g=>{ const fp=footprint(g); minX=Math.min(minX,g.x); minY=Math.min(minY,g.y); maxX=Math.max(maxX,g.x+fp.w); maxY=Math.max(maxY,g.y+fp.h); });
+  const pad=1;
+  const spanX=(maxX-minX)+2*pad, spanY=(maxY-minY)+2*pad;
+  view.ppm=Math.max(18,Math.min(120,Math.min(W/spanX,Hn/spanY)));
+  view.ox=(W-(maxX+minX)*view.ppm)/2; view.oy=(Hn-(maxY+minY)*view.ppm)/2;
+  render();
+}
+
+// ============ Panneau de config ============
+function buildSeg(id,items,get,set){
+  const el=document.getElementById(id); el.innerHTML="";
+  items.forEach(it=>{ const b=document.createElement("button"); b.type="button"; b.textContent=it.label??it; b.dataset.v=it.code??it;
+    b.addEventListener("click",()=>{ set(b.dataset.v); render(); }); el.appendChild(b); });
+}
+buildSeg("fFace",FACES,()=>sel()?.face,v=>{ const g=sel(); if(g)g.face=v; });
+buildSeg("fH",HAUTEURS,()=>sel()?.h,v=>{ const g=sel(); if(g)g.h=Number(v); });
+buildSeg("fP",PROFONDEURS,()=>sel()?.p,v=>{ const g=sel(); if(g)g.p=Number(v); });
+buildSeg("fF",FONDS,()=>sel()?.f,v=>{ const g=sel(); if(g)g.f=v; });
+
+function sel(){ return gondoles.find(g=>g.id===selId); }
+
+document.getElementById("lenM").addEventListener("click",()=>{ const g=sel(); if(g){ g.len=Math.max(1,g.len-1); render(); } });
+document.getElementById("lenP").addEventListener("click",()=>{ const g=sel(); if(g){ g.len=Math.min(30,g.len+1); render(); } });
+document.getElementById("lenI").addEventListener("input",e=>{ const g=sel(); if(g){ const v=parseInt(e.target.value,10); g.len=(isNaN(v)||v<1)?1:Math.min(30,v); render(); } });
+document.getElementById("fPlinthe").addEventListener("change",e=>{ const g=sel(); if(g){ g.plinthes=e.target.checked; render(); } });
+document.getElementById("fChap").addEventListener("change",e=>{ const g=sel(); if(g){ g.chapiteau=e.target.checked; render(); } });
+document.getElementById("btnDup").addEventListener("click",()=>{ const g=sel(); if(!g)return; const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5}; gondoles.push(c); selId=c.id; render(); });
+document.getElementById("btnDelSel").addEventListener("click",()=>{ if(selId!=null){ gondoles=gondoles.filter(g=>g.id!==selId); selId=null; render(); } });
+
+function renderSel(){
+  const g=sel();
+  document.getElementById("selEmpty").style.display=g?"none":"";
+  document.getElementById("selForm").style.display=g?"":"none";
+  if(!g)return;
+  const mark=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
+  mark("fFace",g.face); mark("fH",g.h); mark("fP",g.p); mark("fF",g.f);
+  document.getElementById("lenI").value=g.len;
+  document.getElementById("lenU").textContent="= "+g.len.toLocaleString("fr-FR")+" ml";
+  document.getElementById("fPlinthe").checked=g.plinthes;
+  const cp=chapiteauPossible(g.face,g.h);
+  const chk=document.getElementById("fChap"); chk.checked=g.chapiteau&&cp; chk.disabled=!cp;
+  document.getElementById("chapNote").textContent=cp?"":"(double-face ≤ H.1700)";
+}
+
+function renderTotals(){
+  const n=gondoles.length;
+  let ml=0,sf=0,df=0;
+  gondoles.forEach(g=>{ ml+=g.len; if(g.face==="SF")sf+=g.len; else df+=g.len; });
+  document.getElementById("tGond").textContent=n;
+  const f=v=>v.toLocaleString("fr-FR")+" ml";
+  document.getElementById("tML").textContent=f(ml);
+  document.getElementById("tSF").textContent=f(sf);
+  document.getElementById("tDF").textContent=f(df);
+}
+
+function renderBom(){
+  const bom=buildBom();
+  const table=document.getElementById("bomTable"), empty=document.getElementById("bomEmpty"), body=document.getElementById("bomBody");
+  body.innerHTML="";
+  if(bom.length===0){ table.style.display="none"; empty.style.display=""; return; }
+  table.style.display=""; empty.style.display="none";
+  bom.forEach(i=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td class="ref">${i.code}</td><td>${i.des}</td><td class="q">${i.qty}</td>`; body.appendChild(tr); });
+}
+
+// ============ Pont de données partagé (localStorage) ============
+const STORE_KEY="rsl_plan_gondoles_v1";
+function savePlan(){
+  try{
+    const payload={ ts:Date.now(), nextId, gondoles };
+    localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+  }catch(e){}
+}
+function loadPlan(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return false;
+    const p=JSON.parse(raw);
+    if(!p||!Array.isArray(p.gondoles)||p.gondoles.length===0) return false;
+    gondoles=p.gondoles.map(g=>({
+      id:g.id, x:(g.x??1), y:(g.y??1), rot:(g.rot??0),
+      face:g.face||"SF", h:g.h||2100, p:g.p||470, f:g.f||"FL", len:g.len||4,
+      plinthes:!!g.plinthes, chapiteau:!!g.chapiteau,
+      // champs détaillés du configurateur préservés même si le plan ne les édite pas
+      color:g.color||"blanc", nbg:g.nbg||1, tabProfs:Array.isArray(g.tabProfs)?g.tabProfs:[]
+    }));
+    nextId=p.nextId||(Math.max(0,...gondoles.map(g=>g.id))+1);
+    return true;
+  }catch(e){ return false; }
+}
+
+// démarrage : charge le panier partagé, sinon 2 gondoles d'exemple
+if(!loadPlan()){
+  gondoles.push({...newGondole(1,1),face:"DF",len:5,h:2100,p:470});
+  gondoles.push({...newGondole(1,3.5),face:"SF",len:4,h:1800,p:370,f:"FP"});
+  savePlan();
+}
+selId=null;
+fitView();
+
+// resynchronise si l'autre page (configurateur) modifie le panier pendant que cette page est ouverte
+window.addEventListener("storage",e=>{ if(e.key===STORE_KEY){ if(loadPlan()){ selId=null; render(); } } });
+
+</script>
+</body>
+</html>
