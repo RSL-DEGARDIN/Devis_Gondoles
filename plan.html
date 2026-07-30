@@ -158,6 +158,10 @@
           <div class="seg g3" id="fF"></div>
         </div>
         <div class="field">
+          <label>Coloris de cette gondole</label>
+          <div class="swatches" id="gSwatches"></div>
+        </div>
+        <div class="field">
           <label class="chk"><input type="checkbox" id="fPlinthe"><span>Avec plinthes</span></label>
         </div>
         <div class="field">
@@ -169,9 +173,9 @@
     </div>
 
     <div class="card panel">
-      <h2>Coloris du plan</h2>
+      <h2>Coloris de toutes les gondoles</h2>
       <div class="swatches" id="planSwatches"></div>
-      <div class="swatch-hint">Appliqué à toutes les gondoles du plan. Réglage par gondole possible dans le configurateur.</div>
+      <div class="swatch-hint">Applique le coloris à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la et utilisez son propre sélecteur de coloris.</div>
     </div>
 
     <div class="card panel">
@@ -494,7 +498,7 @@ document.getElementById("btnAdd").addEventListener("click",()=>{
   // pose au centre visible
   const [wx,wy]=pxToWorld(W*0.4,Hn*0.4);
   const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
-  g.color=planColor;
+  g.color=planColor||"blanc";
   gondoles.push(g); selId=g.id; render();
 });
 function rotateSel(){ const g=gondoles.find(x=>x.id===selId); if(!g)return; g.rot=(g.rot+90)%360; render(); }
@@ -517,11 +521,24 @@ let planColor="blanc";
   });
 })();
 function syncPlanSwatches(){ document.querySelectorAll("#planSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===planColor)); }
+
+// ---- Coloris de la gondole sélectionnée ----
+(function buildGondoleSwatches(){
+  const box=document.getElementById("gSwatches"); box.innerHTML="";
+  Object.entries(COLORIS).forEach(([k,c])=>{
+    const d=document.createElement("div"); d.className="swatch"; d.dataset.k=k;
+    d.style.background=c.swatch; d.style.color=(k==="anthracite")?"#fff":"#1c2430";
+    d.title=c.label+" — "+c.ral; d.textContent=c.ral;
+    d.addEventListener("click",()=>{ const g=sel(); if(g){ g.color=k; detectPlanColor(); render(); } });
+    box.appendChild(d);
+  });
+})();
+function syncGondoleSwatches(){ const g=sel(); document.querySelectorAll("#gSwatches .swatch").forEach(d=>d.classList.toggle("active", g && d.dataset.k===(g.color||"blanc"))); }
 function detectPlanColor(){
-  if(gondoles.length===0) return;
+  if(gondoles.length===0){ syncPlanSwatches(); return; }
   const cols=[...new Set(gondoles.map(g=>g.color||"blanc"))];
-  planColor = (cols.length===1) ? cols[0] : "blanc"; // si mélange, on n'impose rien tant qu'on ne clique pas
-  syncPlanSwatches();
+  if(cols.length===1){ planColor=cols[0]; document.querySelectorAll("#planSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===planColor)); }
+  else { planColor=null; document.querySelectorAll("#planSwatches .swatch").forEach(d=>d.classList.remove("active")); } // mélange : aucune pastille globale active
 }
 
 document.getElementById("btnClear").addEventListener("click",()=>{ if(gondoles.length&&confirm("Effacer tout le plan ?")){ gondoles=[]; selId=null; render(); } });
@@ -571,6 +588,7 @@ function renderSel(){
   const cp=chapiteauPossible(g.face,g.h);
   const chk=document.getElementById("fChap"); chk.checked=g.chapiteau&&cp; chk.disabled=!cp;
   document.getElementById("chapNote").textContent=cp?"":"(double-face ≤ H.1700)";
+  syncGondoleSwatches();
 }
 
 function renderTotals(){
