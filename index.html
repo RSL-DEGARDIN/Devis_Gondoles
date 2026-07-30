@@ -1,4 +1,3 @@
-<a href="plan.html">Voir la page Plan</a>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -237,6 +236,13 @@
   .list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
   .list-head h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
   .list-head h2::before { content: ""; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+  tr.list-row { cursor: pointer; transition: background .1s; }
+  tr.list-row:hover td { background: #f7f9fb; }
+  tr.editing-row td { background: #fef1ec; box-shadow: inset 3px 0 0 var(--accent); }
+  .btn-cancel-edit { padding: 6px 12px; border: 1.5px solid var(--steel-100); background: #fff; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: var(--steel-500); cursor: pointer; }
+  .btn-cancel-edit:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-add.editing { background: var(--ok); }
+  .btn-add.editing:hover { background: #155e34; }
 
   .empty {
     text-align: center; padding: 34px 10px; color: var(--steel-300); font-size: 14px;
@@ -312,6 +318,7 @@
     <img src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL" class="brand-logo">
   </a>
   <a class="nav-btn" href="https://rsl.eu/demande-de-devis/" target="_blank" rel="noopener">Devis par produits</a>
+  <a class="nav-btn" href="plan.html" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none">▦ Plan d'implantation</a>
 </nav>
 
 <header>
@@ -414,7 +421,7 @@
 
   <!-- Liste demande -->
   <div class="card list-card">
-    <div class="list-head"><h2>Ma demande</h2></div>
+    <div class="list-head"><h2>Ma demande</h2><button type="button" id="btnCancelEdit" class="btn-cancel-edit" style="display:none">Annuler l'édition</button></div>
     <div id="listZone">
       <div class="empty" id="listEmpty">Aucune gondole ajoutée pour l'instant.</div>
       <table class="list" id="listTable" style="display:none">
@@ -497,6 +504,43 @@ const COLORIS = {
 const state = { face:"SF", color:"blanc", h:2100, p:470, f:"FL", len:4, nbg:1, plinthes:false, tabProfs:[], chapiteau:false };
 let demande = [];
 let nextId = 1;
+
+// ============ Pont de données partagé avec le plan (localStorage) ============
+const STORE_KEY = "rsl_plan_gondoles_v1";
+let planNextId = 1;
+function savePlanFromDemande() {
+  try {
+    // Chaque ligne de la demande devient une gondole du plan ; on préserve x/y/rot si déjà connus,
+    // sinon on place les nouvelles gondoles sur une grille simple.
+    let px = 1, py = 1, col = 0;
+    const gondoles = demande.map(l => {
+      let x = l.x, y = l.y, rot = l.rot ?? 0;
+      if (x == null || y == null) { x = px; y = py; col++; py += (l.face === "DF" ? 2*l.p/1000 : l.p/1000) + 0.6; if (col % 4 === 0) { px += 6; py = 1; } }
+      return { id: l.id, x, y, rot, face:l.face, h:l.h, p:l.p, f:l.f, len:l.len, plinthes:l.plinthes, chapiteau:l.chapiteau, color:l.color, nbg:l.nbg, tabProfs:Array.isArray(l.tabProfs)?l.tabProfs:[] };
+    });
+    const nid = Math.max(planNextId, nextId, ...gondoles.map(g=>g.id||0)) + 1;
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ts:Date.now(), nextId:nid, gondoles }));
+  } catch(e) {}
+}
+function loadPlanIntoDemande() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (!p || !Array.isArray(p.gondoles) || p.gondoles.length === 0) return false;
+    demande = p.gondoles.map(g => ({
+      id: g.id, x:g.x, y:g.y, rot:g.rot ?? 0,
+      face:g.face||"SF", color:g.color||"blanc", h:g.h||2100, p:g.p||470, f:g.f||"FL", len:g.len||4, nbg:g.nbg||1,
+      plinthes:!!g.plinthes, nbPlinthes: g.plinthes ? plinthesParGondole(g.face||"SF", g.len||4) : 0,
+      tabProfs: Array.isArray(g.tabProfs) ? g.tabProfs : [],
+      chapiteau: !!g.chapiteau && chapiteauPossible(g.face||"SF", g.h||2100),
+      nbChapiteaux: (!!g.chapiteau && chapiteauPossible(g.face||"SF", g.h||2100)) ? (g.len||4) : 0
+    }));
+    planNextId = p.nextId || 1;
+    nextId = Math.max(nextId, planNextId, ...demande.map(l=>l.id||0)) + 1;
+    return true;
+  } catch(e) { return false; }
+}
 
 const faceLabel = face => face === "SF" ? "simple-face" : "double-face";
 const fondsLabel = f => f === "FL" ? "lisses" : "perforés";
@@ -667,18 +711,60 @@ function buildBom() {
   });
 }
 
-// ---- Ajout / suppression ----
-document.getElementById("btnAdd").addEventListener("click", () => {
-  demande.push({
-    id: nextId++, face: state.face, color: state.color, h: state.h, p: state.p, f: state.f, len: state.len, nbg: state.nbg,
+// ---- Ajout / mise à jour / édition ----
+let editingId = null;
+
+function buildLineFromState(id) {
+  const src = editingId != null ? demande.find(l => l.id === editingId) : null;
+  return {
+    id,
+    // préserve position/rotation venues du plan si on édite une gondole existante
+    x: src ? src.x : undefined, y: src ? src.y : undefined, rot: src ? (src.rot ?? 0) : 0,
+    face: state.face, color: state.color, h: state.h, p: state.p, f: state.f, len: state.len, nbg: state.nbg,
     plinthes: state.plinthes, nbPlinthes: state.plinthes ? plinthesParGondole(state.face, state.len) : 0,
     tabProfs: state.tabProfs.slice(), chapiteau: chapOn(), nbChapiteaux: nbChapiteaux()
-  });
+  };
+}
+
+document.getElementById("btnAdd").addEventListener("click", () => {
+  if (editingId != null) {
+    const i = demande.findIndex(l => l.id === editingId);
+    if (i >= 0) demande[i] = buildLineFromState(editingId);
+    editingId = null;
+  } else {
+    demande.push(buildLineFromState(nextId++));
+  }
+  updateAddButton();
   renderList();
 });
 
+function loadIntoEditor(id) {
+  const l = demande.find(x => x.id === id);
+  if (!l) return;
+  state.face = l.face; state.color = l.color || "blanc"; state.h = l.h; state.p = l.p;
+  state.f = l.f; state.len = l.len; state.nbg = l.nbg || 1;
+  state.plinthes = !!l.plinthes; state.chapiteau = !!l.chapiteau;
+  state.tabProfs = Array.isArray(l.tabProfs) ? l.tabProfs.slice() : [];
+  editingId = id;
+  updateAddButton();
+  render();
+  renderList();
+  document.querySelector(".selectors").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelEdit() { editingId = null; updateAddButton(); renderList(); }
+
+function updateAddButton() {
+  const btn = document.getElementById("btnAdd");
+  const cancel = document.getElementById("btnCancelEdit");
+  if (editingId != null) { btn.textContent = "✓ Mettre à jour la gondole"; btn.classList.add("editing"); if (cancel) cancel.style.display = ""; }
+  else { btn.textContent = "+ Ajouter à ma demande"; btn.classList.remove("editing"); if (cancel) cancel.style.display = "none"; }
+}
+document.getElementById("btnCancelEdit").addEventListener("click", cancelEdit);
+
 function renderList() {
   renderBom();
+  savePlanFromDemande();
   const table = document.getElementById("listTable");
   const empty = document.getElementById("listEmpty");
   const body = document.getElementById("listBody");
@@ -687,6 +773,8 @@ function renderList() {
   table.style.display = ""; empty.style.display = "none";
   demande.forEach((l, idx) => {
     const tr = document.createElement("tr");
+    tr.className = "list-row" + (l.id === editingId ? " editing-row" : "");
+    tr.dataset.id = l.id;
     tr.innerHTML =
       `<td class="qty">${idx + 1}</td>` +
       `<td class="desig">${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}</td>` +
@@ -694,8 +782,17 @@ function renderList() {
       `<td><button type="button" class="btn-del" aria-label="Retirer" data-id="${l.id}">✕</button></td>`;
     body.appendChild(tr);
   });
+  // clic sur la ligne (hors bouton ✕) → charger dans l'éditeur
+  body.querySelectorAll("tr.list-row").forEach(tr =>
+    tr.addEventListener("click", e => { if (e.target.closest(".btn-del")) return; loadIntoEditor(Number(tr.dataset.id)); }));
   body.querySelectorAll(".btn-del").forEach(b =>
-    b.addEventListener("click", () => { demande = demande.filter(l => l.id !== Number(b.dataset.id)); renderList(); }));
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      const id = Number(b.dataset.id);
+      demande = demande.filter(l => l.id !== id);
+      if (editingId === id) { editingId = null; updateAddButton(); }
+      renderList();
+    }));
 }
 
 function renderBom() {
@@ -1113,8 +1210,14 @@ function render() {
   draw();
 }
 
+loadPlanIntoDemande();   // récupère les gondoles dessinées dans le plan, si présentes
 render();
 renderList();
+
+// resynchronise si le plan modifie le panier pendant que le configurateur est ouvert
+window.addEventListener("storage", e => {
+  if (e.key === STORE_KEY) { if (loadPlanIntoDemande()) renderList(); }
+});
 
 // ---- Auto-redimensionnement en iframe (Webflow / WordPress) ----
 (function () {
