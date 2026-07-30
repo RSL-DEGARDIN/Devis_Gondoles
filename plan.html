@@ -115,7 +115,7 @@
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter aux gondoles</label></div>
       <div class="sep"></div>
       <div class="grp"><a href="index.html" style="text-decoration:none"><button type="button">◧ Ouvrir le configurateur</button></a></div>
-      <span class="hint">Glissez pour déplacer · Suppr pour retirer · molette = zoom</span>
+      <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom · Suppr = retirer</span>
     </div>
     <div class="stage-wrap">
       <svg id="plan" viewBox="0 0 1000 640" role="img" aria-label="Plan d'implantation"></svg>
@@ -367,15 +367,29 @@ function render(){
 
 // ============ Interaction : drag ============
 let drag=null;
+let pan=null;
 function svgPoint(evt){
   const r=svg.getBoundingClientRect();
   const sx=(evt.clientX-r.left)*(W/r.width);
   const sy=(evt.clientY-r.top)*(Hn/r.height);
   return [sx,sy];
 }
+// empêche le menu contextuel du clic droit sur le plan (utilisé pour déplacer la vue)
+svg.addEventListener("contextmenu",e=>e.preventDefault());
+
 svg.addEventListener("pointerdown",e=>{
   const [sx,sy]=svgPoint(e);
   const el=e.target.closest(".gondole");
+  const rightClick = e.button===2;
+  // clic droit, OU clic gauche sur le vide (pas sur une gondole) => déplacer la vue (pan)
+  if(rightClick || (!el && e.button===0)){
+    pan={ px:sx, py:sy, ox:view.ox, oy:view.oy };
+    if(!el){ selId=null; }
+    svg.setPointerCapture(e.pointerId);
+    svg.style.cursor="grabbing";
+    render();
+    return;
+  }
   if(el){
     const id=Number(el.dataset.id); selId=id;
     const g=gondoles.find(x=>x.id===id);
@@ -383,9 +397,16 @@ svg.addEventListener("pointerdown",e=>{
     drag={id, dx:wx-g.x, dy:wy-g.y};
     svg.setPointerCapture(e.pointerId);
     render();
-  } else { selId=null; render(); }
+  }
 });
 svg.addEventListener("pointermove",e=>{
+  if(pan){
+    const [sx,sy]=svgPoint(e);
+    view.ox=pan.ox+(sx-pan.px);
+    view.oy=pan.oy+(sy-pan.py);
+    render();
+    return;
+  }
   if(!drag)return;
   const [sx,sy]=svgPoint(e);
   const [wx,wy]=pxToWorld(sx,sy);
@@ -402,7 +423,7 @@ svg.addEventListener("pointermove",e=>{
   g.x=nx; g.y=ny;
   render();
 });
-svg.addEventListener("pointerup",e=>{ drag=null; snapGuides=[]; render(); try{svg.releasePointerCapture(e.pointerId);}catch(_){}} );
+svg.addEventListener("pointerup",e=>{ drag=null; pan=null; snapGuides=[]; svg.style.cursor="crosshair"; render(); try{svg.releasePointerCapture(e.pointerId);}catch(_){}} );
 
 // --- Aimantation : cherche l'accrochage le plus proche sur X et sur Y séparément ---
 let snapEnabled=true;
