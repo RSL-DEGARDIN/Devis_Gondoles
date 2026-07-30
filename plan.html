@@ -32,6 +32,8 @@
   .toolbar button.primary:hover { background:var(--accent-dark); }
   .toolbar .sep { width:1px; height:26px; background:var(--steel-100); }
   .toolbar .hint { font-size:12.5px; color:var(--steel-300); }
+  .snap-toggle { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--steel-700); cursor:pointer; }
+  .snap-toggle input { width:17px; height:17px; accent-color:var(--accent); cursor:pointer; }
 
   .stage-wrap { padding:0; overflow:hidden; border-radius:0 0 var(--radius) var(--radius); }
   #plan { display:block; width:100%; height:auto; background:#fbfcfd; touch-action:none; cursor:crosshair; }
@@ -110,6 +112,8 @@
       <div class="sep"></div>
       <div class="grp"><button id="btnClear">Tout effacer</button></div>
       <div class="sep"></div>
+      <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter aux gondoles</label></div>
+      <div class="sep"></div>
       <div class="grp"><a href="index.html" style="text-decoration:none"><button type="button">◧ Ouvrir le configurateur</button></a></div>
       <span class="hint">Glissez pour déplacer · Suppr pour retirer · molette = zoom</span>
     </div>
@@ -120,7 +124,7 @@
       <span><i style="background:#f6ecd9;border:1.5px solid #cbbd9f"></i> Simple-face</span>
       <span><i style="background:#dfe3e7;border:1.5px solid #949ba2"></i> Double-face</span>
       <span><i style="background:#fde8e2;border:1.5px solid #e63f1e"></i> Sélectionnée</span>
-      <span>Trait épais = façade (côté client)</span>
+      <span>Double trait = fonds (milieu en double-face, côté fond en simple-face)</span>
     </div>
   </div>
 
@@ -294,18 +298,39 @@ function drawGondole(g){
   const stroke = sel ? "#e63f1e" : (isDF ? "#949ba2" : "#cbbd9f");
   grp.appendChild(E("rect",{x,y,width:w,height:h,fill,stroke,"stroke-width":sel?2.5:1.5,rx:2}));
 
-  // façade (côté client) = trait épais. Pour SF, façade = côté "avant" selon rotation. Pour DF, 2 façades.
-  const edge = sel ? "#e63f1e" : "#8f979f";
-  const facades=[];
-  // rot 0 : longueur horizontale, façade en bas (SF) / haut+bas (DF)
-  if(g.rot%180===0){
-    facades.push([x,y+h,x+w,y+h]);           // bas
-    if(isDF) facades.push([x,y,x+w,y]);       // haut
-  } else {
-    facades.push([x,y,x,y+h]);               // gauche
-    if(isDF) facades.push([x+w,y,x+w,y+h]);   // droite
+  // Fonds symbolisés par un double trait de 60 mm.
+  //  - Double-face : fonds dos à dos, au MILIEU de la profondeur.
+  //  - Simple-face : fonds sur le côté "fond" (opposé à la façade).
+  const fondEp = Math.max(3, 0.06 * view.ppm);   // 60 mm à l'échelle (mini 3px pour rester visible)
+  const fondCol = sel ? "#e63f1e" : (isDF ? "#5a636d" : "#a08a5e");
+  const horiz = g.rot % 180 === 0;               // longueur horizontale ?
+  function doubleBand(cxy, isVertical, length0, length1, center) {
+    // deux traits parallèles espacés de fondEp, centrés sur "center" (coord transverse)
+    const off = fondEp / 2;
+    if (isVertical) {
+      // bande verticale (traits verticaux) — le fond court le long de la hauteur
+      grp.appendChild(E("line",{x1:center-off,y1:length0,x2:center-off,y2:length1,stroke:fondCol,"stroke-width":1.6}));
+      grp.appendChild(E("line",{x1:center+off,y1:length0,x2:center+off,y2:length1,stroke:fondCol,"stroke-width":1.6}));
+    } else {
+      grp.appendChild(E("line",{x1:length0,y1:center-off,x2:length1,y2:center-off,stroke:fondCol,"stroke-width":1.6}));
+      grp.appendChild(E("line",{x1:length0,y1:center+off,x2:length1,y2:center+off,stroke:fondCol,"stroke-width":1.6}));
+    }
   }
-  facades.forEach(f=>grp.appendChild(E("line",{x1:f[0],y1:f[1],x2:f[2],y2:f[3],stroke:edge,"stroke-width":sel?4:3,"stroke-linecap":"round"})));
+  if (horiz) {
+    // longueur = axe X ; profondeur = axe Y
+    let center;
+    if (isDF) center = y + h/2;                         // DF : milieu
+    else center = (g.rot === 0) ? (y + fondEp/2 + 1)    // SF 0° : fond en haut
+                                : (y + h - fondEp/2 - 1); // SF 180° : fond en bas
+    doubleBand(null, false, x+2, x+w-2, center);
+  } else {
+    // longueur = axe Y ; profondeur = axe X
+    let center;
+    if (isDF) center = x + w/2;                          // DF : milieu
+    else center = (g.rot === 90) ? (x + w - fondEp/2 - 1) // SF 90° : fond à droite
+                                 : (x + fondEp/2 + 1);    // SF 270° : fond à gauche
+    doubleBand(null, true, y+2, y+h-2, center);
+  }
 
   // séparations de modules (le long de la longueur)
   const along = g.rot%180===0 ? "h":"v";
@@ -328,7 +353,14 @@ function drawGondole(g){
 function render(){
   svg.innerHTML="";
   svg.appendChild(drawGrid());
-  gondoles.forEach(g=>svg.appendChild(drawGondole(g)));
+  // dessiner les non-sélectionnées d'abord, la sélectionnée au-dessus
+  gondoles.filter(g=>g.id!==selId).forEach(g=>svg.appendChild(drawGondole(g)));
+  const s=gondoles.find(g=>g.id===selId); if(s) svg.appendChild(drawGondole(s));
+  // guides d'aimantation (pointillés) pendant le déplacement
+  snapGuides.forEach(gd=>{
+    const [x1,y1]=worldToPx(gd.x1,gd.y1), [x2,y2]=worldToPx(gd.x2,gd.y2);
+    svg.appendChild(E("line",{x1,y1,x2,y2,stroke:"#e63f1e","stroke-width":1.5,"stroke-dasharray":"5 4",opacity:.9}));
+  });
   renderSel(); renderTotals(); renderBom();
   savePlan();
 }
@@ -358,12 +390,58 @@ svg.addEventListener("pointermove",e=>{
   const [sx,sy]=svgPoint(e);
   const [wx,wy]=pxToWorld(sx,sy);
   const g=gondoles.find(x=>x.id===drag.id);
-  // magnétisme 0,25 m
-  g.x=Math.round((wx-drag.dx)*4)/4;
-  g.y=Math.round((wy-drag.dy)*4)/4;
+  // position brute (avant aimantation), aimantée à la grille 0,25 m
+  let nx=Math.round((wx-drag.dx)*4)/4;
+  let ny=Math.round((wy-drag.dy)*4)/4;
+  // aimantation aux autres gondoles (bord contre bord + alignement des bords)
+  snapGuides=[];
+  if(snapEnabled){
+    const r=snapToGondoles(g,nx,ny);
+    nx=r.x; ny=r.y; snapGuides=r.guides;
+  }
+  g.x=nx; g.y=ny;
   render();
 });
-svg.addEventListener("pointerup",e=>{ drag=null; try{svg.releasePointerCapture(e.pointerId);}catch(_){}} );
+svg.addEventListener("pointerup",e=>{ drag=null; snapGuides=[]; render(); try{svg.releasePointerCapture(e.pointerId);}catch(_){}} );
+
+// --- Aimantation : cherche l'accrochage le plus proche sur X et sur Y séparément ---
+let snapEnabled=true;
+let snapGuides=[];   // segments guides {x1,y1,x2,y2} en coord monde
+const SNAP_M=0.18;   // seuil d'accrochage en mètres
+
+function snapToGondoles(g,nx,ny){
+  const fp=footprint(g);
+  const meLeft=nx, meRight=nx+fp.w, meTop=ny, meBot=ny+fp.h;
+  const others=gondoles.filter(o=>o.id!==g.id);
+  let bestX=null, bestY=null; // {val, dist, guide}
+  const consider=(axis,cand,dist,guide)=>{
+    if(dist>SNAP_M) return;
+    if(axis==="x"){ if(!bestX||dist<bestX.dist) bestX={val:cand,dist,guide}; }
+    else { if(!bestY||dist<bestY.dist) bestY={val:cand,dist,guide}; }
+  };
+  others.forEach(o=>{
+    const ofp=footprint(o);
+    const oL=o.x, oR=o.x+ofp.w, oT=o.y, oB=o.y+ofp.h;
+    // --- Accrochage horizontal (déplace X) ---
+    // bord contre bord : mon gauche sur son droit, mon droit sur son gauche
+    consider("x", oR,        Math.abs(meLeft-oR),        {vert:true, at:oR});         // coller à droite de l'autre
+    consider("x", oL-fp.w,   Math.abs(meRight-oL),       {vert:true, at:oL});         // coller à gauche de l'autre
+    // alignement des bords : gauche/gauche, droit/droit
+    consider("x", oL,        Math.abs(meLeft-oL),        {vert:true, at:oL});
+    consider("x", oR-fp.w,   Math.abs(meRight-oR),       {vert:true, at:oR});
+    // --- Accrochage vertical (déplace Y) ---
+    consider("y", oB,        Math.abs(meTop-oB),         {horiz:true, at:oB});        // coller sous l'autre
+    consider("y", oT-fp.h,   Math.abs(meBot-oT),         {horiz:true, at:oT});        // coller au-dessus
+    consider("y", oT,        Math.abs(meTop-oT),         {horiz:true, at:oT});        // aligner haut/haut
+    consider("y", oB-fp.h,   Math.abs(meBot-oB),         {horiz:true, at:oB});        // aligner bas/bas
+  });
+  const guides=[];
+  if(bestX){ nx=bestX.val; // guide vertical sur toute la zone concernée
+    const gx=bestX.guide.at; guides.push({x1:gx,y1:Math.min(ny,...others.map(o=>o.y))-0.5,x2:gx,y2:Math.max(ny+fp.h,...others.map(o=>o.y+footprint(o).h))+0.5}); }
+  if(bestY){ ny=bestY.val;
+    const gy=bestY.guide.at; guides.push({x1:Math.min(nx,...others.map(o=>o.x))-0.5,y1:gy,x2:Math.max(nx+fp.w,...others.map(o=>o.x+footprint(o).w))+0.5,y2:gy}); }
+  return {x:nx,y:ny,guides};
+}
 
 // molette = zoom
 svg.addEventListener("wheel",e=>{
@@ -396,6 +474,7 @@ document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{ view.ppm=Math.min(120,view.ppm*1.15); render(); });
 document.getElementById("btnZoomOut").addEventListener("click",()=>{ view.ppm=Math.max(18,view.ppm*0.87); render(); });
 document.getElementById("btnFit").addEventListener("click",fitView);
+document.getElementById("snapChk").addEventListener("change",e=>{ snapEnabled=e.target.checked; });
 document.getElementById("btnClear").addEventListener("click",()=>{ if(gondoles.length&&confirm("Effacer tout le plan ?")){ gondoles=[]; selId=null; render(); } });
 
 function fitView(){
