@@ -58,6 +58,10 @@
   .chk input { width:18px; height:18px; accent-color:var(--accent); }
   .chk span { font-size:13.5px; font-weight:600; }
   .empty-sel { font-size:13px; color:var(--steel-300); text-align:center; padding:20px 8px; border:1.5px dashed var(--steel-100); border-radius:8px; }
+  .swatches { display:flex; gap:8px; }
+  .swatch { flex:1 1 auto; height:44px; border-radius:8px; cursor:pointer; border:3px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); display:flex; align-items:flex-end; justify-content:center; font-size:10.5px; font-weight:700; padding-bottom:4px; transition:border-color .12s; }
+  .swatch.active { border-color:var(--accent); }
+  .swatch-hint { font-size:11.5px; color:var(--steel-300); margin-top:9px; line-height:1.4; }
   .btn-dup { width:100%; padding:9px; border:1.5px solid var(--steel-100); background:#fff; border-radius:8px; font-size:13px; font-weight:600; color:var(--steel-700); cursor:pointer; margin-top:2px; }
   .btn-dup:hover { border-color:var(--steel-300); }
   .btn-del { width:100%; padding:9px; border:1.5px solid var(--steel-100); background:#fff; border-radius:8px; font-size:13px; font-weight:600; color:var(--accent); cursor:pointer; margin-top:8px; }
@@ -77,10 +81,9 @@
   table.bom th { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--steel-500); }
   table.bom td.ref { font-family:var(--mono); font-weight:700; color:var(--steel-500); white-space:nowrap; }
   table.bom td.q { text-align:center; font-family:var(--mono); font-weight:700; }
+  table.bom td.ral { font-family:var(--mono); color:var(--steel-500); white-space:nowrap; }
   .bom-empty { text-align:center; padding:24px; color:var(--steel-300); font-size:13.5px; border:1.5px dashed var(--steel-100); border-radius:8px; }
-  .legend { padding:10px 18px 16px; font-size:12.5px; color:var(--steel-500); display:flex; gap:18px; flex-wrap:wrap; }
-  .legend span { display:inline-flex; align-items:center; gap:6px; }
-  .legend i { width:16px; height:11px; border-radius:2px; display:inline-block; }
+  .plan-caption { padding:10px 18px 4px; font-size:12.5px; color:var(--steel-500); }
 </style>
 </head>
 <body>
@@ -117,14 +120,9 @@
       <div class="grp"><a href="index.html" style="text-decoration:none"><button type="button">◧ Ouvrir le configurateur</button></a></div>
       <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom · Suppr = retirer</span>
     </div>
+    <div class="plan-caption">Cliquer sur une gondole pour la sélectionner</div>
     <div class="stage-wrap">
       <svg id="plan" viewBox="0 0 1000 640" role="img" aria-label="Plan d'implantation"></svg>
-    </div>
-    <div class="legend">
-      <span><i style="background:#f6ecd9;border:1.5px solid #cbbd9f"></i> Simple-face</span>
-      <span><i style="background:#dfe3e7;border:1.5px solid #949ba2"></i> Double-face</span>
-      <span><i style="background:#fde8e2;border:1.5px solid #e63f1e"></i> Sélectionnée</span>
-      <span>Double trait = fonds (milieu en double-face, côté fond en simple-face)</span>
     </div>
   </div>
 
@@ -171,11 +169,17 @@
     </div>
 
     <div class="card panel">
+      <h2>Coloris du plan</h2>
+      <div class="swatches" id="planSwatches"></div>
+      <div class="swatch-hint">Appliqué à toutes les gondoles du plan. Réglage par gondole possible dans le configurateur.</div>
+    </div>
+
+    <div class="card panel">
       <h2>Récapitulatif du plan</h2>
       <div class="totrow"><span class="k">Gondoles posées</span><span class="v" id="tGond">0</span></div>
-      <div class="totrow"><span class="k">Métrage linéaire total</span><span class="v" id="tML">0 ml</span></div>
-      <div class="totrow"><span class="k">Dont simple-face</span><span class="v" id="tSF">0 ml</span></div>
-      <div class="totrow"><span class="k">Dont double-face</span><span class="v" id="tDF">0 ml</span></div>
+      <div class="totrow"><span class="k">Gondoles simple-face</span><span class="v" id="tSF">0 ml</span></div>
+      <div class="totrow"><span class="k">Gondoles double-face</span><span class="v" id="tDF">0 ml</span></div>
+      <div class="totrow"><span class="k">Métrage linéaire développé</span><span class="v" id="tDev">0 ml</span></div>
     </div>
   </div>
 
@@ -188,7 +192,7 @@
     <div class="bom-body">
       <div class="bom-empty" id="bomEmpty">Ajoutez des gondoles au plan pour voir la nomenclature.</div>
       <table class="bom" id="bomTable" style="display:none">
-        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th></tr></thead>
+        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Coloris</th></tr></thead>
         <tbody id="bomBody"></tbody>
       </table>
     </div>
@@ -231,10 +235,13 @@ function newGondole(x,y){
 }
 
 // ============ Nomenclature (même logique que le configurateur) ============
+const COLORIS={ blanc:{ral:"RAL 9001",label:"Blanc",swatch:"#fdf4e3",edge:"#dccfb2",fill:"#f6ecd9",band:"#a08a5e"}, anthracite:{ral:"RAL 7015",label:"Anthracite",swatch:"#484d53",edge:"#23262a",fill:"#8b9099",band:"#31353b"}, gris:{ral:"RAL 9006",label:"Gris Alu",swatch:"#c9ced3",edge:"#8f979f",fill:"#dfe3e7",band:"#7d858d"} };
+const COLORIS_RAL={ blanc:COLORIS.blanc.ral, anthracite:COLORIS.anthracite.ral, gris:COLORIS.gris.ral };
 function buildBom(){
   const map=new Map();
-  const add=(ref,qty)=>{ if(!ref||qty<=0)return; const c=map.get(ref[0])||{code:ref[0],des:ref[1],qty:0}; c.qty+=qty; map.set(ref[0],c); };
   gondoles.forEach(g=>{
+    const ral=COLORIS_RAL[g.color]||COLORIS_RAL.blanc;
+    const add=(ref,qty)=>{ if(!ref||qty<=0)return; const key=ref[0]+"|"+ral; const c=map.get(key)||{code:ref[0],des:ref[1],ral,qty:0}; c.qty+=qty; map.set(key,c); };
     const df=g.face==="DF"?2:1;
     const nbMontants=g.len+1;
     add(REF.montant[g.h],nbMontants);
@@ -250,7 +257,7 @@ function buildBom(){
     if(g.chapiteau&&chapiteauPossible(g.face,g.h)) add(REF.chapiteau,g.len);
   });
   const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
-  return [...map.values()].sort((a,b)=>ordre.indexOf(a.code)-ordre.indexOf(b.code));
+  return [...map.values()].sort((a,b)=>{ const d=ordre.indexOf(a.code)-ordre.indexOf(b.code); return d!==0?d:a.ral.localeCompare(b.ral); });
 }
 
 // ============ Vue (SVG) ============
@@ -294,15 +301,16 @@ function drawGondole(g){
   const isDF=g.face==="DF";
   const grp=E("g",{class:"gondole","data-id":g.id,style:"cursor:move"});
 
-  const fill = sel ? "#fde8e2" : (isDF ? "#dfe3e7" : "#f6ecd9");
-  const stroke = sel ? "#e63f1e" : (isDF ? "#949ba2" : "#cbbd9f");
+  const col = COLORIS[g.color] || COLORIS.blanc;
+  const fill = sel ? "#fde8e2" : col.fill;
+  const stroke = sel ? "#e63f1e" : col.edge;
   grp.appendChild(E("rect",{x,y,width:w,height:h,fill,stroke,"stroke-width":sel?2.5:1.5,rx:2}));
 
   // Fonds symbolisés par un double trait de 60 mm.
   //  - Double-face : fonds dos à dos, au MILIEU de la profondeur.
   //  - Simple-face : fonds sur le côté "fond" (opposé à la façade).
   const fondEp = Math.max(3, 0.06 * view.ppm);   // 60 mm à l'échelle (mini 3px pour rester visible)
-  const fondCol = sel ? "#e63f1e" : (isDF ? "#5a636d" : "#a08a5e");
+  const fondCol = sel ? "#e63f1e" : col.band;
   const horiz = g.rot % 180 === 0;               // longueur horizontale ?
   function doubleBand(cxy, isVertical, length0, length1, center) {
     // deux traits parallèles espacés de fondEp, centrés sur "center" (coord transverse)
@@ -342,10 +350,8 @@ function drawGondole(g){
 
   // étiquette
   const cx=x+w/2, cy=y+h/2;
-  const label=`${g.len}×1000 · H.${g.h}`;
-  const sub=`${FACES.find(f=>f.code===g.face).label} · P.${g.p}`;
-  grp.appendChild(E("text",{x:cx,y:cy-3,"text-anchor":"middle","font-size":11.5,"font-weight":700,fill:"#1c2430","pointer-events":"none"},label));
-  grp.appendChild(E("text",{x:cx,y:cy+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},sub));
+  const label=`H.${g.h} · P.${g.p}`;
+  grp.appendChild(E("text",{x:cx,y:cy+4,"text-anchor":"middle","font-size":11.5,"font-weight":700,fill:"#1c2430","pointer-events":"none"},label));
 
   return grp;
 }
@@ -488,6 +494,7 @@ document.getElementById("btnAdd").addEventListener("click",()=>{
   // pose au centre visible
   const [wx,wy]=pxToWorld(W*0.4,Hn*0.4);
   const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
+  g.color=planColor;
   gondoles.push(g); selId=g.id; render();
 });
 function rotateSel(){ const g=gondoles.find(x=>x.id===selId); if(!g)return; g.rot=(g.rot+90)%360; render(); }
@@ -496,6 +503,27 @@ document.getElementById("btnZoomIn").addEventListener("click",()=>{ view.ppm=Mat
 document.getElementById("btnZoomOut").addEventListener("click",()=>{ view.ppm=Math.max(18,view.ppm*0.87); render(); });
 document.getElementById("btnFit").addEventListener("click",fitView);
 document.getElementById("snapChk").addEventListener("change",e=>{ snapEnabled=e.target.checked; });
+
+// ---- Coloris global du plan ----
+let planColor="blanc";
+(function buildPlanSwatches(){
+  const box=document.getElementById("planSwatches"); box.innerHTML="";
+  Object.entries(COLORIS).forEach(([k,c])=>{
+    const d=document.createElement("div"); d.className="swatch"; d.dataset.k=k;
+    d.style.background=c.swatch; d.style.color=(k==="anthracite")?"#fff":"#1c2430";
+    d.title=c.label+" — "+c.ral; d.textContent=c.ral;
+    d.addEventListener("click",()=>{ planColor=k; gondoles.forEach(g=>g.color=k); syncPlanSwatches(); render(); });
+    box.appendChild(d);
+  });
+})();
+function syncPlanSwatches(){ document.querySelectorAll("#planSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===planColor)); }
+function detectPlanColor(){
+  if(gondoles.length===0) return;
+  const cols=[...new Set(gondoles.map(g=>g.color||"blanc"))];
+  planColor = (cols.length===1) ? cols[0] : "blanc"; // si mélange, on n'impose rien tant qu'on ne clique pas
+  syncPlanSwatches();
+}
+
 document.getElementById("btnClear").addEventListener("click",()=>{ if(gondoles.length&&confirm("Effacer tout le plan ?")){ gondoles=[]; selId=null; render(); } });
 
 function fitView(){
@@ -547,13 +575,14 @@ function renderSel(){
 
 function renderTotals(){
   const n=gondoles.length;
-  let ml=0,sf=0,df=0;
-  gondoles.forEach(g=>{ ml+=g.len; if(g.face==="SF")sf+=g.len; else df+=g.len; });
-  document.getElementById("tGond").textContent=n;
+  let sf=0,df=0;
+  gondoles.forEach(g=>{ if(g.face==="SF")sf+=g.len; else df+=g.len; });
+  const dev=sf+df*2;   // métrage développé : la double-face compte double
   const f=v=>v.toLocaleString("fr-FR")+" ml";
-  document.getElementById("tML").textContent=f(ml);
+  document.getElementById("tGond").textContent=n;
   document.getElementById("tSF").textContent=f(sf);
   document.getElementById("tDF").textContent=f(df);
+  document.getElementById("tDev").textContent=f(dev);
 }
 
 function renderBom(){
@@ -562,7 +591,7 @@ function renderBom(){
   body.innerHTML="";
   if(bom.length===0){ table.style.display="none"; empty.style.display=""; return; }
   table.style.display=""; empty.style.display="none";
-  bom.forEach(i=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td class="ref">${i.code}</td><td>${i.des}</td><td class="q">${i.qty}</td>`; body.appendChild(tr); });
+  bom.forEach(i=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td class="ref">${i.code}</td><td>${i.des}</td><td class="q">${i.qty}</td><td class="ral">${i.ral}</td>`; body.appendChild(tr); });
 }
 
 // ============ Pont de données partagé (localStorage) ============
@@ -598,10 +627,11 @@ if(!loadPlan()){
   savePlan();
 }
 selId=null;
+detectPlanColor();
 fitView();
 
 // resynchronise si l'autre page (configurateur) modifie le panier pendant que cette page est ouverte
-window.addEventListener("storage",e=>{ if(e.key===STORE_KEY){ if(loadPlan()){ selId=null; render(); } } });
+window.addEventListener("storage",e=>{ if(e.key===STORE_KEY){ if(loadPlan()){ selId=null; detectPlanColor(); render(); } } });
 
 </script>
 </body>
