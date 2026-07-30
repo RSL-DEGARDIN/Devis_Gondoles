@@ -3,312 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Configurez vos gondoles — RSL</title>
+<title>Configurateur & plan d'implantation gondoles — RSL</title>
 <style>
-  :root {
-    --steel-900: #1c2430;
-    --steel-700: #2e3a4a;
-    --steel-500: #55677d;
-    --steel-300: #9fb0c2;
-    --steel-100: #e8edf2;
-    --paper: #f5f7f9;
-    --accent: #e63f1e;
-    --accent-dark: #c23213;
-    --ok: #1c7c46;
-    --ok-bg: #e7f4ec;
-    --radius: 10px;
-    --mono: "Consolas", "Menlo", monospace;
+  :root{
+    --steel-900:#1c2430;--steel-700:#2e3a4a;--steel-500:#55677d;--steel-300:#9fb0c2;
+    --steel-100:#e8edf2;--paper:#f5f7f9;--accent:#e63f1e;--accent-dark:#c23213;
+    --ok:#1c7c46;--ok-bg:#e7f4ec;--radius:10px;--mono:"Consolas","Menlo",monospace;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--steel-900);padding:22px 16px 48px;}
+  .topnav{max-width:1360px;margin:0 auto 18px;display:flex;align-items:center;gap:16px;}
+  .topnav .brand{display:inline-flex;align-items:center;line-height:0;text-decoration:none;}
+  .topnav .brand-logo{height:48px;width:auto;display:block;mix-blend-mode:multiply;}
+  .topnav .nav-btn{padding:11px 22px;border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:700;background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(230,63,30,.3);}
+  .topnav .nav-btn:hover{background:var(--accent-dark);}
+  header{max-width:1360px;margin:0 auto 4px;}
+  .eyebrow{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;}
+  h1{font-size:clamp(22px,3.5vw,30px);font-weight:800;letter-spacing:-.5px;}
+  h1 span{color:var(--steel-500);font-weight:400;}
+  .intro{max-width:1360px;margin:0 auto 18px;font-size:14px;color:var(--steel-500);line-height:1.5;}
 
-  body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: var(--paper);
-    color: var(--steel-900);
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 32px 16px 48px;
-  }
+  .app{max-width:1360px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start;}
+  @media (max-width:980px){.app{grid-template-columns:1fr;}}
+  .col-left{display:flex;flex-direction:column;gap:18px;min-width:0;}
+  .block-h{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .block-h::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
+  .panel-card{padding:18px;}
+  .panel-card table.list,.panel-card table.bom{border-collapse:collapse;width:100%;font-size:13px;}
+  .panel-card th,.panel-card td{border-bottom:1px solid var(--steel-100);padding:9px 10px;text-align:left;vertical-align:top;}
+  .panel-card th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--steel-500);}
+  .card{background:#fff;border:1px solid var(--steel-100);border-radius:var(--radius);box-shadow:0 1px 3px rgba(28,36,48,.06);}
 
-  .topnav {
-    width: 100%; max-width: 1180px; margin-bottom: 24px;
-    display: flex; align-items: center; gap: 18px;
-  }
-  .topnav .brand {
-    display: inline-flex; align-items: center; flex: 0 0 auto;
-    text-decoration: none; line-height: 0;
-  }
-  .topnav .brand-logo {
-    height: 52px; width: auto; display: block;
-    mix-blend-mode: multiply;   /* fond blanc du JPG fondu dans le fond clair de la page */
-    transition: opacity .12s;
-  }
-  .topnav .brand:hover .brand-logo { opacity: .85; }
-  .topnav .nav-btn {
-    padding: 12px 26px; border-radius: 999px; text-decoration: none;
-    font-size: 15px; font-weight: 700; background: var(--accent); color: #fff;
-    box-shadow: 0 2px 8px rgba(230,63,30,.30); transition: background .12s, transform .08s;
-  }
-  .topnav .nav-btn:hover { background: var(--accent-dark); }
-  .topnav .nav-btn:active { transform: scale(.98); }
+  .viz-zoom-hint{font-size:11.5px;color:var(--steel-300);text-align:center;margin-top:4px;}
+  /* popup zoom aperçu */
+  .viz-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(28,36,48,.72);align-items:center;justify-content:center;padding:24px;}
+  .viz-modal.open{display:flex;}
+  .viz-modal-inner{position:relative;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:22px;max-width:min(1000px,94vw);max-height:92vh;overflow:auto;}
+  .viz-modal-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;font-size:18px;font-weight:700;color:var(--steel-700);cursor:pointer;line-height:1;}
+  .viz-modal-close:hover{border-color:var(--accent);color:var(--accent);}
+  .viz-modal-svg{display:block;width:100%;height:auto;max-height:80vh;}
+  .viz-modal-cap{font-size:13.5px;color:var(--steel-500);text-align:center;margin-top:12px;line-height:1.5;}
+  .viz-modal-cap b{color:var(--steel-900);}
 
-  header { width: 100%; max-width: 1180px; margin-bottom: 12px; }
-  .eyebrow {
-    font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
-    color: var(--accent); font-weight: 700; margin-bottom: 6px;
-  }
-  h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: -0.5px; }
-  h1 span { color: var(--steel-500); font-weight: 400; }
-  .intro {
-    width: 100%; max-width: 1180px; margin-bottom: 24px;
-    font-size: 15px; color: var(--steel-500); line-height: 1.5;
-  }
+  /* ---- Plan ---- */
+  .toolbar{padding:12px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--steel-100);}
+  .toolbar .grp{display:flex;align-items:center;gap:6px;}
+  .toolbar button{padding:9px 13px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+  .toolbar button:hover{border-color:var(--steel-300);}
+  .toolbar .sep{width:1px;height:24px;background:var(--steel-100);}
+  .toolbar .hint{font-size:12px;color:var(--steel-300);flex:1 1 100%;}
+  .snap-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+  .snap-toggle input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
+  .plan-caption{padding:9px 16px 3px;font-size:12.5px;color:var(--steel-500);}
+  #plan{display:block;width:100%;height:auto;background:#fbfcfd;touch-action:none;cursor:crosshair;border-radius:0 0 var(--radius) var(--radius);}
 
-  .app {
-    width: 100%; max-width: 1180px;
-    display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start;
-  }
-  @media (max-width: 860px) {
-    .app { grid-template-columns: 1fr; }
-    .sticky-col { position: static; grid-row: auto; grid-column: 1; }
-  }
+  /* ---- Colonne droite ---- */
+  .side{display:flex;flex-direction:column;gap:16px;}
+  .top-actions{display:grid;grid-template-columns:1fr;gap:10px;}
+  .act-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:13px 12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 1px 3px rgba(28,36,48,.06);}
+  .act-btn:hover{background:var(--accent-dark);}
+  .panel{padding:16px;}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1.3px;color:var(--steel-500);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .panel h2::before{content:"";width:9px;height:9px;background:var(--accent);border-radius:2px;}
 
-  .card {
-    background: #fff; border: 1px solid var(--steel-100);
-    border-radius: var(--radius); box-shadow: 0 1px 3px rgba(28,36,48,.06);
-  }
+  .field{margin-bottom:13px;}
+  .field label,.field .lbl{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--steel-500);margin-bottom:6px;}
+  .seg{display:flex;flex-wrap:wrap;gap:5px;}
+  .seg.g3{display:grid;grid-template-columns:repeat(3,1fr);}
+  .seg button{flex:1 1 auto;padding:8px 6px;border:1.5px solid var(--steel-100);background:#fff;border-radius:7px;font-size:13px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+  #dFace button{flex:0 1 auto;}
+  .seg button:hover{border-color:var(--steel-300);}
+  .seg button.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+  .seg button.is-disabled{opacity:.35;cursor:not-allowed;background:var(--steel-100);color:var(--steel-300);border-color:var(--steel-100);}
+  .len-ctrl{display:flex;align-items:center;gap:8px;}
+  .len-ctrl button{width:34px;height:34px;border:1.5px solid var(--steel-100);background:#fff;border-radius:7px;font-size:17px;font-weight:700;color:var(--steel-700);cursor:pointer;}
+  .len-ctrl input{width:56px;text-align:center;padding:8px 4px;border:1.5px solid var(--steel-100);border-radius:7px;font-size:15px;font-weight:700;font-family:var(--mono);}
+  .len-ctrl .u{font-size:12.5px;color:var(--steel-500);}
+  .chk{display:flex;align-items:center;gap:9px;cursor:pointer;}
+  .chk input{width:18px;height:18px;accent-color:var(--accent);}
+  .chk span{font-size:13.5px;font-weight:600;}
+  .field.disabled{opacity:.4;pointer-events:none;}
+  .hint2{font-size:11.5px;color:var(--steel-300);margin-top:5px;line-height:1.4;}
 
-  .selectors { padding: 22px; display: flex; flex-direction: column; gap: 20px; }
-  .field label, .field .lbl {
-    display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px;
-    font-weight: 700; color: var(--steel-500); margin-bottom: 8px;
-  }
-  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
-  .seg button {
-    flex: 1 1 auto; min-width: 64px; padding: 10px 8px;
-    border: 1.5px solid var(--steel-100); background: #fff; border-radius: 8px;
-    font-size: 14px; font-weight: 600; color: var(--steel-700); cursor: pointer;
-    transition: border-color .12s, background .12s, color .12s;
-  }
-  #selFace button { flex: 0 1 auto; }
-  .seg button:hover { border-color: var(--steel-300); }
-  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .seg button.active { border-color: var(--accent); background: var(--accent); color: #fff; }
-  .seg button.is-disabled {
-    opacity: .38; cursor: not-allowed; background: var(--steel-100);
-    color: var(--steel-300); border-color: var(--steel-100);
-  }
-  .seg button.is-disabled:hover { border-color: var(--steel-100); }
-  .seg.grid-h { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .hint { font-size: 12px; color: var(--steel-300); margin-top: 5px; }
+  .swatches{display:flex;gap:8px;}
+  .swatch{flex:1 1 auto;height:42px;border-radius:8px;cursor:pointer;border:3px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);display:flex;align-items:flex-end;justify-content:center;font-size:10px;font-weight:700;padding-bottom:4px;}
+  .swatch.active{border-color:var(--accent);}
 
-  /* Coloris */
-  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
-  .swatch {
-    width: 92px; height: 52px; border-radius: 8px; cursor: pointer; border: 3px solid transparent;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.10); transition: border-color .12s, transform .08s;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12.5px; font-weight: 700; letter-spacing: .3px; text-align: center;
-  }
-  .swatch:hover { transform: translateY(-1px); }
-  .swatch.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(0,0,0,.10), 0 0 0 1px var(--accent); }
+  /* tablettes niveau par niveau */
+  .tab-levels{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .tab-lvl{display:flex;align-items:center;gap:9px;}
+  .tab-lvl .lvl-name{font-size:12px;font-weight:700;color:var(--steel-500);flex:0 0 62px;}
+  .tab-lvl .lvl-seg{display:flex;gap:5px;flex:1 1 auto;}
+  .tab-lvl .lvl-seg button{flex:1 1 auto;padding:6px 4px;border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;font-size:12px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+  .tab-lvl .lvl-seg button.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+  .tab-lvl .lvl-seg button.is-disabled{opacity:.35;cursor:not-allowed;background:var(--steel-100);color:var(--steel-300);border-color:var(--steel-100);}
 
-  .len-ctrl { display: flex; align-items: center; gap: 10px; }
-  .len-ctrl button {
-    width: 38px; height: 38px; border: 1.5px solid var(--steel-100); background: #fff;
-    border-radius: 8px; font-size: 18px; font-weight: 700; color: var(--steel-700); cursor: pointer;
-  }
-  .len-ctrl button:hover { border-color: var(--steel-300); }
-  .len-ctrl input {
-    width: 70px; text-align: center; padding: 9px 4px;
-    border: 1.5px solid var(--steel-100); border-radius: 8px;
-    font-size: 17px; font-weight: 700; font-family: var(--mono);
-  }
-  .len-ctrl .unit { font-size: 14px; color: var(--steel-500); font-weight: 600; }
+  /* aperçu repliable */
+  details.preview{margin-top:6px;border-top:1px solid var(--steel-100);padding-top:10px;}
+  details.preview summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent);list-style:none;}
+  details.preview summary::before{content:"▸ ";}
+  details.preview[open] summary::before{content:"▾ ";}
+  .viz{width:100%;border-radius:10px;margin-top:10px;}
+  .viz-cap{font-size:12px;color:var(--steel-500);text-align:center;line-height:1.5;margin-top:8px;}
+  .viz-cap b{color:var(--steel-900);}
 
-  .tab-levels { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
-  .tab-lvl { display: flex; align-items: center; gap: 10px; }
-  .tab-lvl .lvl-name {
-    font-size: 12.5px; font-weight: 700; color: var(--steel-500);
-    flex: 0 0 70px; white-space: nowrap;
-  }
-  .tab-lvl .lvl-seg { display: flex; gap: 5px; flex: 1 1 auto; }
-  .tab-lvl .lvl-seg button {
-    flex: 1 1 auto; padding: 7px 6px; border: 1.5px solid var(--steel-100); background: #fff;
-    border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--steel-700); cursor: pointer;
-    transition: border-color .12s, background .12s, color .12s;
-  }
-  .tab-lvl .lvl-seg button:hover { border-color: var(--steel-300); }
-  .tab-lvl .lvl-seg button.active { border-color: var(--accent); background: var(--accent); color: #fff; }
-  .tab-lvl .lvl-seg button.is-disabled {
-    opacity: .35; cursor: not-allowed; background: var(--steel-100);
-    color: var(--steel-300); border-color: var(--steel-100);
-  }
-  .tab-lvl .lvl-seg button.is-disabled:hover { border-color: var(--steel-100); }
+  .btn-dup,.btn-del-sel{width:100%;padding:9px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+  .btn-dup{color:var(--steel-700);} .btn-dup:hover{border-color:var(--steel-300);}
+  .btn-del-sel{color:var(--accent);} .btn-del-sel:hover{border-color:var(--accent);}
+  .empty-sel{font-size:13px;color:var(--steel-300);text-align:center;padding:22px 8px;border:1.5px dashed var(--steel-100);border-radius:8px;}
 
-  .schema { margin-top: 12px; display: flex; gap: 3px; flex-wrap: wrap; }
-  .schema .mod {
-    height: 40px; min-width: 52px; flex: 0 0 52px; border-radius: 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10.5px; font-weight: 700; letter-spacing: .5px; color: #fff;
-  }
-  .schema .mod.dep { background: var(--accent); }
-  .schema .mod.sui { background: var(--steel-500); }
-  .schema-legend { font-size: 12px; color: var(--steel-500); margin-top: 6px; }
-  .schema-legend b.d { color: var(--accent); }
-  .schema-legend b.s { color: var(--steel-500); }
+  .totrow{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .totrow .k{color:var(--steel-500);} .totrow .v{font-family:var(--mono);font-weight:700;}
+  .swatch-hint{font-size:11.5px;color:var(--steel-300);margin-top:9px;line-height:1.4;}
 
-  .check-row {
-    display: flex !important; align-items: center; gap: 10px; cursor: pointer;
-    text-transform: none !important; letter-spacing: 0 !important; margin-bottom: 0 !important;
-  }
-  .check-row input { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
-  .check-row .check-label { font-size: 14.5px; font-weight: 600; color: var(--steel-900); }
-  .check-row .check-label small { font-weight: 400; color: var(--steel-500); }
-  .field.disabled { opacity: .40; pointer-events: none; }
+  /* devis + nomenclature pleine largeur */
+  .wide{max-width:1360px;margin:16px auto 0;}
+  .wide.panel-card{padding:18px;}
+  .wide h2{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .wide h2::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
+  table.list,table.bom{border-collapse:collapse;width:100%;font-size:13px;}
+  table.list th,table.list td,table.bom th,table.bom td{border-bottom:1px solid var(--steel-100);padding:9px 10px;text-align:left;vertical-align:top;}
+  table.list th,table.bom th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--steel-500);}
+  table.list td.qty{text-align:center;font-family:var(--mono);}
+  table.bom td.ref{font-family:var(--mono);font-weight:700;color:var(--steel-500);white-space:nowrap;}
+  table.bom td.q{text-align:center;font-family:var(--mono);font-weight:700;}
+  table.bom td.ral{font-family:var(--mono);color:var(--steel-500);white-space:nowrap;}
+  .empty{text-align:center;padding:26px;color:var(--steel-300);font-size:13.5px;border:1.5px dashed var(--steel-100);border-radius:8px;}
+  details.bom summary{cursor:pointer;font-size:15px;font-weight:700;color:var(--steel-700);list-style:none;margin-bottom:10px;}
+  details.bom summary::before{content:"▸ ";color:var(--accent);}
+  details.bom[open] summary::before{content:"▾ ";}
 
-  .tab-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .tab-row input {
-    width: 66px; text-align: center; padding: 9px 4px;
-    border: 1.5px solid var(--steel-100); border-radius: 8px;
-    font-size: 16px; font-weight: 700; font-family: var(--mono);
-  }
-  .tab-row .op { font-size: 14px; color: var(--steel-500); font-weight: 600; }
-  .tab-row .tab-total {
-    font-family: var(--mono); font-size: 15px; font-weight: 700;
-    background: var(--steel-100); border-radius: 6px; padding: 8px 12px;
-  }
-
-  /* Colonne collante : aperçu + sélection en cours */
-  .sticky-col {
-    grid-column: 2; grid-row: 1 / -1; position: sticky; top: 20px;
-    display: flex; flex-direction: column; gap: 20px;
-  }
-
-  .stage { padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .stage-title { align-self: flex-start; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: var(--steel-500); }
-  .viz { width: 100%; border-radius: 10px; }
-  .caption { font-size: 13.5px; color: var(--steel-500); text-align: center; line-height: 1.5; }
-  .caption b { color: var(--steel-900); }
-
-  .result { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-  .result .label {
-    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
-    font-weight: 700; color: var(--steel-500);
-  }
-  .designation {
-    font-size: 14.5px; font-weight: 700; line-height: 1.45;
-    background: var(--steel-100); border-radius: 8px; padding: 12px 14px;
-  }
-  .compo {
-    display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; font-size: 13.5px;
-    border-top: 1px dashed var(--steel-100); padding-top: 12px;
-  }
-  .compo .k { color: var(--steel-500); }
-  .compo .v { font-family: var(--mono); font-weight: 700; text-align: right; }
-
-  .nbg-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    border-top: 1px dashed var(--steel-100); padding-top: 12px;
-  }
-  .nbg-row label { font-size: 13.5px; color: var(--steel-500); }
-  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
-  .qty-ctrl button {
-    width: 30px; height: 30px; border: 1.5px solid var(--steel-100); background: #fff;
-    border-radius: 6px; font-size: 16px; font-weight: 700; color: var(--steel-700); cursor: pointer;
-  }
-  .qty-ctrl button:hover { border-color: var(--steel-300); }
-  .qty-ctrl input {
-    width: 56px; text-align: center; padding: 6px 4px;
-    border: 1.5px solid var(--steel-100); border-radius: 6px;
-    font-size: 15px; font-weight: 700; font-family: var(--mono);
-  }
-
-  .btn-add {
-    padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    font-size: 15px; font-weight: 700; cursor: pointer; transition: background .12s, transform .08s;
-  }
-  .btn-add:hover { background: var(--accent-dark); }
-  .btn-add:active { transform: scale(.985); }
-  .btn-add:focus-visible { outline: 2px solid var(--steel-900); outline-offset: 2px; }
-
-  .list-card { grid-column: 1; padding: 22px; }
-  .list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-  .list-head h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .list-head h2::before { content: ""; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
-  tr.list-row { cursor: pointer; transition: background .1s; }
-  tr.list-row:hover td { background: #f7f9fb; }
-  tr.editing-row td { background: #fef1ec; box-shadow: inset 3px 0 0 var(--accent); }
-  .btn-cancel-edit { padding: 6px 12px; border: 1.5px solid var(--steel-100); background: #fff; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: var(--steel-500); cursor: pointer; }
-  .btn-cancel-edit:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-add.editing { background: var(--ok); }
-  .btn-add.editing:hover { background: #155e34; }
-
-  .empty {
-    text-align: center; padding: 34px 10px; color: var(--steel-300); font-size: 14px;
-    border: 1.5px dashed var(--steel-100); border-radius: 8px;
-  }
-  table.list { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-  table.list th, table.list td {
-    border-bottom: 1px solid var(--steel-100); padding: 10px 10px; text-align: left; vertical-align: top;
-  }
-  table.list th {
-    font-size: 11.5px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--steel-500); border-bottom: 2px solid var(--steel-100);
-  }
-  table.list td.desig { font-weight: 600; }
-  table.list td.qty { text-align: center; font-family: var(--mono); white-space: nowrap; }
-  .btn-del {
-    width: 28px; height: 28px; border: 1.5px solid var(--steel-100); background: #fff;
-    border-radius: 6px; color: var(--steel-500); font-size: 14px; cursor: pointer;
-  }
-  .btn-del:hover { border-color: var(--accent); color: var(--accent); }
-
-  details.pieces { grid-column: 1; }
-  details.pieces summary {
-    cursor: pointer; padding: 14px 22px; font-size: 14px; font-weight: 700; color: var(--steel-700); list-style: none;
-  }
-  details.pieces summary::before { content: "▸ "; color: var(--accent); }
-  details.pieces[open] summary::before { content: "▾ "; }
-  .pieces-body { padding: 0 22px 22px; }
-  table.bom { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-  table.bom th, table.bom td { border-bottom: 1px solid var(--steel-100); padding: 8px 10px; text-align: left; }
-  table.bom th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--steel-500); }
-  table.bom td.q { text-align: center; font-family: var(--mono); font-weight: 700; }
-  table.bom td.ref { font-family: var(--mono); font-weight: 700; color: var(--steel-500); white-space: nowrap; }
-  table.bom td.ral { font-family: var(--mono); color: var(--steel-500); white-space: nowrap; }
-
-  /* Contact + envoi */
-  .send-card { grid-column: 1; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
-  .send-card h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .send-card h2::before { content: ""; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-field { display: flex; flex-direction: column; gap: 6px; }
-  .form-field.full { grid-column: 1 / -1; }
-  .form-field label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--steel-500); }
-  .form-field input, .form-field textarea {
-    border: 1.5px solid var(--steel-100); border-radius: 8px; padding: 10px 12px;
-    font-size: 14px; font-family: inherit; color: var(--steel-900);
-  }
-  .form-field input:focus, .form-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
-  .form-field textarea { resize: vertical; min-height: 64px; }
-
-  .send-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn-send {
-    flex: 1 1 auto; padding: 14px 18px; background: var(--accent); color: #fff; border: none;
-    border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center;
-    text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    transition: background .12s;
-  }
-  .btn-send:hover { background: var(--accent-dark); }
-  .btn-copy {
-    flex: 1 1 auto; padding: 14px 18px; background: #fff; color: var(--steel-700);
-    border: 1.5px solid var(--steel-100); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  .btn-copy:hover { border-color: var(--steel-300); }
-  .btn-copy.done { border-color: var(--ok); color: var(--ok); background: var(--ok-bg); }
-  .send-note { font-size: 12.5px; color: var(--steel-300); }
+  .send-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .btn-send{flex:1 1 auto;padding:14px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-send:hover{background:var(--accent-dark);}
+  .btn-copy{flex:1 1 auto;padding:14px 18px;background:#fff;color:var(--steel-700);border:1.5px solid var(--steel-100);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-copy:hover{border-color:var(--steel-300);}
+  .btn-copy.done{border-color:var(--ok);color:var(--ok);background:var(--ok-bg);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:520px){.form-grid{grid-template-columns:1fr;}}
+  .form-field{display:flex;flex-direction:column;gap:6px;}
+  .form-field.full{grid-column:1/-1;}
+  .form-field label{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--steel-500);}
+  .form-field input,.form-field textarea{border:1.5px solid var(--steel-100);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;}
+  .form-field textarea{resize:vertical;min-height:60px;}
+  .send-note{font-size:12px;color:var(--steel-300);margin-top:10px;}
 </style>
 </head>
 <body>
@@ -318,646 +156,232 @@
     <img src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL" class="brand-logo">
   </a>
   <a class="nav-btn" href="https://rsl.eu/demande-de-devis/" target="_blank" rel="noopener">Devis par produits</a>
-  <a class="nav-btn" href="plan.html" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none">▦ Plan d'implantation</a>
 </nav>
 
 <header>
   <div class="eyebrow">Rayonnages Services Lorraine</div>
-  <h1>Configurez vos gondoles <span>· demande de devis</span></h1>
+  <h1>Configurateur &amp; plan d'implantation <span>· gondoles</span></h1>
 </header>
 <p class="intro">
-  Composez vos gondoles (simple ou double-face), visualisez l'aperçu en temps réel, ajoutez-les à votre demande,
-  puis envoyez-nous le détail. Nous vous établissons le devis chiffré en retour. Aucun prix n'est affiché ici — c'est une demande, pas une commande.
+  Dessinez votre implantation à gauche, réglez le détail de chaque gondole à droite (options et tablettes intermédiaires),
+  puis récupérez le devis et la nomenclature complète en bas. Aucun prix ici — c'est une demande, pas une commande.
 </p>
 
 <div class="app">
 
-  <!-- Configurateur -->
-  <div class="card selectors">
-    <div class="field">
-      <label>Type de gondole</label>
-      <div class="seg" id="selFace"></div>
+  <!-- COLONNE GAUCHE : plan + devis + nomenclature -->
+  <div class="col-left">
+  <!-- PLAN -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="grp"><button id="btnRotate">⟳ Pivoter (R)</button></div>
+      <div class="sep"></div>
+      <div class="grp"><button id="btnZoomOut">−</button><button id="btnZoomIn">+</button><button id="btnFit">Ajuster</button></div>
+      <div class="sep"></div>
+      <div class="grp"><button id="btnClear">Tout effacer</button></div>
+      <div class="sep"></div>
+      <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
+      <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom · Suppr = retirer</span>
     </div>
-    <div class="field">
-      <span class="lbl">Coloris</span>
-      <div class="swatches" id="swatches"></div>
-    </div>
-    <div class="field">
-      <label>Hauteur (mm)</label>
-      <div class="seg grid-h" id="selHauteur"></div>
-    </div>
-    <div class="field">
-      <label>Profondeur (mm)</label>
-      <div class="seg grid-h" id="selProfondeur"></div>
-    </div>
-    <div class="field">
-      <label>Fonds</label>
-      <div class="seg grid-h" id="selFonds"></div>
-    </div>
-    <div class="field">
-      <span class="lbl">Longueur (modules de 1000 mm)</span>
-      <div class="len-ctrl">
-        <button type="button" id="lenMinus" aria-label="Diminuer la longueur">−</button>
-        <input type="number" id="lenInput" value="4" min="1" max="30">
-        <span class="unit" id="lenUnit">× 1000 = 4,00 ml</span>
-      </div>
-      <div class="schema" id="schema" aria-hidden="true"></div>
-      <div class="schema-legend">
-        Composition : <b class="d">1 DÉPART</b> + <b class="s" id="legSuites">3 SUITES</b> — une suite ne va jamais sans départ.
-      </div>
-    </div>
-    <div class="field">
-      <label class="check-row" for="chkPlinthes">
-        <input type="checkbox" id="chkPlinthes">
-        <span class="check-label">Avec plinthes <small id="plintheInfo"></small></span>
-      </label>
-      <div class="hint">1 plinthe par élément en simple-face, 2 par élément en double-face.</div>
-    </div>
-    <div class="field" id="fieldChapiteau">
-      <label class="check-row" for="chkChapiteau">
-        <input type="checkbox" id="chkChapiteau">
-        <span class="check-label">Avec chapiteaux <small id="chapInfo"></small></span>
-      </label>
-      <div class="hint">Double-face uniquement, jusqu'à H.1700 — 1 par élément.</div>
-    </div>
-    <div class="field">
-      <span class="lbl">Tablettes intermédiaires</span>
-      <div class="len-ctrl">
-        <button type="button" id="tabMinus" aria-label="Diminuer">−</button>
-        <input type="number" id="tabNiv" value="0" min="0" max="8">
-        <button type="button" id="tabPlus" aria-label="Augmenter">+</button>
-        <span class="unit" id="tabInfo">niveau(x)</span>
-      </div>
-      <div class="tab-levels" id="tabLevels"></div>
-      <div class="hint">Chaque niveau peut avoir sa propre profondeur (≤ tablette de base). Le niveau 1 est juste au-dessus de la base ; le dernier est tout en haut. Comptées sur toute la longueur de la gondole.</div>
-    </div>
+    <div class="plan-caption">Cliquez sur une gondole pour la sélectionner et la régler à droite</div>
+    <svg id="plan" viewBox="0 0 1000 640" role="img" aria-label="Plan d'implantation"></svg>
   </div>
 
-  <!-- Colonne collante : aperçu + sélection en cours -->
-  <div class="sticky-col">
-
-    <div class="card stage">
-      <div class="stage-title">Aperçu</div>
-      <svg class="viz" id="viz" viewBox="0 0 560 460" role="img" aria-label="Aperçu de la gondole"></svg>
-      <div class="caption" id="caption"></div>
-    </div>
-
-    <div class="card result">
-      <div class="label">Ma sélection</div>
-      <div class="designation" id="designation">—</div>
-      <div class="compo" id="compo"></div>
-      <div class="nbg-row">
-        <label for="nbg">Nombre de gondoles identiques</label>
-        <div class="qty-ctrl">
-          <button type="button" id="nbgMinus" aria-label="Diminuer">−</button>
-          <input type="number" id="nbg" value="1" min="1" max="99">
-          <button type="button" id="nbgPlus" aria-label="Augmenter">+</button>
-        </div>
-      </div>
-      <button type="button" class="btn-add" id="btnAdd">+ Ajouter à ma demande</button>
-    </div>
-
-  </div>
-
-  <!-- Liste demande -->
-  <div class="card list-card">
-    <div class="list-head"><h2>Ma demande</h2><button type="button" id="btnCancelEdit" class="btn-cancel-edit" style="display:none">Annuler l'édition</button></div>
+  <!-- DEVIS -->
+  <div class="card panel-card">
+    <h2 class="block-h">Ma demande</h2>
     <div id="listZone">
-      <div class="empty" id="listEmpty">Aucune gondole ajoutée pour l'instant.</div>
+      <div class="empty" id="listEmpty">Aucune gondole pour l'instant.</div>
       <table class="list" id="listTable" style="display:none">
-        <thead><tr><th>#</th><th>Configuration</th><th>Qté</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Configuration</th><th></th></tr></thead>
         <tbody id="listBody"></tbody>
       </table>
     </div>
-  </div>
-
-  <!-- Détail des pièces -->
-  <details class="card pieces">
-    <summary>Détail des pièces (nomenclature pour chiffrage)</summary>
-    <div class="pieces-body">
-      <div class="empty" id="bomEmpty">Ajoutez une gondole pour voir la nomenclature.</div>
-      <table class="bom" id="bomTable" style="display:none">
-        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Coloris</th></tr></thead>
-        <tbody id="bomBody"></tbody>
-      </table>
-    </div>
-  </details>
-
-  <!-- Contact & envoi -->
-  <div class="card send-card">
-    <h2>Vos coordonnées &amp; envoi</h2>
-    <div class="form-grid">
+    <div class="form-grid" style="margin-top:16px">
       <div class="form-field"><label for="cNom">Nom</label><input type="text" id="cNom" placeholder="Votre nom"></div>
       <div class="form-field"><label for="cSociete">Société</label><input type="text" id="cSociete" placeholder="Votre société"></div>
       <div class="form-field"><label for="cEmail">Email</label><input type="email" id="cEmail" placeholder="vous@exemple.fr"></div>
       <div class="form-field"><label for="cTel">Téléphone</label><input type="tel" id="cTel" placeholder="Facultatif"></div>
-      <div class="form-field full"><label for="cMsg">Message (facultatif)</label><textarea id="cMsg" placeholder="Précisions, délai souhaité, lieu de livraison…"></textarea></div>
+      <div class="form-field full"><label for="cMsg">Message (facultatif)</label><textarea id="cMsg" placeholder="Précisions, délai, lieu de livraison…"></textarea></div>
     </div>
     <div class="send-actions">
       <a href="#" class="btn-send" id="btnEmail">✉ Envoyer ma demande par email</a>
       <button type="button" class="btn-copy" id="btnCopy">Copier ma demande</button>
     </div>
-    <p class="send-note">Le bouton email ouvre votre messagerie avec la demande pré-remplie, adressée à RSL. Si rien ne s'ouvre, utilisez « Copier ma demande » et collez le contenu dans un email à s.degardin@rsl.eu.</p>
+    <p class="send-note">Le bouton email ouvre votre messagerie pré-remplie, adressée à RSL. Sinon, « Copier ma demande » et collez dans un email à s.degardin@rsl.eu.</p>
   </div>
 
+  <!-- NOMENCLATURE -->
+  <div class="card panel-card">
+    <details class="bom" open>
+      <summary>Nomenclature complète (pour chiffrage)</summary>
+      <div class="empty" id="bomEmpty">Ajoutez des gondoles pour voir la nomenclature.</div>
+      <table class="bom" id="bomTable" style="display:none">
+        <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Coloris</th></tr></thead>
+        <tbody id="bomBody"></tbody>
+      </table>
+    </details>
+  </div>
+  </div>
+
+  <!-- COLONNE DROITE : détail gondole -->
+  <div class="side">
+    <div class="top-actions">
+      <button class="act-btn" id="btnAdd">+ Ajouter une gondole</button>
+    </div>
+
+    <div class="card panel">
+      <h2>Gondole sélectionnée</h2>
+      <div id="selEmpty" class="empty-sel">Cliquez sur une gondole du plan pour la configurer, ou ajoutez-en une.</div>
+      <div id="selForm" style="display:none">
+        <div class="field"><label>Type</label><div class="seg" id="dFace"></div></div>
+        <div class="field"><label>Longueur (× 1000 mm)</label>
+          <div class="len-ctrl"><button id="lenM">−</button><input type="number" id="lenI" min="1" max="30" value="4"><button id="lenP">+</button><span class="u" id="lenU"></span></div>
+        </div>
+        <div class="field"><label>Hauteur (mm)</label><div class="seg g3" id="dH"></div></div>
+        <div class="field"><label>Profondeur (mm)</label><div class="seg g3" id="dP"></div></div>
+        <div class="field"><label>Fonds</label><div class="seg g3" id="dF"></div></div>
+        <div class="field"><label>Coloris de cette gondole</label><div class="swatches" id="dSwatches"></div></div>
+        <div class="field"><label class="chk"><input type="checkbox" id="dPlinthe"><span>Avec plinthes <small id="plintheInfo" style="color:var(--steel-500);font-weight:400"></small></span></label></div>
+        <div class="field" id="dChapField"><label class="chk"><input type="checkbox" id="dChap"><span>Avec chapiteaux <small id="chapInfo" style="color:var(--steel-500);font-weight:400"></small></span></label></div>
+        <div class="field">
+          <span class="lbl">Tablettes intermédiaires</span>
+          <div class="len-ctrl"><button id="tabM">−</button><input type="number" id="tabI" min="0" max="8" value="0"><button id="tabP2">+</button><span class="u">niveau(x)</span></div>
+          <div class="tab-levels" id="tabLevels"></div>
+          <div class="hint2">Chaque niveau ≤ profondeur de base. Niveau 1 = juste au-dessus de la base.</div>
+        </div>
+
+        <details class="preview">
+          <summary>Aperçu (vue de face + coupe)</summary>
+          <svg class="viz" id="viz" viewBox="0 0 560 460" role="img" aria-label="Aperçu" style="cursor:zoom-in"></svg>
+          <div class="viz-cap" id="vizCap"></div>
+          <div class="viz-zoom-hint">Cliquez sur l'aperçu pour l'agrandir</div>
+        </details>
+
+        <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
+        <button class="btn-del-sel" id="btnDelSel">✕ Supprimer cette gondole</button>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <h2>Coloris de toutes les gondoles</h2>
+      <div class="swatches" id="planSwatches"></div>
+      <div class="swatch-hint">Applique le coloris à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la ci-dessus.</div>
+    </div>
+
+    <div class="card panel">
+      <h2>Récapitulatif du plan</h2>
+      <div class="totrow"><span class="k">Gondoles posées</span><span class="v" id="tGond">0</span></div>
+      <div class="totrow"><span class="k">Gondoles simple-face</span><span class="v" id="tSF">0 ml</span></div>
+      <div class="totrow"><span class="k">Gondoles double-face</span><span class="v" id="tDF">0 ml</span></div>
+      <div class="totrow"><span class="k">Métrage linéaire développé</span><span class="v" id="tDev">0 ml</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP ZOOM APERÇU -->
+<div class="viz-modal" id="vizModal">
+  <div class="viz-modal-inner">
+    <button class="viz-modal-close" id="vizModalClose" aria-label="Fermer">✕</button>
+    <svg class="viz-modal-svg" id="vizBig" viewBox="0 0 560 460" role="img" aria-label="Aperçu agrandi"></svg>
+    <div class="viz-modal-cap" id="vizBigCap"></div>
+  </div>
 </div>
 
 <script>
-// ===================== Paramètres (AUCUN PRIX) =====================
+// ===== Données =====
 const DEST_EMAIL = "s.degardin@rsl.eu";
-
-const HAUTEURS = [1200, 1400, 1600, 1700, 1800, 2100, 2400, 2500];
-const PROFONDEURS = [370, 470, 570];
-const FONDS = [{ code: "FL", label: "Lisses" }, { code: "FP", label: "Perforés" }];
-const FACES = [{ code: "SF", label: "Simple-face" }, { code: "DF", label: "Double-face" }];
-
-// Répartition des fonds par élément de 1000 selon la hauteur des montants
-const FONDS_H = {
-  1200: {100:0, 300:1, 400:2}, 1400: {100:1, 300:0, 400:3}, 1600: {100:0, 300:1, 400:3},
-  1700: {100:0, 300:0, 400:4}, 1800: {100:1, 300:0, 400:4}, 2100: {100:0, 300:0, 400:5},
-  2400: {100:0, 300:1, 400:5}, 2500: {100:0, 300:0, 400:6}
+const HAUTEURS=[1200,1400,1600,1700,1800,2100,2400,2500];
+const PROFONDEURS=[370,470,570];
+const FONDS=[{code:"FL",label:"Lisses"},{code:"FP",label:"Perforés"}];
+const FACES=[{code:"SF",label:"Simple-face"},{code:"DF",label:"Double-face"}];
+const FONDS_H={1200:{100:0,300:1,400:2},1400:{100:1,300:0,400:3},1600:{100:0,300:1,400:3},1700:{100:0,300:0,400:4},1800:{100:1,300:0,400:4},2100:{100:0,300:0,400:5},2400:{100:0,300:1,400:5},2500:{100:0,300:0,400:6}};
+const REF={
+  montant:{1200:["S4273D","Montant 1200x60x30"],1400:["S4274D","Montant 1400x60x30"],1600:["S4275D","Montant 1600x60x30"],1700:["S6500D","Montant 1700x60x30"],1800:["S4276D","Montant 1800x60x30"],2100:["S4277D","Montant 2100x60x30"],2400:["S4278D","Montant 2400x80x30"],2500:["S1642D","Montant 2500x80x30"]},
+  pietement:{370:["S4282D","Piétement 370x160"],470:["S4283D","Piétement 470x160"],570:["S4284D","Piétement 570x160"]},
+  fond:{100:["S4267D","Fond lisse 1000x100"],300:["S4269D","Fond lisse 1000x300"],400:["S4270D","Fond lisse 1000x400"]},
+  perfo:["S4281D","Panneau perforé 1000x400 RL"],
+  tablette:{370:["S4290D","Tablette 1000x370"],470:["S4291D","Tablette 1000x470"],570:["S4292D","Tablette 1000x570"]},
+  console:{370:["S4253D","Console 370 - 2C (la paire)"],470:["S4254D","Console 470 - 2C (la paire)"],570:["S4258D","Console 570 - 3C renforcée (la paire)"]},
+  pe:["S5738","Porte-étiquettes 2 positions L1000 H40"],
+  plinthe:["S4286D","Plinthe 1000x160 - Blanc"],
+  chapiteau:["S4248D","Chapiteau 1000x80 (col.60)"]
 };
-
-// Références articles (désignations only — pas de prix)
-const REF = {
-  montant: {1200:["S4273D","Montant 1200x60x30"],1400:["S4274D","Montant 1400x60x30"],
-            1600:["S4275D","Montant 1600x60x30"],1700:["S6500D","Montant 1700x60x30"],
-            1800:["S4276D","Montant 1800x60x30"],2100:["S4277D","Montant 2100x60x30"],
-            2400:["S4278D","Montant 2400x80x30"],2500:["S1642D","Montant 2500x80x30"]},
-  pietement: {370:["S4282D","Piétement 370x160"],470:["S4283D","Piétement 470x160"],570:["S4284D","Piétement 570x160"]},
-  fond: {100:["S4267D","Fond lisse 1000x100"],300:["S4269D","Fond lisse 1000x300"],400:["S4270D","Fond lisse 1000x400"]},
-  perfo: ["S4281D","Panneau perforé 1000x400 RL"],
-  tablette: {370:["S4290D","Tablette 1000x370"],470:["S4291D","Tablette 1000x470"],570:["S4292D","Tablette 1000x570"]},
-  console: {370:["S4253D","Console 370 - 2C (la paire)"],470:["S4254D","Console 470 - 2C (la paire)"],570:["S4258D","Console 570 - 3C renforcée (la paire)"]},
-  pe: ["S5738","Porte-étiquettes 2 positions L1000 H40"],
-  plinthe: ["S4286D","Plinthe 1000x160 - Blanc"],
-  chapiteau: ["S4248D","Chapiteau 1000x80 (col.60)"]
+const COLORIS={
+  blanc:{label:"Blanc",ral:"RAL 9001",ink:"#1c2430",base:"#fdf4e3",light:"#fffdf6",mid:"#f6ecd9",dark:"#ece0c8",edge:"#dccfb2",metal:"#efe6d2",metalDk:"#cbbd9f",planFill:"#f6ecd9",planEdge:"#dccfb2",planBand:"#a08a5e",swatch:"#fdf4e3"},
+  anthracite:{label:"Anthracite",ral:"RAL 7015",ink:"#ffffff",base:"#484d53",light:"#5c6268",mid:"#3f4247",dark:"#2c2f33",edge:"#23262a",metal:"#565b61",metalDk:"#3a3d42",planFill:"#8b9099",planEdge:"#23262a",planBand:"#31353b",swatch:"#484d53"},
+  gris:{label:"Gris Alu",ral:"RAL 9006",ink:"#1c2430",base:"#c9ced3",light:"#dfe3e7",mid:"#bcc2c8",dark:"#a3abb2",edge:"#8f979f",metal:"#b3bac1",metalDk:"#949ba2",planFill:"#dfe3e7",planEdge:"#8f979f",planBand:"#7d858d",swatch:"#c9ced3"}
 };
+const faceLabel=face=>face==="SF"?"simple-face":"double-face";
+const fondsLabel=f=>f==="FL"?"lisses":"perforés";
+const plinthesParGondole=(face,len)=>(face==="SF"?1:2)*len;
+const chapiteauPossible=(face,h)=>face==="DF"&&h<=1700;
 
-// 3 coloris du modèle : blanc, anthracite, gris clair (informatif — n'influe pas la nomenclature)
-const COLORIS = {
-  blanc:      {label:"Blanc",      ral:"RAL 9001", ink:"#1c2430", base:"#fdf4e3", light:"#fffdf6", mid:"#f6ecd9", dark:"#ece0c8", edge:"#dccfb2", metal:"#efe6d2", metalDk:"#cbbd9f"},
-  anthracite: {label:"Anthracite", ral:"RAL 7015", ink:"#ffffff", base:"#484d53", light:"#5c6268", mid:"#3f4247", dark:"#2c2f33", edge:"#23262a", metal:"#565b61", metalDk:"#3a3d42"},
-  gris:       {label:"Gris Alu", ral:"RAL 9006", ink:"#1c2430", base:"#c9ced3", light:"#dfe3e7", mid:"#bcc2c8", dark:"#a3abb2", edge:"#8f979f", metal:"#b3bac1", metalDk:"#949ba2"}
-};
-
-const state = { face:"SF", color:"blanc", h:2100, p:470, f:"FL", len:4, nbg:1, plinthes:false, tabProfs:[], chapiteau:false };
-let demande = [];
-let nextId = 1;
-
-// ============ Pont de données partagé avec le plan (localStorage) ============
-const STORE_KEY = "rsl_plan_gondoles_v1";
-let planNextId = 1;
-function savePlanFromDemande() {
-  try {
-    // Chaque ligne de la demande devient une gondole du plan ; on préserve x/y/rot si déjà connus,
-    // sinon on place les nouvelles gondoles sur une grille simple.
-    let px = 1, py = 1, col = 0;
-    const gondoles = demande.map(l => {
-      let x = l.x, y = l.y, rot = l.rot ?? 0;
-      if (x == null || y == null) { x = px; y = py; col++; py += (l.face === "DF" ? 2*l.p/1000 : l.p/1000) + 0.6; if (col % 4 === 0) { px += 6; py = 1; } }
-      return { id: l.id, x, y, rot, face:l.face, h:l.h, p:l.p, f:l.f, len:l.len, plinthes:l.plinthes, chapiteau:l.chapiteau, color:l.color, nbg:l.nbg, tabProfs:Array.isArray(l.tabProfs)?l.tabProfs:[] };
-    });
-    const nid = Math.max(planNextId, nextId, ...gondoles.map(g=>g.id||0)) + 1;
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ts:Date.now(), nextId:nid, gondoles }));
-  } catch(e) {}
+// ===== Helpers désignation =====
+function tabResume(profs){
+  if(!profs||profs.length===0)return"";
+  const counts={}; profs.forEach(p=>counts[p]=(counts[p]||0)+1);
+  const parts=Object.keys(counts).sort((a,b)=>b-a).map(p=>counts[p]+"×"+p);
+  return `${profs.length} tablette${profs.length>1?"s":""} interm. (${parts.join(", ")})`;
 }
-function loadPlanIntoDemande() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return false;
-    const p = JSON.parse(raw);
-    if (!p || !Array.isArray(p.gondoles) || p.gondoles.length === 0) return false;
-    demande = p.gondoles.map(g => ({
-      id: g.id, x:g.x, y:g.y, rot:g.rot ?? 0,
-      face:g.face||"SF", color:g.color||"blanc", h:g.h||2100, p:g.p||470, f:g.f||"FL", len:g.len||4, nbg:g.nbg||1,
-      plinthes:!!g.plinthes, nbPlinthes: g.plinthes ? plinthesParGondole(g.face||"SF", g.len||4) : 0,
-      tabProfs: Array.isArray(g.tabProfs) ? g.tabProfs : [],
-      chapiteau: !!g.chapiteau && chapiteauPossible(g.face||"SF", g.h||2100),
-      nbChapiteaux: (!!g.chapiteau && chapiteauPossible(g.face||"SF", g.h||2100)) ? (g.len||4) : 0
-    }));
-    planNextId = p.nextId || 1;
-    nextId = Math.max(nextId, planNextId, ...demande.map(l=>l.id||0)) + 1;
-    // si toutes les gondoles du plan partagent le même coloris, le panneau de composition l'adopte
-    const cols = [...new Set(demande.map(l => l.color || "blanc"))];
-    if (cols.length === 1) state.color = cols[0];
-    return true;
-  } catch(e) { return false; }
-}
-
-const faceLabel = face => face === "SF" ? "simple-face" : "double-face";
-const fondsLabel = f => f === "FL" ? "lisses" : "perforés";
-const plinthesParGondole = (face, len) => (face === "SF" ? 1 : 2) * len;
-const chapiteauPossible = (face, h) => face === "DF" && h <= 1700;
-
-// ---- Sélecteurs ----
-function buildSeg(id, items, getVal, setVal) {
-  const el = document.getElementById(id);
-  items.forEach(item => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = item.label ?? item;
-    b.dataset.value = item.code ?? item;
-    b.addEventListener("click", () => { setVal(b.dataset.value); render(); });
-    el.appendChild(b);
-  });
-  return () => [...el.children].forEach(b =>
-    b.classList.toggle("active", String(b.dataset.value) === String(getVal())));
-}
-const syncFace = buildSeg("selFace", FACES, () => state.face, v => state.face = v);
-const syncH = buildSeg("selHauteur", HAUTEURS, () => state.h, v => state.h = Number(v));
-const syncP = buildSeg("selProfondeur", PROFONDEURS, () => state.p, v => { state.p = Number(v); });
-const syncF = buildSeg("selFonds", FONDS, () => state.f, v => state.f = v);
-
-// ---- Coloris ----
-const swatchesEl = document.getElementById("swatches");
-Object.entries(COLORIS).forEach(([k, c]) => {
-  const d = document.createElement("div");
-  d.className = "swatch"; d.dataset.v = k; d.title = c.label + " — " + c.ral;
-  d.style.background = `linear-gradient(135deg, ${c.light}, ${c.dark})`;
-  d.style.color = c.ink;
-  d.textContent = c.ral;
-  d.addEventListener("click", () => { state.color = k; render(); });
-  swatchesEl.appendChild(d);
-});
-const syncSwatch = () => [...swatchesEl.children].forEach(d => d.classList.toggle("active", d.dataset.v === state.color));
-
-// ---- Longueur ----
-const lenInput = document.getElementById("lenInput");
-document.getElementById("lenMinus").addEventListener("click", () => { state.len = Math.max(1, state.len - 1); lenInput.value = state.len; render(); });
-lenInput.addEventListener("input", () => {
-  const v = parseInt(lenInput.value, 10);
-  state.len = (isNaN(v) || v < 1) ? 1 : Math.min(30, v);
-  render();
-});
-(() => {
-  const plus = document.createElement("button");
-  plus.type = "button"; plus.textContent = "+"; plus.setAttribute("aria-label", "Augmenter la longueur");
-  plus.addEventListener("click", () => { state.len = Math.min(30, state.len + 1); lenInput.value = state.len; render(); });
-  lenInput.after(plus);
-})();
-
-// ---- Options ----
-document.getElementById("chkPlinthes").addEventListener("change", e => { state.plinthes = e.target.checked; render(); });
-document.getElementById("chkChapiteau").addEventListener("change", e => { state.chapiteau = e.target.checked; render(); });
-const chapOn = () => state.chapiteau && chapiteauPossible(state.face, state.h);
-const nbChapiteaux = () => chapOn() ? state.len : 0;
-
-// ---- Tablettes ----
-const tabNivInput = document.getElementById("tabNiv");
-function setNbNiveaux(n) {
-  n = Math.max(0, Math.min(8, n));
-  const cur = state.tabProfs.length;
-  if (n > cur) { for (let i = cur; i < n; i++) state.tabProfs.push(state.p); }   // nouveaux = profondeur de base
-  else if (n < cur) { state.tabProfs.length = n; }
-  render();
-}
-tabNivInput.addEventListener("input", () => {
-  const v = parseInt(tabNivInput.value, 10);
-  setNbNiveaux(isNaN(v) ? 0 : v);
-});
-document.getElementById("tabMinus").addEventListener("click", () => setNbNiveaux(state.tabProfs.length - 1));
-document.getElementById("tabPlus").addEventListener("click", () => setNbNiveaux(state.tabProfs.length + 1));
-
-// Construit la liste "niveau par niveau" avec sélecteur de profondeur (≤ base)
-function buildTabLevels() {
-  const box = document.getElementById("tabLevels");
-  box.innerHTML = "";
-  state.tabProfs.forEach((prof, idx) => {
-    const row = document.createElement("div"); row.className = "tab-lvl";
-    const name = document.createElement("span"); name.className = "lvl-name";
-    name.textContent = "Niveau " + (idx + 1); row.appendChild(name);
-    const seg = document.createElement("div"); seg.className = "lvl-seg";
-    PROFONDEURS.forEach(pf => {
-      const b = document.createElement("button"); b.type = "button"; b.textContent = pf;
-      const trop = pf > state.p;
-      if (trop) b.classList.add("is-disabled");
-      if (pf === prof) b.classList.add("active");
-      b.addEventListener("click", () => { if (pf > state.p) return; state.tabProfs[idx] = pf; render(); });
-      seg.appendChild(b);
-    });
-    row.appendChild(seg); box.appendChild(row);
-  });
-}
-
-// ---- Nombre de gondoles ----
-const nbgInput = document.getElementById("nbg");
-document.getElementById("nbgMinus").addEventListener("click", () => { state.nbg = Math.max(1, state.nbg - 1); nbgInput.value = state.nbg; render(); });
-document.getElementById("nbgPlus").addEventListener("click", () => { state.nbg = Math.min(99, state.nbg + 1); nbgInput.value = state.nbg; render(); });
-nbgInput.addEventListener("input", () => {
-  const v = parseInt(nbgInput.value, 10);
-  state.nbg = (isNaN(v) || v < 1) ? 1 : Math.min(99, v);
-  render();
-});
-
-// ---- Désignation ----
-function tabResume(profs) {
-  if (!profs || profs.length === 0) return "";
-  const counts = {};
-  profs.forEach(p => counts[p] = (counts[p] || 0) + 1);
-  const parts = Object.keys(counts).sort((a, b) => b - a).map(p => counts[p] + "×" + p);
-  return `${profs.length} tablette${profs.length > 1 ? "s" : ""} interm. (${parts.join(", ")})`;
-}
-function designationText(nbg, face, color, h, p, len, f, plinthes, profs, chap) {
-  const g = nbg > 1 ? nbg + " gondoles" : "1 gondole";
-  const col = COLORIS[color] || COLORIS.blanc;
-  let t = `${g} ${faceLabel(face)} ${col.label} (${col.ral}) H.${h} P.${p} L.${len}x1000 - Fonds ${fondsLabel(f)}`;
-  if (plinthes) t += " - Avec plinthes";
-  if (chap) t += " - Avec chapiteaux";
-  const rt = tabResume(profs);
-  if (rt) t += " - " + rt;
+function designationText(g){
+  const col=COLORIS[g.color]||COLORIS.blanc;
+  let t=`1 gondole ${faceLabel(g.face)} ${col.label} (${col.ral}) H.${g.h} P.${g.p} L.${g.len}x1000 - Fonds ${fondsLabel(g.f)}`;
+  if(g.plinthes)t+=" - Avec plinthes";
+  if(g.chapiteau&&chapiteauPossible(g.face,g.h))t+=" - Avec chapiteaux";
+  const rt=tabResume(g.tabProfs); if(rt)t+=" - "+rt;
   return t;
 }
 
-// ---- Nomenclature (quantités uniquement) ----
-function buildBom() {
-  const map = new Map();
-  demande.forEach(l => {
-    const ral = (COLORIS[l.color] || COLORIS.blanc).ral;
-    const add = (ref, qty) => {
-      if (!ref || qty <= 0) return;
-      const key = ref[0] + "|" + ral;
-      const cur = map.get(key) || { code: ref[0], des: ref[1], ral: ral, qty: 0 };
-      cur.qty += qty; map.set(key, cur);
-    };
-    const df = l.face === "DF" ? 2 : 1;
-    const nbMontants = (l.len + 1) * l.nbg;
-    add(REF.montant[l.h], nbMontants);
-    add(REF.pietement[l.p], nbMontants * df);
-    const elems = l.len * df * l.nbg;
-    const rep = FONDS_H[l.h];
-    add(REF.fond[100], rep[100] * elems);
-    add(REF.fond[300], rep[300] * elems);
-    add(l.f === "FP" ? REF.perfo : REF.fond[400], rep[400] * elems);
-    add(REF.tablette[l.p], elems);
-    add(REF.pe, elems);
-    // Tablettes intermédiaires : chaque niveau = 1 tablette + 1 paire consoles + 1 porte-étiquettes, à sa profondeur, par module et par face
-    if (l.tabProfs && l.tabProfs.length) {
-      const counts = {};
-      l.tabProfs.forEach(p => counts[p] = (counts[p] || 0) + 1);
-      Object.keys(counts).forEach(pf => {
-        const q = counts[pf] * elems;
-        add(REF.tablette[pf], q);
-        add(REF.console[pf], q);
-        add(REF.pe, q);
-      });
+// ===== Nomenclature (par référence + coloris) =====
+function buildBom(){
+  const map=new Map();
+  gondoles.forEach(g=>{
+    const ral=(COLORIS[g.color]||COLORIS.blanc).ral;
+    const add=(ref,qty)=>{ if(!ref||qty<=0)return; const key=ref[0]+"|"+ral; const c=map.get(key)||{code:ref[0],des:ref[1],ral,qty:0}; c.qty+=qty; map.set(key,c); };
+    const df=g.face==="DF"?2:1;
+    const nbMontants=g.len+1;
+    add(REF.montant[g.h],nbMontants);
+    add(REF.pietement[g.p],nbMontants*df);
+    const elems=g.len*df;
+    const rep=FONDS_H[g.h];
+    add(REF.fond[100],rep[100]*elems);
+    add(REF.fond[300],rep[300]*elems);
+    add(g.f==="FP"?REF.perfo:REF.fond[400],rep[400]*elems);
+    add(REF.tablette[g.p],elems);
+    add(REF.pe,elems);
+    if(g.tabProfs&&g.tabProfs.length){
+      const counts={}; g.tabProfs.forEach(p=>counts[p]=(counts[p]||0)+1);
+      Object.keys(counts).forEach(pf=>{ const q=counts[pf]*elems; add(REF.tablette[pf],q); add(REF.console[pf],q); add(REF.pe,q); });
     }
-    if (l.nbPlinthes > 0) add(REF.plinthe, l.nbPlinthes * l.nbg);
-    if (l.nbChapiteaux > 0) add(REF.chapiteau, l.nbChapiteaux * l.nbg);
+    if(g.plinthes) add(REF.plinthe,plinthesParGondole(g.face,g.len));
+    if(g.chapiteau&&chapiteauPossible(g.face,g.h)) add(REF.chapiteau,g.len);
   });
-  const ordre = ["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D",
-                 "S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D",
-                 "S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
-  return [...map.values()].sort((a, b) => {
-    const d = ordre.indexOf(a.code) - ordre.indexOf(b.code);
-    return d !== 0 ? d : a.ral.localeCompare(b.ral);
-  });
+  const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
+  return [...map.values()].sort((a,b)=>{ const d=ordre.indexOf(a.code)-ordre.indexOf(b.code); return d!==0?d:a.ral.localeCompare(b.ral); });
 }
 
-// ---- Ajout / mise à jour / édition ----
-let editingId = null;
-
-function buildLineFromState(id) {
-  const src = editingId != null ? demande.find(l => l.id === editingId) : null;
-  return {
-    id,
-    // préserve position/rotation venues du plan si on édite une gondole existante
-    x: src ? src.x : undefined, y: src ? src.y : undefined, rot: src ? (src.rot ?? 0) : 0,
-    face: state.face, color: state.color, h: state.h, p: state.p, f: state.f, len: state.len, nbg: state.nbg,
-    plinthes: state.plinthes, nbPlinthes: state.plinthes ? plinthesParGondole(state.face, state.len) : 0,
-    tabProfs: state.tabProfs.slice(), chapiteau: chapOn(), nbChapiteaux: nbChapiteaux()
-  };
-}
-
-document.getElementById("btnAdd").addEventListener("click", () => {
-  if (editingId != null) {
-    const i = demande.findIndex(l => l.id === editingId);
-    if (i >= 0) demande[i] = buildLineFromState(editingId);
-    editingId = null;
-  } else {
-    demande.push(buildLineFromState(nextId++));
-  }
-  updateAddButton();
-  renderList();
-});
-
-function loadIntoEditor(id) {
-  const l = demande.find(x => x.id === id);
-  if (!l) return;
-  state.face = l.face; state.color = l.color || "blanc"; state.h = l.h; state.p = l.p;
-  state.f = l.f; state.len = l.len; state.nbg = l.nbg || 1;
-  state.plinthes = !!l.plinthes; state.chapiteau = !!l.chapiteau;
-  state.tabProfs = Array.isArray(l.tabProfs) ? l.tabProfs.slice() : [];
-  editingId = id;
-  updateAddButton();
-  render();
-  renderList();
-  document.querySelector(".selectors").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function cancelEdit() { editingId = null; updateAddButton(); renderList(); }
-
-function updateAddButton() {
-  const btn = document.getElementById("btnAdd");
-  const cancel = document.getElementById("btnCancelEdit");
-  if (editingId != null) { btn.textContent = "✓ Mettre à jour la gondole"; btn.classList.add("editing"); if (cancel) cancel.style.display = ""; }
-  else { btn.textContent = "+ Ajouter à ma demande"; btn.classList.remove("editing"); if (cancel) cancel.style.display = "none"; }
-}
-document.getElementById("btnCancelEdit").addEventListener("click", cancelEdit);
-
-function renderList() {
-  renderBom();
-  savePlanFromDemande();
-  const table = document.getElementById("listTable");
-  const empty = document.getElementById("listEmpty");
-  const body = document.getElementById("listBody");
-  body.innerHTML = "";
-  if (demande.length === 0) { table.style.display = "none"; empty.style.display = ""; return; }
-  table.style.display = ""; empty.style.display = "none";
-  demande.forEach((l, idx) => {
-    const tr = document.createElement("tr");
-    tr.className = "list-row" + (l.id === editingId ? " editing-row" : "");
-    tr.dataset.id = l.id;
-    tr.innerHTML =
-      `<td class="qty">${idx + 1}</td>` +
-      `<td class="desig">${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}</td>` +
-      `<td class="qty">${l.nbg}</td>` +
-      `<td><button type="button" class="btn-del" aria-label="Retirer" data-id="${l.id}">✕</button></td>`;
-    body.appendChild(tr);
-  });
-  // clic sur la ligne (hors bouton ✕) → charger dans l'éditeur
-  body.querySelectorAll("tr.list-row").forEach(tr =>
-    tr.addEventListener("click", e => { if (e.target.closest(".btn-del")) return; loadIntoEditor(Number(tr.dataset.id)); }));
-  body.querySelectorAll(".btn-del").forEach(b =>
-    b.addEventListener("click", e => {
-      e.stopPropagation();
-      const id = Number(b.dataset.id);
-      demande = demande.filter(l => l.id !== id);
-      if (editingId === id) { editingId = null; updateAddButton(); }
-      renderList();
-    }));
-}
-
-function renderBom() {
-  const bom = buildBom();
-  const table = document.getElementById("bomTable");
-  const empty = document.getElementById("bomEmpty");
-  const body = document.getElementById("bomBody");
-  body.innerHTML = "";
-  if (bom.length === 0) { table.style.display = "none"; empty.style.display = ""; return; }
-  table.style.display = ""; empty.style.display = "none";
-  bom.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="ref">${item.code}</td><td>${item.des}</td><td class="q">${item.qty}</td><td class="ral">${item.ral}</td>`;
-    body.appendChild(tr);
-  });
-}
-
-// ---- Assemblage de la demande (texte) ----
-function buildRequestText() {
-  const lignes = demande.map((l, i) =>
-    `${i + 1}. ${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)}  (x${l.nbg})`
-  );
-  const c = {
-    nom: document.getElementById("cNom").value.trim(),
-    soc: document.getElementById("cSociete").value.trim(),
-    mail: document.getElementById("cEmail").value.trim(),
-    tel: document.getElementById("cTel").value.trim(),
-    msg: document.getElementById("cMsg").value.trim()
-  };
-  let t = "DEMANDE DE DEVIS — GONDOLES RSL\n\n";
-  t += "Client :\n";
-  t += `  Nom : ${c.nom || "-"}\n  Société : ${c.soc || "-"}\n  Email : ${c.mail || "-"}\n  Téléphone : ${c.tel || "-"}\n`;
-  if (c.msg) t += `  Message : ${c.msg}\n`;
-  t += "\nConfigurations demandées :\n" + (lignes.length ? lignes.join("\n") : "  (aucune)") + "\n";
-  t += "\nDétail des pièces (pour chiffrage) :\n" + buildBomTable() + "\n";
-  return t;
-}
-
-// Tableau texte aligné (police à chasse fixe) : Réf. | Désignation | Qté | Coloris
-function buildBomTable() {
-  const bom = buildBom();
-  if (bom.length === 0) return "  (aucune)";
-  const rows = bom.map(i => [i.code, i.des, String(i.qty), i.ral]);
-  const head = ["Réf.", "Désignation", "Qté", "Coloris"];
-  const all = [head, ...rows];
-  const wRef = Math.max(...all.map(r => r[0].length));
-  const wDes = Math.max(...all.map(r => r[1].length));
-  const wQty = Math.max(...all.map(r => r[2].length));
-  const pad = (s, w) => s + " ".repeat(w - s.length);
-  const padL = (s, w) => " ".repeat(w - s.length) + s;
-  const line = r => `${pad(r[0], wRef)}  ${pad(r[1], wDes)}  ${padL(r[2], wQty)}  ${r[3]}`;
-  const sep = `${"-".repeat(wRef)}  ${"-".repeat(wDes)}  ${"-".repeat(wQty)}  ${"-".repeat(7)}`;
-  return [line(head), sep, ...rows.map(line)].join("\n");
-}
-
-// Version HTML de la demande (vrai tableau) — utilisée pour la copie riche vers Word/Gmail
-function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function buildRequestHTML() {
-  const c = {
-    nom: document.getElementById("cNom").value.trim(),
-    soc: document.getElementById("cSociete").value.trim(),
-    mail: document.getElementById("cEmail").value.trim(),
-    tel: document.getElementById("cTel").value.trim(),
-    msg: document.getElementById("cMsg").value.trim()
-  };
-  const lignes = demande.map((l, i) =>
-    `${i + 1}. ${designationText(l.nbg, l.face, l.color, l.h, l.p, l.len, l.f, l.plinthes, l.tabProfs, l.chapiteau)} (x${l.nbg})`
-  );
-  const bom = buildBom();
-  let h = `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1c2430">`;
-  h += `<h2 style="margin:0 0 8px">DEMANDE DE DEVIS — GONDOLES RSL</h2>`;
-  h += `<p style="margin:0 0 4px"><b>Client :</b><br>`;
-  h += `Nom : ${esc(c.nom||"-")}<br>Société : ${esc(c.soc||"-")}<br>Email : ${esc(c.mail||"-")}<br>Téléphone : ${esc(c.tel||"-")}`;
-  if (c.msg) h += `<br>Message : ${esc(c.msg)}`;
-  h += `</p>`;
-  h += `<p style="margin:12px 0 4px"><b>Configurations demandées :</b></p>`;
-  h += `<ol style="margin:0 0 12px;padding-left:18px">` + lignes.map(l => `<li>${esc(l.replace(/^\d+\.\s/,""))}</li>`).join("") + `</ol>`;
-  h += `<p style="margin:12px 0 4px"><b>Détail des pièces (pour chiffrage) :</b></p>`;
-  h += `<table style="border-collapse:collapse;font-size:12.5px" border="1" cellpadding="5">`;
-  h += `<thead><tr style="background:#f0f2f5">`;
-  ["Réf.","Désignation","Qté","Coloris"].forEach(t => h += `<th style="border:1px solid #b8c0ca;text-align:left;padding:5px 8px">${t}</th>`);
-  h += `</tr></thead><tbody>`;
-  bom.forEach(i => {
-    h += `<tr>`;
-    h += `<td style="border:1px solid #d4dae0;padding:4px 8px;font-family:Consolas,monospace">${esc(i.code)}</td>`;
-    h += `<td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.des)}</td>`;
-    h += `<td style="border:1px solid #d4dae0;padding:4px 8px;text-align:center">${i.qty}</td>`;
-    h += `<td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.ral)}</td>`;
-    h += `</tr>`;
-  });
-  h += `</tbody></table></div>`;
-  return h;
-}
-
-// ---- Copie (avec repli synchrone si l'API Clipboard est bloquée) ----
-function execCopyText(text) {
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text; ta.style.position = "fixed"; ta.style.top = "-9999px"; ta.style.opacity = "0";
-    document.body.appendChild(ta); ta.focus(); ta.select();
-    const ok = document.execCommand("copy"); document.body.removeChild(ta); return ok;
-  } catch (e) { return false; }
-}
-document.getElementById("btnCopy").addEventListener("click", () => {
-  if (demande.length === 0) { alert("Ajoutez au moins une gondole à votre demande."); return; }
-  const text = buildRequestText();
-  const html = buildRequestHTML();
-  const btn = document.getElementById("btnCopy");
-  const done = () => { btn.textContent = "✓ Copié !"; btn.classList.add("done"); setTimeout(() => { btn.textContent = "Copier ma demande"; btn.classList.remove("done"); }, 1800); };
-  const fallbackText = () => { if (execCopyText(text)) done(); };
-  // Copie riche : HTML (Word/Gmail voient un vrai tableau) + texte brut en repli
-  if (navigator.clipboard && window.ClipboardItem) {
-    try {
-      const item = new ClipboardItem({
-        "text/html": new Blob([html], { type: "text/html" }),
-        "text/plain": new Blob([text], { type: "text/plain" })
-      });
-      navigator.clipboard.write([item]).then(done).catch(() => {
-        navigator.clipboard.writeText(text).then(done).catch(fallbackText);
-      });
-    } catch (e) {
-      navigator.clipboard.writeText(text).then(done).catch(fallbackText);
-    }
-  } else if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(fallbackText);
-  } else { fallbackText(); }
-});
-
-// ---- Envoi email (mailto pré-rempli) ----
-document.getElementById("btnEmail").addEventListener("click", (e) => {
-  e.preventDefault();
-  if (demande.length === 0) { alert("Ajoutez au moins une gondole à votre demande."); return; }
-  const soc = document.getElementById("cSociete").value.trim();
-  const subject = "Demande de devis gondoles" + (soc ? " — " + soc : "");
-  const body = buildRequestText();
-  window.location.href = `mailto:${DEST_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-});
-
-// ===================== Aperçu SVG (dessin dynamique) =====================
-const NS = "http://www.w3.org/2000/svg";
-function E(n, a, txt) { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; }
-
-function draw() {
-  const chapPossible = chapiteauPossible(state.face, state.h);
-  const chapActive = state.chapiteau && chapPossible;
+function draw(g) {
+  if(!g)return;
+  const chapPossible = chapiteauPossible(g.face, g.h);
+  const chapActive = g.chapiteau && chapPossible;
   const viz = document.getElementById("viz"); viz.innerHTML = "";
-  const C = COLORIS[state.color];
-  const isDF = state.face === "DF";
-  const nMods = state.len;
-  const profs = state.tabProfs || [];
+  const C = COLORIS[g.color];
+  const isDF = g.face === "DF";
+  const nMods = g.len;
+  const profs = g.tabProfs || [];
   const nT = profs.length;
-  const rep = FONDS_H[state.h];
+  const rep = FONDS_H[g.h];
   const DPT = {370:34, 470:46, 570:58};
 
   // ---------- Cadre global : face à gauche, coupe à droite ----------
   const H = 460;
   const groundY = 396, topPad = 40;
   const usableH = groundY - topPad;
-  const hRatio = 0.5 + 0.5 * ((state.h - 1200) / (2500 - 1200));
+  const hRatio = 0.5 + 0.5 * ((g.h - 1200) / (2500 - 1200));
   const gondH = usableH * hRatio;
   const topY = groundY - gondH;
-  const scale = gondH / state.h;
+  const scale = gondH / g.h;
 
   // Largeur de la vue de face
   const modW = 1000 * scale * 0.9;
@@ -967,7 +391,7 @@ function draw() {
   const faceRight = faceX + backW;
 
   // Largeur de la coupe (profondeur base, en px), dédoublée si DF
-  const baseDpt = DPT[state.p];
+  const baseDpt = DPT[g.p];
   const cutHalf = baseDpt;                       // demi-largeur px = profondeur base
   const cutW = isDF ? cutHalf * 2 : cutHalf;
   const cutGap = 70;                             // espace entre les deux vues
@@ -978,7 +402,7 @@ function draw() {
   viz.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
   // dégradés
-  const gid = "grad-" + state.color;
+  const gid = "grad-" + g.color;
   const defs = E("defs", {});
   const lg = E("linearGradient", {id:gid, x1:"0", y1:"0", x2:"1", y2:"0"});
   lg.appendChild(E("stop", {offset:"0%", "stop-color":C.mid}));
@@ -996,7 +420,7 @@ function draw() {
   const backTopY = topY;
   const fondBottom = pietTop;                 // les fonds descendent jusqu'au piétement, sans jour
   const regionH = fondBottom - backTopY;
-  const totalMm = state.h - 100;
+  const totalMm = g.h - 100;
 
   // Positions verticales des tablettes intermédiaires (communes aux 2 vues)
   const tabTop = backTopY + (chapActive ? 18 : 14);
@@ -1015,7 +439,7 @@ function draw() {
     const ph = regionH * (mm / totalMm);
     viz.appendChild(E("rect", {x:faceX, y:yCur, width:backW, height:ph, fill:`url(#${gid})`, stroke:C.edge, "stroke-width":1}));
     viz.appendChild(E("rect", {x:faceX, y:yCur + ph*0.16, width:backW, height:Math.min(ph*0.18, 9), fill:"#ffffff", opacity:.10}));
-    if (state.f === "FP" && mm === 400) {
+    if (g.f === "FP" && mm === 400) {
       for (let yy = yCur+8; yy < yCur+ph-5; yy += 10)
         for (let xx = faceX+8; xx < faceX+backW-5; xx += 10)
           viz.appendChild(E("circle", {cx:xx, cy:yy, r:1.3, fill:C.edge, opacity:.55}));
@@ -1060,7 +484,7 @@ function draw() {
     viz.appendChild(E("ellipse", {cx:px, cy:groundY-1, rx:7, ry:2.5, fill:C.metalDk}));                    // patin réglable
   }
   // plinthe (face) : elle, court sur toute la longueur en façade
-  if (state.plinthes) {
+  if (g.plinthes) {
     viz.appendChild(E("rect", {x:faceX, y:fTraTop, width:backW, height:traH, fill:C.mid, opacity:.75, stroke:C.edge, "stroke-width":.8}));
   }
 
@@ -1069,7 +493,7 @@ function draw() {
   viz.appendChild(E("line", {x1:faceX-25, y1:topY, x2:faceX-19, y2:topY, stroke:"#c3ccd5", "stroke-width":1}));
   viz.appendChild(E("line", {x1:faceX-25, y1:groundY, x2:faceX-19, y2:groundY, stroke:"#c3ccd5", "stroke-width":1}));
   const midY = (topY + groundY) / 2;
-  viz.appendChild(E("text", {x:faceX-28, y:midY, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#55677d", transform:`rotate(-90 ${faceX-28} ${midY})`}, `H.${state.h}`));
+  viz.appendChild(E("text", {x:faceX-28, y:midY, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#55677d", transform:`rotate(-90 ${faceX-28} ${midY})`}, `H.${g.h}`));
   viz.appendChild(E("text", {x:faceX+backW/2, y:topY-(chapActive?20:8), "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#9fb0c2"}, `L = ${nMods} x 1000`));
   viz.appendChild(E("text", {x:faceX+backW/2, y:groundY+22, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":10.5, "font-weight":700, fill:"#9fb0c2", "letter-spacing":"1px"}, "VUE DE FACE"));
 
@@ -1128,7 +552,7 @@ function draw() {
   });
 
   // plinthe (coupe) : petite façade verticale devant, si cochée
-  if (state.plinthes) {
+  if (g.plinthes) {
     sides.forEach(s => viz.appendChild(E("rect", {x: s>0 ? cutAxisX+baseDpt-3 : cutAxisX-baseDpt, y:traTop-2, width:3, height:traH+verinH, fill:C.mid, stroke:C.edge, "stroke-width":.8})));
   }
 
@@ -1139,7 +563,7 @@ function draw() {
     viz.appendChild(E("line", {x1:cutAxisX, y1:yb, x2:xEnd, y2:yb, stroke:"#c3ccd5", "stroke-width":1}));
     viz.appendChild(E("line", {x1:cutAxisX, y1:yb-3, x2:cutAxisX, y2:yb+3, stroke:"#c3ccd5", "stroke-width":1}));
     viz.appendChild(E("line", {x1:xEnd, y1:yb-3, x2:xEnd, y2:yb+3, stroke:"#c3ccd5", "stroke-width":1}));
-    viz.appendChild(E("text", {x:(cutAxisX+xEnd)/2, y:yb+13, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":9.5, fill:"#55677d"}, "P."+state.p));
+    viz.appendChild(E("text", {x:(cutAxisX+xEnd)/2, y:yb+13, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":9.5, fill:"#55677d"}, "P."+g.p));
   });
   // (libellé simple/double-face retiré — le visuel suffit)
 
@@ -1148,91 +572,325 @@ function draw() {
   viz.appendChild(E("line", {x1:sepX, y1:topY-6, x2:sepX, y2:groundY+6, stroke:"#e4e9ee", "stroke-width":1, "stroke-dasharray":"3 4"}));
 
   // ---------- légende ----------
-  const suites = state.len - 1;
+  const suites = g.len - 1;
   const parts = [
-    `<b>${FACES.find(x => x.code === state.face).label}</b>`,
+    `<b>${FACES.find(x => x.code === g.face).label}</b>`,
     `<b>${C.label} — ${C.ral}</b>`,
-    `H.${state.h}`, `P.${state.p}`,
-    `fonds ${state.f === "FL" ? "lisses" : "perforés"}`,
-    `${state.len}×1000 (1 départ${suites>0 ? ` + ${suites} suite${suites>1?"s":""}` : ""})`
+    `H.${g.h}`, `P.${g.p}`,
+    `fonds ${g.f === "FL" ? "lisses" : "perforés"}`,
+    `${g.len}×1000 (1 départ${suites>0 ? ` + ${suites} suite${suites>1?"s":""}` : ""})`
   ];
-  if (state.plinthes) parts.push("plinthes");
+  if (g.plinthes) parts.push("plinthes");
   if (chapActive) parts.push("chapiteaux");
-  if (nT > 0) parts.push(tabResume(state.tabProfs));
-  document.getElementById("caption").innerHTML = parts.join(" · ");
+  if (nT > 0) parts.push(tabResume(g.tabProfs));
+  document.getElementById("vizCap").innerHTML = parts.join(" · ");
 
-  viz.style.background = `linear-gradient(#fbfcfd, ${state.color === "anthracite" ? "#eceef0" : "#eef2f6"})`;
+  viz.style.background = `linear-gradient(#fbfcfd, ${g.color === "anthracite" ? "#eceef0" : "#eef2f6"})`;
   viz.style.border = "1px solid var(--steel-100)";
 }
 
-// ---- Rendu global (état + nomenclature + aperçu) ----
-function render() {
-  syncFace(); syncH(); syncP(); syncF(); syncSwatch();
+// ===================== État =====================
+let gondoles=[]; let nextId=1; let selId=null;
+function sel(){ return gondoles.find(g=>g.id===selId); }
+function newGondole(x,y){ return {id:nextId++,x,y,rot:0,face:"SF",h:2100,p:470,f:"FL",len:4,plinthes:false,chapiteau:false,color:planColor||"blanc",tabProfs:[]}; }
+const chapOn=g=>g&&g.chapiteau&&chapiteauPossible(g.face,g.h);
 
-  const suites = state.len - 1;
-  document.getElementById("lenUnit").textContent = "× 1000 = " + state.len.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) + " ml";
+// ===================== Vue SVG plan =====================
+const NS="http://www.w3.org/2000/svg";
+function E(n,a,t){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;return e;}
+const svg=document.getElementById("plan");
+const W=1000,Hn=640;
+let view={ox:60,oy:60,ppm:52};
+function worldToPx(mx,my){return[view.ox+mx*view.ppm,view.oy+my*view.ppm];}
+function pxToWorld(px,py){return[(px-view.ox)/view.ppm,(py-view.oy)/view.ppm];}
+function footprint(g){const L=g.len,D=(g.face==="DF"?2:1)*g.p/1000;return(g.rot%180===0)?{w:L,h:D}:{w:D,h:L};}
 
-  const schema = document.getElementById("schema");
-  schema.innerHTML = "";
-  const dep = document.createElement("div"); dep.className = "mod dep"; dep.textContent = "DÉPART"; schema.appendChild(dep);
-  for (let i = 0; i < Math.min(suites, 19); i++) { const m = document.createElement("div"); m.className = "mod sui"; m.textContent = "SUITE"; schema.appendChild(m); }
-  if (suites > 19) { const m = document.createElement("div"); m.className = "mod sui"; m.textContent = "+" + (suites - 19); schema.appendChild(m); }
-  document.getElementById("legSuites").textContent = suites === 0 ? "0 SUITE" : suites + " SUITE" + (suites > 1 ? "S" : "");
-
-  // plinthes / chapiteaux
-  document.getElementById("plintheInfo").textContent = "(" + plinthesParGondole(state.face, state.len) + " plinthes pour cette gondole)";
-  document.getElementById("chkPlinthes").checked = state.plinthes;
-  const chapPossible = chapiteauPossible(state.face, state.h);
-  document.getElementById("fieldChapiteau").classList.toggle("disabled", !chapPossible);
-  document.getElementById("chkChapiteau").checked = state.chapiteau && chapPossible;
-  document.getElementById("chapInfo").textContent = chapPossible
-    ? "(" + state.len + " chapiteau" + (state.len > 1 ? "x" : "") + " pour cette gondole)"
-    : "(indisponible pour cette configuration)";
-
-  document.getElementById("tabNiv").value = state.tabProfs.length;
-  // Clamp : toute tablette plus profonde que la base retombe à la base
-  state.tabProfs = state.tabProfs.map(pf => pf > state.p ? state.p : pf);
-  buildTabLevels();
-
-  document.getElementById("designation").textContent =
-    designationText(state.nbg, state.face, state.color, state.h, state.p, state.len, state.f, state.plinthes, state.tabProfs, chapOn());
-
-  // Composition (quantités, sans prix)
-  const nbPl = state.plinthes ? plinthesParGondole(state.face, state.len) : 0;
-  const nbChap = nbChapiteaux();
-  const col = COLORIS[state.color];
-  const rt = tabResume(state.tabProfs);
-  const compo = document.getElementById("compo");
-  compo.innerHTML =
-    `<span class="k">Coloris</span><span class="v">${col.label} — ${col.ral}</span>` +
-    `<span class="k">Éléments</span><span class="v">1 départ${suites > 0 ? " + " + suites + " suite" + (suites > 1 ? "s" : "") : ""}</span>` +
-    (nbPl > 0 ? `<span class="k">Plinthes</span><span class="v">${nbPl}</span>` : "") +
-    (nbChap > 0 ? `<span class="k">Chapiteaux</span><span class="v">${nbChap}</span>` : "") +
-    (rt ? `<span class="k">Tablettes interm.</span><span class="v">${state.tabProfs.length}</span>` : "");
-
-  draw();
+function drawGrid(){
+  const g=E("g",{});
+  const maxX=(W-view.ox)/view.ppm+2,maxY=(Hn-view.oy)/view.ppm+2;
+  const minX=Math.floor(-view.ox/view.ppm)-1,minY=Math.floor(-view.oy/view.ppm)-1;
+  for(let i=minX;i<=maxX;i++){const[x]=worldToPx(i,0);g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke:i%5===0?"#d7dee6":"#eef2f6","stroke-width":i%5===0?1:.7}));}
+  for(let j=minY;j<=maxY;j++){const[,y]=worldToPx(0,j);g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke:j%5===0?"#d7dee6":"#eef2f6","stroke-width":j%5===0?1:.7}));}
+  const[sx]=worldToPx(0,0);
+  g.appendChild(E("line",{x1:sx,y1:Hn-24,x2:sx+view.ppm,y2:Hn-24,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("line",{x1:sx,y1:Hn-27,x2:sx,y2:Hn-21,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("line",{x1:sx+view.ppm,y1:Hn-27,x2:sx+view.ppm,y2:Hn-21,stroke:"#55677d","stroke-width":2}));
+  g.appendChild(E("text",{x:sx+view.ppm/2,y:Hn-10,"text-anchor":"middle","font-size":11,fill:"#55677d"},"1 m"));
+  return g;
+}
+function drawGondole(g){
+  const fp=footprint(g);const[x,y]=worldToPx(g.x,g.y);
+  const w=fp.w*view.ppm,h=fp.h*view.ppm;
+  const isSel=g.id===selId,isDF=g.face==="DF";
+  const col=COLORIS[g.color]||COLORIS.blanc;
+  const grp=E("g",{class:"gondole","data-id":g.id,style:"cursor:move"});
+  grp.appendChild(E("rect",{x,y,width:w,height:h,fill:isSel?"#fde8e2":col.planFill,stroke:isSel?"#e63f1e":col.planEdge,"stroke-width":isSel?2.5:1.5,rx:2}));
+  const fondEp=Math.max(3,.06*view.ppm),fondCol=isSel?"#e63f1e":col.planBand,horiz=g.rot%180===0;
+  function band(isV,l0,l1,c){const off=fondEp/2;
+    if(isV){grp.appendChild(E("line",{x1:c-off,y1:l0,x2:c-off,y2:l1,stroke:fondCol,"stroke-width":1.6}));grp.appendChild(E("line",{x1:c+off,y1:l0,x2:c+off,y2:l1,stroke:fondCol,"stroke-width":1.6}));}
+    else{grp.appendChild(E("line",{x1:l0,y1:c-off,x2:l1,y2:c-off,stroke:fondCol,"stroke-width":1.6}));grp.appendChild(E("line",{x1:l0,y1:c+off,x2:l1,y2:c+off,stroke:fondCol,"stroke-width":1.6}));}}
+  if(horiz){let c;if(isDF)c=y+h/2;else c=(g.rot===0)?(y+fondEp/2+1):(y+h-fondEp/2-1);band(false,x+2,x+w-2,c);}
+  else{let c;if(isDF)c=x+w/2;else c=(g.rot===90)?(x+w-fondEp/2-1):(x+fondEp/2+1);band(true,y+2,y+h-2,c);}
+  for(let m=1;m<g.len;m++){const t=m/g.len;if(horiz){const mx=x+t*w;grp.appendChild(E("line",{x1:mx,y1:y,x2:mx,y2:y+h,stroke:col.planEdge,"stroke-width":.8,opacity:.6}));}else{const my=y+t*h;grp.appendChild(E("line",{x1:x,y1:my,x2:x+w,y2:my,stroke:col.planEdge,"stroke-width":.8,opacity:.6}));}}
+  const cx=x+w/2,cy=y+h/2;
+  const rp=repereOf(g);
+  // position du texte : décalé dans une moitié pour ne pas être masqué par le fond central (DF)
+  let tx=cx,ty=cy;
+  if(isDF){ if(horiz) ty=y+h*0.27; else tx=x+w*0.27; }
+  grp.appendChild(E("text",{x:tx,y:ty-2,"text-anchor":"middle","font-size":13,"font-weight":800,fill:"#1c2430","pointer-events":"none"},rp));
+  grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},`H.${g.h} · P.${g.p}`));
+  return grp;
+}
+function renderPlan(){
+  svg.innerHTML="";
+  svg.appendChild(drawGrid());
+  gondoles.filter(g=>g.id!==selId).forEach(g=>svg.appendChild(drawGondole(g)));
+  const s=sel(); if(s)svg.appendChild(drawGondole(s));
+  snapGuides.forEach(gd=>{const[x1,y1]=worldToPx(gd.x1,gd.y1),[x2,y2]=worldToPx(gd.x2,gd.y2);svg.appendChild(E("line",{x1,y1,x2,y2,stroke:"#e63f1e","stroke-width":1.5,"stroke-dasharray":"5 4",opacity:.9}));});
 }
 
-loadPlanIntoDemande();   // récupère les gondoles dessinées dans le plan, si présentes
-render();
-renderList();
+// ===================== Rendu global =====================
+function renderAll(){ renderPlan(); renderDetail(); renderTotals(); renderList(); renderBom(); }
+function repere(idx){ let s="",n=idx; do{ s=String.fromCharCode(65+(n%26))+s; n=Math.floor(n/26)-1; }while(n>=0); return s; }
+function repereOf(g){ const i=gondoles.indexOf(g); return i<0?"":repere(i); }
 
-// resynchronise si le plan modifie le panier pendant que le configurateur est ouvert
-window.addEventListener("storage", e => {
-  if (e.key === STORE_KEY) { if (loadPlanIntoDemande()) { render(); renderList(); } }
+// ===================== Interaction plan =====================
+let drag=null,pan=null,snapEnabled=true,snapGuides=[];const SNAP_M=0.18;
+function svgPoint(evt){const r=svg.getBoundingClientRect();return[(evt.clientX-r.left)*(W/r.width),(evt.clientY-r.top)*(Hn/r.height)];}
+svg.addEventListener("contextmenu",e=>e.preventDefault());
+svg.addEventListener("pointerdown",e=>{
+  const[sx,sy]=svgPoint(e);const el=e.target.closest(".gondole");const right=e.button===2;
+  if(right||(!el&&e.button===0)){ pan={px:sx,py:sy,ox:view.ox,oy:view.oy}; if(!el){selId=null;} svg.setPointerCapture(e.pointerId); svg.style.cursor="grabbing"; renderAll(); return; }
+  if(el){ const id=Number(el.dataset.id);selId=id;const g=gondoles.find(x=>x.id===id);const[wx,wy]=pxToWorld(sx,sy);drag={id,dx:wx-g.x,dy:wy-g.y};svg.setPointerCapture(e.pointerId);renderAll(); }
+});
+svg.addEventListener("pointermove",e=>{
+  if(pan){const[sx,sy]=svgPoint(e);view.ox=pan.ox+(sx-pan.px);view.oy=pan.oy+(sy-pan.py);renderPlan();return;}
+  if(!drag)return;
+  const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const g=gondoles.find(x=>x.id===drag.id);
+  let nx=Math.round((wx-drag.dx)*4)/4,ny=Math.round((wy-drag.dy)*4)/4;
+  snapGuides=[];
+  if(snapEnabled){const r=snapToGondoles(g,nx,ny);nx=r.x;ny=r.y;snapGuides=r.guides;}
+  g.x=nx;g.y=ny;renderPlan();
+});
+svg.addEventListener("pointerup",e=>{drag=null;pan=null;snapGuides=[];svg.style.cursor="crosshair";renderAll();try{svg.releasePointerCapture(e.pointerId);}catch(_){}});
+svg.addEventListener("wheel",e=>{e.preventDefault();const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const f=e.deltaY<0?1.1:.9;view.ppm=Math.max(18,Math.min(120,view.ppm*f));view.ox=sx-wx*view.ppm;view.oy=sy-wy*view.ppm;renderPlan();},{passive:false});
+window.addEventListener("keydown",e=>{ if(e.target.tagName==="INPUT")return;
+  if((e.key==="Delete"||e.key==="Backspace")&&selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}
+  if(e.key==="r"||e.key==="R")rotateSel();
+});
+function snapToGondoles(g,nx,ny){
+  const fp=footprint(g);const meL=nx,meR=nx+fp.w,meT=ny,meB=ny+fp.h;
+  const others=gondoles.filter(o=>o.id!==g.id);let bX=null,bY=null;
+  const cons=(ax,cand,dist)=>{if(dist>SNAP_M)return;if(ax==="x"){if(!bX||dist<bX.dist)bX={val:cand,dist,at:cand};}else{if(!bY||dist<bY.dist)bY={val:cand,dist,at:cand};}};
+  others.forEach(o=>{const ofp=footprint(o);const oL=o.x,oR=o.x+ofp.w,oT=o.y,oB=o.y+ofp.h;
+    cons("x",oR,Math.abs(meL-oR));cons("x",oL-fp.w,Math.abs(meR-oL));cons("x",oL,Math.abs(meL-oL));cons("x",oR-fp.w,Math.abs(meR-oR));
+    cons("y",oB,Math.abs(meT-oB));cons("y",oT-fp.h,Math.abs(meB-oT));cons("y",oT,Math.abs(meT-oT));cons("y",oB-fp.h,Math.abs(meB-oB));});
+  const guides=[];
+  if(bX){nx=bX.val;const gx=bX.at;guides.push({x1:gx,y1:Math.min(ny,...others.map(o=>o.y))-.5,x2:gx,y2:Math.max(ny+fp.h,...others.map(o=>o.y+footprint(o).h))+.5});}
+  if(bY){ny=bY.val;const gy=bY.at;guides.push({x1:Math.min(nx,...others.map(o=>o.x))-.5,y1:gy,x2:Math.max(nx+fp.w,...others.map(o=>o.x+footprint(o).w))+.5,y2:gy});}
+  return{x:nx,y:ny,guides};
+}
+
+// ===================== Barre d'outils =====================
+document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();});
+function rotateSel(){const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
+document.getElementById("btnRotate").addEventListener("click",rotateSel);
+document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
+document.getElementById("btnZoomOut").addEventListener("click",()=>{view.ppm=Math.max(18,view.ppm*.87);renderPlan();});
+document.getElementById("btnFit").addEventListener("click",fitView);
+document.getElementById("btnClear").addEventListener("click",()=>{if(gondoles.length&&confirm("Effacer tout le plan ?")){gondoles=[];selId=null;renderAll();}});
+document.getElementById("snapChk").addEventListener("change",e=>{snapEnabled=e.target.checked;});
+function fitView(){
+  if(gondoles.length===0){view={ox:60,oy:60,ppm:52};renderPlan();return;}
+  let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
+  gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
+  const pad=1,spanX=(mxX-mnX)+2*pad,spanY=(mxY-mnY)+2*pad;
+  view.ppm=Math.max(18,Math.min(120,Math.min(W/spanX,Hn/spanY)));
+  view.ox=(W-(mxX+mnX)*view.ppm)/2;view.oy=(Hn-(mxY+mnY)*view.ppm)/2;renderPlan();
+}
+
+// ===================== Panneau détail =====================
+function buildSeg(id,items,getV,setV){
+  const el=document.getElementById(id);el.innerHTML="";
+  items.forEach(it=>{const b=document.createElement("button");b.type="button";b.textContent=it.label??it;b.dataset.v=it.code??it;
+    b.addEventListener("click",()=>{const g=sel();if(!g)return;setV(g,b.dataset.v);renderAll();});el.appendChild(b);});
+}
+buildSeg("dFace",FACES,()=>sel()?.face,(g,v)=>g.face=v);
+buildSeg("dH",HAUTEURS,()=>sel()?.h,(g,v)=>g.h=Number(v));
+buildSeg("dP",PROFONDEURS,()=>sel()?.p,(g,v)=>{g.p=Number(v);g.tabProfs=g.tabProfs.map(pf=>pf>g.p?g.p:pf);});
+buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>g.f=v);
+// coloris gondole
+(function(){const box=document.getElementById("dSwatches");Object.entries(COLORIS).forEach(([k,c])=>{const d=document.createElement("div");d.className="swatch";d.dataset.k=k;d.style.background=c.swatch;d.style.color=(k==="anthracite")?"#fff":"#1c2430";d.title=c.label+" — "+c.ral;d.textContent=c.ral;d.addEventListener("click",()=>{const g=sel();if(g){g.color=k;detectPlanColor();renderAll();}});box.appendChild(d);});})();
+// longueur
+document.getElementById("lenM").addEventListener("click",()=>{const g=sel();if(g){g.len=Math.max(1,g.len-1);renderAll();}});
+document.getElementById("lenP").addEventListener("click",()=>{const g=sel();if(g){g.len=Math.min(30,g.len+1);renderAll();}});
+document.getElementById("lenI").addEventListener("input",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10);g.len=(isNaN(v)||v<1)?1:Math.min(30,v);renderAll();}});
+// plinthes / chapiteaux
+document.getElementById("dPlinthe").addEventListener("change",e=>{const g=sel();if(g){g.plinthes=e.target.checked;renderAll();}});
+document.getElementById("dChap").addEventListener("change",e=>{const g=sel();if(g){g.chapiteau=e.target.checked;renderAll();}});
+// tablettes niveaux
+function setNbNiveaux(n){const g=sel();if(!g)return;n=Math.max(0,Math.min(8,n));const cur=g.tabProfs.length;if(n>cur){for(let i=cur;i<n;i++)g.tabProfs.push(g.p);}else if(n<cur){g.tabProfs.length=n;}renderAll();}
+document.getElementById("tabM").addEventListener("click",()=>{const g=sel();if(g)setNbNiveaux(g.tabProfs.length-1);});
+document.getElementById("tabP2").addEventListener("click",()=>{const g=sel();if(g)setNbNiveaux(g.tabProfs.length+1);});
+document.getElementById("tabI").addEventListener("input",e=>{const v=parseInt(e.target.value,10);setNbNiveaux(isNaN(v)?0:v);});
+function buildTabLevels(){
+  const g=sel();const box=document.getElementById("tabLevels");box.innerHTML="";if(!g)return;
+  g.tabProfs.forEach((prof,idx)=>{
+    const row=document.createElement("div");row.className="tab-lvl";
+    const nm=document.createElement("span");nm.className="lvl-name";nm.textContent="Niveau "+(idx+1);row.appendChild(nm);
+    const seg=document.createElement("div");seg.className="lvl-seg";
+    PROFONDEURS.forEach(pf=>{const b=document.createElement("button");b.type="button";b.textContent=pf;const trop=pf>g.p;if(trop)b.classList.add("is-disabled");if(pf===prof)b.classList.add("active");b.addEventListener("click",()=>{if(pf>g.p)return;g.tabProfs[idx]=pf;renderAll();});seg.appendChild(b);});
+    row.appendChild(seg);box.appendChild(row);
+  });
+}
+document.getElementById("btnDup").addEventListener("click",()=>{const g=sel();if(!g)return;const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:g.tabProfs.slice()};gondoles.push(c);selId=c.id;renderAll();});
+document.getElementById("btnDelSel").addEventListener("click",()=>{if(selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}});
+
+// ---- Popup zoom de l'aperçu ----
+const vizModal=document.getElementById("vizModal");
+function openVizModal(){
+  const src=document.getElementById("viz");
+  const big=document.getElementById("vizBig");
+  big.setAttribute("viewBox",src.getAttribute("viewBox"));
+  big.innerHTML=src.innerHTML;
+  big.style.background=src.style.background;
+  document.getElementById("vizBigCap").innerHTML=document.getElementById("vizCap").innerHTML;
+  vizModal.classList.add("open");
+}
+function closeVizModal(){ vizModal.classList.remove("open"); }
+document.getElementById("viz").addEventListener("click",openVizModal);
+document.getElementById("vizModalClose").addEventListener("click",closeVizModal);
+vizModal.addEventListener("click",e=>{ if(e.target===vizModal) closeVizModal(); });
+window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&vizModal.classList.contains("open")) closeVizModal(); });
+
+function renderDetail(){
+  const g=sel();
+  document.getElementById("selEmpty").style.display=g?"none":"";
+  document.getElementById("selForm").style.display=g?"":"none";
+  if(!g)return;
+  const mark=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
+  mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);mark("dF",g.f);
+  document.querySelectorAll("#dSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===(g.color||"blanc")));
+  document.getElementById("lenI").value=g.len;
+  document.getElementById("lenU").textContent="= "+g.len.toLocaleString("fr-FR")+" ml";
+  document.getElementById("dPlinthe").checked=g.plinthes;
+  document.getElementById("plintheInfo").textContent="("+plinthesParGondole(g.face,g.len)+" plinthes)";
+  const cp=chapiteauPossible(g.face,g.h);
+  document.getElementById("dChapField").classList.toggle("disabled",!cp);
+  document.getElementById("dChap").checked=g.chapiteau&&cp;
+  document.getElementById("chapInfo").textContent=cp?"("+g.len+" chapiteau"+(g.len>1?"x":"")+")":"(double-face ≤ H.1700)";
+  document.getElementById("tabI").value=g.tabProfs.length;
+  buildTabLevels();
+  draw(g);
+}
+
+// ===================== Récapitulatif =====================
+function renderTotals(){
+  const n=gondoles.length;let sf=0,df=0;
+  gondoles.forEach(g=>{if(g.face==="SF")sf+=g.len;else df+=g.len;});
+  const f=v=>v.toLocaleString("fr-FR")+" ml";
+  document.getElementById("tGond").textContent=n;
+  document.getElementById("tSF").textContent=f(sf);
+  document.getElementById("tDF").textContent=f(df);
+  document.getElementById("tDev").textContent=f(sf+df*2);
+}
+
+// ===================== Coloris global =====================
+let planColor="blanc";
+(function(){const box=document.getElementById("planSwatches");Object.entries(COLORIS).forEach(([k,c])=>{const d=document.createElement("div");d.className="swatch";d.dataset.k=k;d.style.background=c.swatch;d.style.color=(k==="anthracite")?"#fff":"#1c2430";d.title=c.label+" — "+c.ral;d.textContent=c.ral;d.addEventListener("click",()=>{planColor=k;gondoles.forEach(g=>g.color=k);detectPlanColor();renderAll();});box.appendChild(d);});})();
+function detectPlanColor(){
+  const sw=document.querySelectorAll("#planSwatches .swatch");
+  if(gondoles.length===0){sw.forEach(d=>d.classList.toggle("active",d.dataset.k===planColor));return;}
+  const cols=[...new Set(gondoles.map(g=>g.color||"blanc"))];
+  if(cols.length===1){planColor=cols[0];sw.forEach(d=>d.classList.toggle("active",d.dataset.k===planColor));}
+  else{planColor=null;sw.forEach(d=>d.classList.remove("active"));}
+}
+
+// ===================== Devis (liste) =====================
+function renderList(){
+  const table=document.getElementById("listTable"),empty=document.getElementById("listEmpty"),body=document.getElementById("listBody");
+  body.innerHTML="";
+  if(gondoles.length===0){table.style.display="none";empty.style.display="";return;}
+  table.style.display="";empty.style.display="none";
+  gondoles.forEach((g,idx)=>{
+    const tr=document.createElement("tr");tr.dataset.id=g.id;tr.style.cursor="pointer";
+    if(g.id===selId)tr.style.background="#fef1ec";
+    tr.innerHTML=`<td class="qty">${repere(idx)}</td><td>${designationText(g)}</td><td><button type="button" class="btn-del-row" data-id="${g.id}" style="width:26px;height:26px;border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;color:var(--steel-500);cursor:pointer">✕</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",e=>{if(e.target.closest(".btn-del-row"))return;selId=Number(tr.dataset.id);renderAll();svg.scrollIntoView({behavior:"smooth",block:"nearest"});}));
+  body.querySelectorAll(".btn-del-row").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();const id=Number(b.dataset.id);gondoles=gondoles.filter(g=>g.id!==id);if(selId===id)selId=null;renderAll();}));
+}
+
+// ===================== Nomenclature =====================
+function renderBom(){
+  const bom=buildBom();const table=document.getElementById("bomTable"),empty=document.getElementById("bomEmpty"),body=document.getElementById("bomBody");
+  body.innerHTML="";
+  if(bom.length===0){table.style.display="none";empty.style.display="";return;}
+  table.style.display="";empty.style.display="none";
+  bom.forEach(i=>{const tr=document.createElement("tr");tr.innerHTML=`<td class="ref">${i.code}</td><td>${i.des}</td><td class="q">${i.qty}</td><td class="ral">${i.ral}</td>`;body.appendChild(tr);});
+}
+
+// ===================== Envoi / copie =====================
+function buildRequestText(){
+  const lignes=gondoles.map((g,i)=>`${repere(i)}. ${designationText(g)}`);
+  const c={nom:val("cNom"),soc:val("cSociete"),mail:val("cEmail"),tel:val("cTel"),msg:val("cMsg")};
+  let t="DEMANDE DE DEVIS — GONDOLES RSL\n\nClient :\n";
+  t+=`  Nom : ${c.nom||"-"}\n  Société : ${c.soc||"-"}\n  Email : ${c.mail||"-"}\n  Téléphone : ${c.tel||"-"}\n`;
+  if(c.msg)t+=`  Message : ${c.msg}\n`;
+  t+="\nConfigurations demandées :\n"+(lignes.length?lignes.join("\n"):"  (aucune)")+"\n";
+  t+="\nDétail des pièces (pour chiffrage) :\n"+buildBomTable()+"\n";
+  return t;
+}
+function buildBomTable(){
+  const bom=buildBom();if(bom.length===0)return"  (aucune)";
+  const rows=bom.map(i=>[i.code,i.des,String(i.qty),i.ral]);const head=["Réf.","Désignation","Qté","Coloris"];const all=[head,...rows];
+  const wR=Math.max(...all.map(r=>r[0].length)),wD=Math.max(...all.map(r=>r[1].length)),wQ=Math.max(...all.map(r=>r[2].length));
+  const pad=(s,w)=>s+" ".repeat(w-s.length),padL=(s,w)=>" ".repeat(w-s.length)+s;
+  const line=r=>`${pad(r[0],wR)}  ${pad(r[1],wD)}  ${padL(r[2],wQ)}  ${r[3]}`;
+  const sep=`${"-".repeat(wR)}  ${"-".repeat(wD)}  ${"-".repeat(wQ)}  -------`;
+  return[line(head),sep,...rows.map(line)].join("\n");
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function buildRequestHTML(){
+  const c={nom:val("cNom"),soc:val("cSociete"),mail:val("cEmail"),tel:val("cTel"),msg:val("cMsg")};
+  const lignes=gondoles.map((g,i)=>`${repere(i)}. ${designationText(g)}`);const bom=buildBom();
+  let h=`<div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1c2430">`;
+  h+=`<h2 style="margin:0 0 8px">DEMANDE DE DEVIS — GONDOLES RSL</h2>`;
+  h+=`<p style="margin:0 0 4px"><b>Client :</b><br>Nom : ${esc(c.nom||"-")}<br>Société : ${esc(c.soc||"-")}<br>Email : ${esc(c.mail||"-")}<br>Téléphone : ${esc(c.tel||"-")}`;
+  if(c.msg)h+=`<br>Message : ${esc(c.msg)}`;h+=`</p>`;
+  h+=`<p style="margin:12px 0 4px"><b>Configurations demandées :</b></p><ol style="margin:0 0 12px;padding-left:18px">`+lignes.map(l=>`<li>${esc(l.replace(/^[A-Z]+\.\s/,""))}</li>`).join("")+`</ol>`;
+  h+=`<p style="margin:12px 0 4px"><b>Détail des pièces :</b></p><table style="border-collapse:collapse;font-size:12.5px" border="1" cellpadding="5"><thead><tr style="background:#f0f2f5">`;
+  ["Réf.","Désignation","Qté","Coloris"].forEach(t=>h+=`<th style="border:1px solid #b8c0ca;text-align:left;padding:5px 8px">${t}</th>`);
+  h+=`</tr></thead><tbody>`;
+  bom.forEach(i=>{h+=`<tr><td style="border:1px solid #d4dae0;padding:4px 8px;font-family:Consolas,monospace">${esc(i.code)}</td><td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.des)}</td><td style="border:1px solid #d4dae0;padding:4px 8px;text-align:center">${i.qty}</td><td style="border:1px solid #d4dae0;padding:4px 8px">${esc(i.ral)}</td></tr>`;});
+  h+=`</tbody></table></div>`;return h;
+}
+function val(id){return document.getElementById(id).value.trim();}
+function execCopyText(text){try{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.top="-9999px";document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand("copy");document.body.removeChild(ta);return ok;}catch(e){return false;}}
+document.getElementById("btnCopy").addEventListener("click",()=>{
+  if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
+  const text=buildRequestText(),html=buildRequestHTML(),btn=document.getElementById("btnCopy");
+  const done=()=>{btn.textContent="✓ Copié !";btn.classList.add("done");setTimeout(()=>{btn.textContent="Copier ma demande";btn.classList.remove("done");},1800);};
+  const fb=()=>{if(execCopyText(text))done();};
+  if(navigator.clipboard&&window.ClipboardItem){try{const item=new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})});navigator.clipboard.write([item]).then(done).catch(()=>navigator.clipboard.writeText(text).then(done).catch(fb));}catch(e){navigator.clipboard.writeText(text).then(done).catch(fb);}}
+  else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(fb);}else fb();
+});
+document.getElementById("btnEmail").addEventListener("click",e=>{
+  e.preventDefault();
+  if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
+  const soc=val("cSociete");const subject="Demande de devis gondoles"+(soc?" — "+soc:"");
+  window.location.href=`mailto:${DEST_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildRequestText())}`;
 });
 
-// ---- Auto-redimensionnement en iframe (Webflow / WordPress) ----
-(function () {
-  function postHeight() {
-    var h = document.documentElement.scrollHeight;
-    if (window.parent !== window) window.parent.postMessage({ type: "rsl-configurateur-height", height: h }, "*");
-  }
-  window.addEventListener("load", postHeight);
-  if (window.ResizeObserver) { var ro = new ResizeObserver(postHeight); ro.observe(document.body); }
-  document.addEventListener("click", function () { setTimeout(postHeight, 60); });
-  document.addEventListener("input", function () { setTimeout(postHeight, 60); });
-})();
+// ===================== Démarrage =====================
+gondoles.push({...newGondole(1,1),face:"DF",len:5,h:2100,p:470});
+gondoles.push({...newGondole(1,3.5),face:"SF",len:4,h:1800,p:370,f:"FP"});
+selId=null;
+detectPlanColor();
+fitView();
+renderAll();
+
 </script>
 </body>
 </html>
