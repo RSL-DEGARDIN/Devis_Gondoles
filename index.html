@@ -538,6 +538,9 @@ function loadPlanIntoDemande() {
     }));
     planNextId = p.nextId || 1;
     nextId = Math.max(nextId, planNextId, ...demande.map(l=>l.id||0)) + 1;
+    // si toutes les gondoles du plan partagent le même coloris, le panneau de composition l'adopte
+    const cols = [...new Set(demande.map(l => l.color || "blanc"))];
+    if (cols.length === 1) state.color = cols[0];
     return true;
   } catch(e) { return false; }
 }
@@ -1216,7 +1219,7 @@ renderList();
 
 // resynchronise si le plan modifie le panier pendant que le configurateur est ouvert
 window.addEventListener("storage", e => {
-  if (e.key === STORE_KEY) { if (loadPlanIntoDemande()) renderList(); }
+  if (e.key === STORE_KEY) { if (loadPlanIntoDemande()) { render(); renderList(); } }
 });
 
 // ---- Auto-redimensionnement en iframe (Webflow / WordPress) ----
