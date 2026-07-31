@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aperçu 3D 360° — Gondole double-face 2 ml — RSL</title>
+<style>
+  :root{--steel-900:#1c2430;--steel-500:#55677d;--steel-100:#e8edf2;--paper:#f5f7f9;--accent:#e63f1e;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--steel-900);padding:24px 16px;display:flex;flex-direction:column;align-items:center;}
+  .eyebrow{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;}
+  h1{font-size:26px;font-weight:800;margin-bottom:4px;text-align:center;}
+  .sub{font-size:14px;color:var(--steel-500);margin-bottom:18px;text-align:center;}
+  .card{background:#fff;border:1px solid var(--steel-100);border-radius:12px;box-shadow:0 1px 3px rgba(28,36,48,.06);padding:16px;max-width:900px;width:100%;}
+  #stage{width:100%;height:520px;border-radius:10px;background:linear-gradient(#fbfcfd,#e9eef3);overflow:hidden;position:relative;cursor:grab;}
+  #stage:active{cursor:grabbing;}
+  #fallback{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--steel-500);font-size:14px;line-height:1.6;}
+  .controls{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+  .controls label{font-size:12px;color:var(--steel-500);font-weight:700;text-transform:uppercase;letter-spacing:1px;display:flex;flex-direction:column;gap:5px;align-items:center;}
+  .controls .seg{display:flex;gap:5px;}
+  .controls button{padding:8px 13px;border:1.5px solid var(--steel-100);background:#fff;border-radius:7px;font-size:13px;font-weight:600;color:var(--steel-500);cursor:pointer;}
+  .controls button.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+  .note{font-size:12.5px;color:var(--steel-500);margin-top:14px;line-height:1.5;text-align:center;max-width:900px;}
+</style>
+</head>
+<body>
+  <div class="eyebrow">Rayonnages Services Lorraine</div>
+  <h1>Aperçu 3D 360° — prototype</h1>
+  <div class="sub">Gondole double-face · 2 × 1000 mm · glissez pour faire tourner · molette pour zoomer</div>
+
+  <div class="card">
+    <div id="stage">
+      <div id="fallback">Impossible de charger le moteur 3D (Three.js).<br>Vérifiez la connexion internet — sur le site en ligne, le rendu s'affichera normalement.</div>
+    </div>
+    <div class="controls">
+      <label>Hauteur<div class="seg" id="segH"></div></label>
+      <label>Profondeur<div class="seg" id="segP"></div></label>
+      <label>Coloris<div class="seg" id="segC"></div></label>
+      <label>Vue<div class="seg" id="segV"></div></label>
+    </div>
+  </div>
+  <p class="note">Vraie 3D orbitable (Three.js). Chaque élément — montants, fonds, tablettes, piétement, vérins — est un volume. Faites glisser pour tourner à 360°, molette pour zoomer, double-clic pour recentrer.</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+  if(typeof THREE==="undefined"){ document.getElementById("fallback").style.display="flex"; return; }
+
+  const stage=document.getElementById("stage");
+  const W=()=>stage.clientWidth, H=()=>stage.clientHeight;
+
+  // ---- Coloris (couleur RAL approximée + métal) ----
+  const COLORIS={
+    blanc:{panel:0xf2e9d5, metal:0xd9cdb2, label:"9001"},
+    gris:{panel:0xd7dce1, metal:0xb7bdc4, label:"9006"},
+    anthracite:{panel:0x4a4f56, metal:0x565b61, label:"7015"}
+  };
+  const state={h:1800,p:470,color:"gris"};
+  const LEN=2, MOD=1.0; // mètres
+
+  // ---- Scène ----
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xf3f6f9);
+  const camera=new THREE.PerspectiveCamera(45, W()/H(), 0.1, 100);
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(W(),H());
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  stage.appendChild(renderer.domElement);
+
+  const controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.08;
+  controls.minDistance=2; controls.maxDistance=14;
+
+  // lumières
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9099a5,0.85));
+  const dir=new THREE.DirectionalLight(0xffffff,0.7);
+  dir.position.set(4,7,5); dir.castShadow=true;
+  dir.shadow.mapSize.set(1024,1024);
+  dir.shadow.camera.left=-6;dir.shadow.camera.right=6;dir.shadow.camera.top=6;dir.shadow.camera.bottom=-6;
+  scene.add(dir);
+
+  // sol
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30), new THREE.MeshStandardMaterial({color:0xe7ecf1,roughness:1}));
+  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; floor.position.y=0;
+  scene.add(floor);
+  const grid=new THREE.GridHelper(30,30,0xcdd6df,0xe3e9ee); grid.position.y=0.001; scene.add(grid);
+
+  let group=null;
+
+  function mat(hex,rough){ return new THREE.MeshStandardMaterial({color:hex,roughness:rough==null?0.7:rough,metalness:0.05}); }
+
+  function boxMesh(w,h,d,x,y,z,material){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true;
+    return m;
+  }
+
+  function build(){
+    if(group){ scene.remove(group); group.traverse(o=>{ if(o.geometry)o.geometry.dispose(); }); }
+    group=new THREE.Group();
+    const C=COLORIS[state.color];
+    const panelMat=mat(C.panel,0.85), metalMat=mat(C.metal,0.5);
+
+    const L=LEN*MOD;                 // longueur
+    const Ht=state.h/1000;           // hauteur m
+    const D=state.p/1000;            // profondeur d'une face
+    const pietH=0.1;                 // 100 mm
+    const upW=0.06;                  // montant 60 mm
+    const th=0.025;                  // épaisseur tablette
+
+    // origine : gondole centrée en X, fond au centre Z=0, faces de -D à +D
+    const x0=-L/2;
+
+    // ---- piétements (traverses basses) sous chaque montant ----
+    for(let m=0;m<=LEN;m++){
+      let x=x0+m*MOD; if(m===LEN)x=x0+L; // extrémités
+      group.add(boxMesh(upW*1.4, pietH*0.5, D*2*0.96, x, pietH*0.3, 0, metalMat));
+      // vérins avant/arrière
+      [-D*0.9, D*0.9].forEach(zz=>{
+        const v=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,pietH*0.4,12),metalMat);
+        v.position.set(x,pietH*0.2,zz); v.castShadow=true; group.add(v);
+      });
+    }
+
+    // ---- montants (au centre, dos à dos) ----
+    for(let m=0;m<=LEN;m++){
+      let x=x0+m*MOD;
+      group.add(boxMesh(upW,Ht-pietH,upW, x, pietH, 0, metalMat));
+    }
+
+    // ---- fond central (dos commun, double face) ----
+    const fondMesh=boxMesh(L, Ht-pietH, 0.02, 0, pietH, 0, panelMat);
+    group.add(fondMesh);
+
+    // ---- tablettes : base + 2 niveaux, sur chaque face ----
+    const niveaux=[pietH, pietH+(Ht-pietH)*0.42, pietH+(Ht-pietH)*0.72];
+    niveaux.forEach(y=>{
+      // face avant (+Z) : de 0 à +D
+      const av=boxMesh(L-upW*0.4, th, D-0.03, 0, y, D/2+0.01, panelMat); group.add(av);
+      // face arrière (-Z)
+      const ar=boxMesh(L-upW*0.4, th, D-0.03, 0, y, -(D/2+0.01), panelMat); group.add(ar);
+    });
+
+    // ---- chapeau haut (finition) ----
+    group.add(boxMesh(L, 0.02, 0.06, 0, Ht-0.02, 0, metalMat));
+
+    scene.add(group);
+  }
+
+  // ---- vues prédéfinies ----
+  function setView(v){
+    const Ht=state.h/1000, d=Math.max(4, Ht*2.2);
+    if(v==="3/4"){ camera.position.set(d*0.8,Ht*0.9+0.6,d*0.8); }
+    else if(v==="face"){ camera.position.set(0,Ht*0.6,d); }
+    else if(v==="cote"){ camera.position.set(d,Ht*0.6,0.001); }
+    else if(v==="haut"){ camera.position.set(0.001,d*1.2,0.001); }
+    controls.target.set(0,Ht*0.45,0);
+    controls.update();
+  }
+
+  // ---- contrôles UI ----
+  function seg(id,items,getter,setter){
+    const el=document.getElementById(id);
+    items.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label??it; b.dataset.v=it.v??it;
+      b.addEventListener("click",()=>{ setter(b.dataset.v); syncBtns(); build(); }); el.appendChild(b); });
+  }
+  seg("segH",[1200,1400,1600,1800,2100,2500],()=>state.h,v=>state.h=Number(v));
+  seg("segP",[370,470,570],()=>state.p,v=>state.p=Number(v));
+  seg("segC",[{label:"9001",v:"blanc"},{label:"9006",v:"gris"},{label:"7015",v:"anthracite"}],()=>state.color,v=>state.color=v);
+  seg("segV",[{label:"3/4",v:"3/4"},{label:"Face",v:"face"},{label:"Côté",v:"cote"},{label:"Dessus",v:"haut"}],()=>"3/4",v=>setView(v));
+  function syncBtns(){
+    const m=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
+    m("segH",state.h); m("segP",state.p); m("segC",state.color);
+  }
+
+  renderer.domElement.addEventListener("dblclick",()=>setView("3/4"));
+
+  window.addEventListener("resize",()=>{ camera.aspect=W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(),H()); });
+
+  build(); syncBtns(); setView("3/4");
+  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); })();
+})();
+</script>
+</body>
+</html>
