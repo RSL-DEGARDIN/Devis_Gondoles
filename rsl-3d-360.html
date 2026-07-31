@@ -42,10 +42,12 @@
   <p class="note">Vraie 3D orbitable (Three.js). Chaque élément — montants, fonds, tablettes, piétement, vérins — est un volume. Faites glisser pour tourner à 360°, molette pour zoomer, double-clic pour recentrer.</p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/js/controls/OrbitControls.js"></script>
 <script>
 (function(){
-  if(typeof THREE==="undefined"){ document.getElementById("fallback").style.display="flex"; return; }
+  const fb=document.getElementById("fallback");
+  function showFallback(msg){ if(msg)fb.innerHTML=msg; fb.style.display="flex"; }
+  if(typeof THREE==="undefined"){ showFallback("Impossible de charger le moteur 3D (Three.js).<br>Vérifiez la connexion — sur le site en ligne, le rendu s'affichera normalement."); return; }
+  try{
 
   const stage=document.getElementById("stage");
   const W=()=>stage.clientWidth, H=()=>stage.clientHeight;
@@ -69,9 +71,25 @@
   renderer.shadowMap.enabled=true;
   stage.appendChild(renderer.domElement);
 
-  const controls=new THREE.OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true; controls.dampingFactor=0.08;
-  controls.minDistance=2; controls.maxDistance=14;
+  // ---- Contrôle d'orbite MAISON (pas de dépendance externe) ----
+  const orbit={ target:new THREE.Vector3(0,0.8,0), radius:6, theta:Math.PI*0.25, phi:Math.PI*0.35, min:2, max:16 };
+  function applyCamera(){
+    const r=orbit.radius, t=orbit.theta, p=Math.max(0.15,Math.min(Math.PI-0.15,orbit.phi));
+    orbit.phi=p;
+    camera.position.set(
+      orbit.target.x + r*Math.sin(p)*Math.sin(t),
+      orbit.target.y + r*Math.cos(p),
+      orbit.target.z + r*Math.sin(p)*Math.cos(t)
+    );
+    camera.lookAt(orbit.target);
+  }
+  let dragging=false,lastX=0,lastY=0;
+  const el=renderer.domElement;
+  el.addEventListener("pointerdown",e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; el.setPointerCapture(e.pointerId); });
+  el.addEventListener("pointermove",e=>{ if(!dragging)return; const dx=e.clientX-lastX,dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY; orbit.theta-=dx*0.008; orbit.phi-=dy*0.008; applyCamera(); });
+  el.addEventListener("pointerup",e=>{ dragging=false; try{el.releasePointerCapture(e.pointerId);}catch(_){}} );
+  el.addEventListener("wheel",e=>{ e.preventDefault(); orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*(e.deltaY<0?0.9:1.1))); applyCamera(); },{passive:false});
+  el.addEventListener("dblclick",()=>setView("3/4"));
 
   // lumières
   scene.add(new THREE.HemisphereLight(0xffffff,0x9099a5,0.85));
@@ -88,9 +106,7 @@
   const grid=new THREE.GridHelper(30,30,0xcdd6df,0xe3e9ee); grid.position.y=0.001; scene.add(grid);
 
   let group=null;
-
   function mat(hex,rough){ return new THREE.MeshStandardMaterial({color:hex,roughness:rough==null?0.7:rough,metalness:0.05}); }
-
   function boxMesh(w,h,d,x,y,z,material){
     const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
     m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true;
@@ -102,85 +118,60 @@
     group=new THREE.Group();
     const C=COLORIS[state.color];
     const panelMat=mat(C.panel,0.85), metalMat=mat(C.metal,0.5);
-
-    const L=LEN*MOD;                 // longueur
-    const Ht=state.h/1000;           // hauteur m
-    const D=state.p/1000;            // profondeur d'une face
-    const pietH=0.1;                 // 100 mm
-    const upW=0.06;                  // montant 60 mm
-    const th=0.025;                  // épaisseur tablette
-
-    // origine : gondole centrée en X, fond au centre Z=0, faces de -D à +D
+    const L=LEN*MOD, Ht=state.h/1000, D=state.p/1000;
+    const pietH=0.1, upW=0.06, th=0.025;
     const x0=-L/2;
 
-    // ---- piétements (traverses basses) sous chaque montant ----
     for(let m=0;m<=LEN;m++){
-      let x=x0+m*MOD; if(m===LEN)x=x0+L; // extrémités
+      let x=x0+m*MOD;
       group.add(boxMesh(upW*1.4, pietH*0.5, D*2*0.96, x, pietH*0.3, 0, metalMat));
-      // vérins avant/arrière
       [-D*0.9, D*0.9].forEach(zz=>{
         const v=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,pietH*0.4,12),metalMat);
         v.position.set(x,pietH*0.2,zz); v.castShadow=true; group.add(v);
       });
     }
-
-    // ---- montants (au centre, dos à dos) ----
-    for(let m=0;m<=LEN;m++){
-      let x=x0+m*MOD;
-      group.add(boxMesh(upW,Ht-pietH,upW, x, pietH, 0, metalMat));
-    }
-
-    // ---- fond central (dos commun, double face) ----
-    const fondMesh=boxMesh(L, Ht-pietH, 0.02, 0, pietH, 0, panelMat);
-    group.add(fondMesh);
-
-    // ---- tablettes : base + 2 niveaux, sur chaque face ----
+    for(let m=0;m<=LEN;m++){ let x=x0+m*MOD; group.add(boxMesh(upW,Ht-pietH,upW, x, pietH, 0, metalMat)); }
+    group.add(boxMesh(L, Ht-pietH, 0.02, 0, pietH, 0, panelMat));
     const niveaux=[pietH, pietH+(Ht-pietH)*0.42, pietH+(Ht-pietH)*0.72];
     niveaux.forEach(y=>{
-      // face avant (+Z) : de 0 à +D
-      const av=boxMesh(L-upW*0.4, th, D-0.03, 0, y, D/2+0.01, panelMat); group.add(av);
-      // face arrière (-Z)
-      const ar=boxMesh(L-upW*0.4, th, D-0.03, 0, y, -(D/2+0.01), panelMat); group.add(ar);
+      group.add(boxMesh(L-upW*0.4, th, D-0.03, 0, y, D/2+0.01, panelMat));
+      group.add(boxMesh(L-upW*0.4, th, D-0.03, 0, y, -(D/2+0.01), panelMat));
     });
-
-    // ---- chapeau haut (finition) ----
     group.add(boxMesh(L, 0.02, 0.06, 0, Ht-0.02, 0, metalMat));
-
     scene.add(group);
   }
 
-  // ---- vues prédéfinies ----
   function setView(v){
-    const Ht=state.h/1000, d=Math.max(4, Ht*2.2);
-    if(v==="3/4"){ camera.position.set(d*0.8,Ht*0.9+0.6,d*0.8); }
-    else if(v==="face"){ camera.position.set(0,Ht*0.6,d); }
-    else if(v==="cote"){ camera.position.set(d,Ht*0.6,0.001); }
-    else if(v==="haut"){ camera.position.set(0.001,d*1.2,0.001); }
-    controls.target.set(0,Ht*0.45,0);
-    controls.update();
+    const Ht=state.h/1000;
+    orbit.target.set(0,Ht*0.45,0);
+    orbit.radius=Math.max(4,Ht*2.4);
+    if(v==="3/4"){ orbit.theta=Math.PI*0.25; orbit.phi=Math.PI*0.38; }
+    else if(v==="face"){ orbit.theta=0; orbit.phi=Math.PI*0.5; }
+    else if(v==="cote"){ orbit.theta=Math.PI*0.5; orbit.phi=Math.PI*0.5; }
+    else if(v==="haut"){ orbit.theta=0; orbit.phi=0.25; }
+    applyCamera();
   }
 
-  // ---- contrôles UI ----
-  function seg(id,items,getter,setter){
+  function seg(id,items,setter){
     const el=document.getElementById(id);
     items.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label??it; b.dataset.v=it.v??it;
       b.addEventListener("click",()=>{ setter(b.dataset.v); syncBtns(); build(); }); el.appendChild(b); });
   }
-  seg("segH",[1200,1400,1600,1800,2100,2500],()=>state.h,v=>state.h=Number(v));
-  seg("segP",[370,470,570],()=>state.p,v=>state.p=Number(v));
-  seg("segC",[{label:"9001",v:"blanc"},{label:"9006",v:"gris"},{label:"7015",v:"anthracite"}],()=>state.color,v=>state.color=v);
-  seg("segV",[{label:"3/4",v:"3/4"},{label:"Face",v:"face"},{label:"Côté",v:"cote"},{label:"Dessus",v:"haut"}],()=>"3/4",v=>setView(v));
+  seg("segH",[1200,1400,1600,1800,2100,2500],v=>state.h=Number(v));
+  seg("segP",[370,470,570],v=>state.p=Number(v));
+  seg("segC",[{label:"9001",v:"blanc"},{label:"9006",v:"gris"},{label:"7015",v:"anthracite"}],v=>state.color=v);
+  seg("segV",[{label:"3/4",v:"3/4"},{label:"Face",v:"face"},{label:"Côté",v:"cote"},{label:"Dessus",v:"haut"}],v=>setView(v));
   function syncBtns(){
     const m=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
     m("segH",state.h); m("segP",state.p); m("segC",state.color);
   }
 
-  renderer.domElement.addEventListener("dblclick",()=>setView("3/4"));
-
   window.addEventListener("resize",()=>{ camera.aspect=W()/H(); camera.updateProjectionMatrix(); renderer.setSize(W(),H()); });
 
   build(); syncBtns(); setView("3/4");
-  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); })();
+  (function loop(){ requestAnimationFrame(loop); renderer.render(scene,camera); })();
+
+  }catch(err){ showFallback("Erreur d'affichage 3D : "+(err&&err.message?err.message:err)+"<br>Réessayez ou rechargez la page."); }
 })();
 </script>
 </body>
