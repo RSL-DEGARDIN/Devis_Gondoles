@@ -107,7 +107,8 @@
   .viz-cap{font-size:12px;color:var(--steel-500);text-align:center;line-height:1.5;margin-top:8px;}
   .viz-cap b{color:var(--steel-900);}
 
-  .btn-dup,.btn-del-sel{width:100%;padding:9px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+  .sel-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  .btn-dup,.btn-del-sel{width:100%;padding:10px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
   .btn-dup{color:var(--steel-700);} .btn-dup:hover{border-color:var(--steel-300);}
   .btn-del-sel{color:var(--accent);} .btn-del-sel:hover{border-color:var(--accent);}
   .empty-sel{font-size:13px;color:var(--steel-300);text-align:center;padding:22px 8px;border:1.5px dashed var(--steel-100);border-radius:8px;}
@@ -251,15 +252,17 @@
           <div class="hint2">Chaque niveau ≤ profondeur de base. Niveau 1 = juste au-dessus de la base.</div>
         </div>
 
-        <details class="preview">
+        <details class="preview" open>
           <summary>Aperçu (vue de face + coupe)</summary>
           <svg class="viz" id="viz" viewBox="0 0 560 460" role="img" aria-label="Aperçu" style="cursor:zoom-in"></svg>
           <div class="viz-cap" id="vizCap"></div>
           <div class="viz-zoom-hint">Cliquez sur l'aperçu pour l'agrandir</div>
         </details>
 
-        <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
-        <button class="btn-del-sel" id="btnDelSel">✕ Supprimer cette gondole</button>
+        <div class="sel-actions">
+          <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
+          <button class="btn-del-sel" id="btnDelSel">✕ Supprimer</button>
+        </div>
       </div>
     </div>
 
