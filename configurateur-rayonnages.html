@@ -49,7 +49,6 @@ select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);ou
 .tvl .lab{font-size:13px;color:var(--encre);flex:0 0 72px;font-weight:600;font-variant-numeric:tabular-nums}
 .tvl .stepper{flex:0 0 118px}
 .tvl .stepper input{font-weight:600}
-.tvl.zero .lab{color:#a4b0bc;font-weight:400}
 .tvl .cnt{font-size:11.5px;color:#8b98a6;flex:1}
 .opt{
   display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--trait);
@@ -121,11 +120,17 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 .recap-l.grand{border-top:1px solid var(--trait);margin-top:6px;padding-top:8px;font-weight:700}
 .recap-l.grand b{font-size:20px}
 .recap-l .sub{font-size:11px;color:#8b98a6;margin-left:6px}
+.recap-l .txp{display:flex;align-items:center;gap:8px;flex:1;margin-right:14px}
+.recap-l .txp>span:first-child{white-space:nowrap}
+.recap-l .txp select{margin:0 auto;width:130px;flex:0 0 auto}
+.recap-l .txp .sub{margin-left:0}
 .recap .warn{font-size:12px;color:#7c2f14}
 .recap select{padding:3px 6px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:12.5px;color:var(--encre)}
 .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#eef4f8;color:var(--signal);padding:2px 7px;border-radius:2px;font-weight:600}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <header>
@@ -218,6 +223,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
       <div id="devis"></div>
       <div id="recap"></div>
       <div class="actions">
+        <button class="btn-ghost" id="pdf" style="border-color:var(--signal);color:var(--signal)">📄 Devis PDF</button>
         <button class="btn-ghost" id="copy">Copier le devis</button>
         <button class="btn-ghost" id="csv">Exporter la nomenclature (CSV)</button>
         <button class="btn-ghost" id="clear">Vider le devis</button>
@@ -425,14 +431,13 @@ function fmtLongs(longs){
 function libelle(c){
   const rec = {aucun:'tablettes nues', iso:'dessus isobois', tole:'dessus tôle galva'}[c.rec];
   const pd = {pied:'pieds plastique', platine:'platines métal', calage:'platines de calage', aucun:'sans appui'}[c.pd];
-  return `Rayonnage EPSILINE H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}`;
+  return `Rayonnage H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}`;
 }
 
 /* ==========================================================
    DESSIN — projection cavalière, redessinée à chaque choix
    ========================================================== */
-function dessiner(c){
-  const svg = $('dessin');
+function svgMarkup(c){
   const DX = 0.46, DY = 0.30;                       // fuyante
   const prof = c.P, haut = c.H;
   // bornes horizontales cumulées : une par poteau (t+1 bornes)
@@ -478,7 +483,7 @@ function dessiner(c){
       const rempli = c.rec!=='aucun';
       if(rempli){
         // recouvrement : surface pleine (isobois ou tôle)
-        const fill = c.rec==='iso' ? 'var(--bois)' : '#c2cad3';
+        const fill = c.rec==='iso' ? '#c89a5b' : '#c2cad3';
         o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y,prof)} ${pt(x0,y,prof)}"
                 fill="${fill}" stroke="#6d7a87" stroke-width=".7"/>`);
       } else {
@@ -550,7 +555,11 @@ function dessiner(c){
   // profondeur, en bas le long de la fuyante
   o.push(cote(X(larg,0)+8, Y(0,0)+6, X(larg,prof)+8, Y(0,prof)+6, `${prof} mm`, 30, 12));
 
-  svg.innerHTML = o.join('');
+  return o.join('');
+}
+
+function dessiner(c){
+  $('dessin').innerHTML = svgMarkup(c);
 }
 
 /* ==========================================================
@@ -559,7 +568,7 @@ function dessiner(c){
 function rendreTravees(){
   $('travees').innerHTML = LONGUEURS.map(L=>{
     const n = nbTravees[L]||0;
-    return `<div class="tvl${n===0?' zero':''}">
+    return `<div class="tvl">
       <span class="lab">L.${L}</span>
       <div class="stepper">
         <button type="button" data-tvl="${L}" data-d="-1">−</button>
@@ -673,7 +682,7 @@ function rendreDevis(){
       ligneTransport = `<span>Transport ${selDep}</span><span class="warn">sur consultation</span>`;
       grand = `<span>Total HT hors transport</span><b>${eur(marchandise)}</b>`;
     } else {
-      ligneTransport = `<span>Transport ${selDep}<span class="sub">${t.txt}</span></span><span>${eur(t.val)}</span>`;
+      ligneTransport = `<span class="txp"><span>Transport <span class="sub">${t.txt}</span></span>${selDep}</span><span>${eur(t.val)}</span>`;
       grand = `<span>Total HT rendu</span><b>${eur(marchandise + t.val)}</b>`;
     }
     $('recap').innerHTML = `
@@ -777,6 +786,138 @@ $('csv').onclick = ()=>{
   a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
   a.download = 'nomenclature-epsiline.csv';
   a.click();
+};
+
+/* ==========================================================
+   EXPORT PDF DU DEVIS
+   ========================================================== */
+// convertit un SVG (chaîne <svg…>) en PNG dataURL via canvas
+function svgToPng(svgInner, scale=2){
+  return new Promise((resolve,reject)=>{
+    const vw = 700, vh = 420;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}">`
+              + `<rect width="${vw}" height="${vh}" fill="#ffffff"/>` + svgInner + `</svg>`;
+    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = ()=>{
+      const cv = document.createElement('canvas');
+      cv.width = vw*scale; cv.height = vh*scale;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.drawImage(img,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url);
+      resolve({data:cv.toDataURL('image/png'), w:vw, h:vh});
+    };
+    img.onerror = e=>{ URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+$('pdf').onclick = async ()=>{
+  if(!devis.length) return;
+  const btn = $('pdf'); const label = btn.textContent;
+  btn.textContent = 'Génération…'; btn.disabled = true;
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4'});
+    const M = 15, PW = 210, PH = 297;
+    let y = M;
+
+    // ---- en-tête
+    doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
+    doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
+    const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    doc.text('Date : '+dateStr, PW-M, 16, {align:'right'});
+    y = 30;
+
+    // ---- SYNTHÈSE : une ligne par rayonnage + vignette
+    doc.setTextColor(30); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Synthèse', M, y); y += 5;
+
+    // pré-rendu des vignettes
+    const vignettes = [];
+    for(const d of devis) vignettes.push(await svgToPng(svgMarkup(d.cfg), 2));
+
+    for(let i=0;i<devis.length;i++){
+      const d = devis[i], v = vignettes[i];
+      const imgW = 55, imgH = imgW * v.h / v.w;
+      const blocH = Math.max(imgH, 20) + 6;
+      if(y + blocH > PH - 30){ doc.addPage(); y = M; }
+
+      doc.setDrawColor(220); doc.setLineWidth(0.2);
+      doc.line(M, y, PW-M, y); y += 4;
+
+      doc.addImage(v.data,'PNG', M, y, imgW, imgH);
+      const tx = M + imgW + 6;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(30);
+      const titre = `${d.q>1?d.q+' × ':''}${d.lib}`;
+      doc.text(doc.splitTextToSize(titre, PW-M-tx), tx, y+4);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90);
+      doc.text(`Prix HT : ${eur(d.total)}`, tx, y+imgH-2);
+
+      y += Math.max(imgH, 16) + 4;
+    }
+
+    // ---- DÉTAIL : nomenclature consolidée
+    if(y > PH - 60){ doc.addPage(); y = M; } else y += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30);
+    doc.text('Nomenclature détaillée', M, y); y += 2;
+
+    const body = consolide().map(l=>[l.ref, l.lib, String(l.qte), eur(l.pu), eur(l.total)]);
+    doc.autoTable({
+      startY: y+3, margin:{left:M, right:M},
+      head:[['Référence','Désignation','Qté','P.U. HT','Total HT']],
+      body,
+      styles:{fontSize:8, cellPadding:1.6},
+      headStyles:{fillColor:[61,71,83], textColor:255, fontSize:8},
+      columnStyles:{0:{cellWidth:32, font:'courier', fontSize:7.5},
+                    2:{halign:'right', cellWidth:14},
+                    3:{halign:'right', cellWidth:24},
+                    4:{halign:'right', cellWidth:24}},
+      alternateRowStyles:{fillColor:[245,248,250]}
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // ---- RÉCAP marchandise + transport + total
+    const marchandise = devis.reduce((s,d)=>s+d.total,0);
+    const dep = departement, t = calculTransport(marchandise, dep);
+    if(y > PH - 45){ doc.addPage(); y = M; }
+    const rx = PW - M, lx = PW - M - 80;
+    const ligne = (lib, val, bold=false)=>{
+      doc.setFont('helvetica', bold?'bold':'normal'); doc.setFontSize(bold?11:9.5);
+      doc.setTextColor(bold?30:90);
+      doc.text(lib, lx, y); doc.text(val, rx, y, {align:'right'}); y += bold?7:5.5;
+    };
+    doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
+    ligne('Marchandise HT', eur(marchandise));
+    if(!dep) ligne('Transport', 'département non renseigné');
+    else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
+    else {
+      ligne(`Transport dépt ${dep} (${t.txt})`, eur(t.val));
+      doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
+      ligne('TOTAL HT RENDU', eur(marchandise + t.val), true);
+    }
+
+    // ---- pied de page
+    const pages = doc.getNumberOfPages();
+    for(let p=1;p<=pages;p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150);
+      doc.text('RSL — Rayonnages Services Lorraine  ·  Heillecourt/Nancy', M, PH-8);
+      doc.text(`${p} / ${pages}`, PW-M, PH-8, {align:'right'});
+    }
+
+    doc.save(`devis-rayonnages-epsiline-${dateStr.replace(/\//g,'-')}.pdf`);
+  } catch(err){
+    console.error(err);
+    alert("La génération du PDF a échoué. Réessayez ; si le problème persiste, vérifiez la connexion (les librairies PDF se chargent en ligne).");
+  } finally {
+    btn.textContent = label; btn.disabled = false;
+  }
 };
 
 ['pf','ht','nv','qt'].forEach(id=>{
