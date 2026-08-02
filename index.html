@@ -8,24 +8,24 @@
   :root{
     --steel-900:#1c2430;--steel-700:#2e3a4a;--steel-500:#55677d;--steel-300:#9fb0c2;
     --steel-100:#e8edf2;--paper:#f5f7f9;--accent:#e63f1e;--accent-dark:#c23213;
-    --ok:#1c7c46;--ok-bg:#e7f4ec;--radius:10px;--mono:"Consolas","Menlo",monospace;
+    --ok:#1c7c46;--ok-bg:#e7f4ec;--radius:10px;--mono:"Consolas","Menlo",monospace;--work-w:1360px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--steel-900);padding:22px 16px 48px;}
-  .topnav{max-width:1360px;margin:0 auto 18px;display:flex;align-items:center;gap:16px;}
+  .topnav{max-width:var(--work-w);margin:0 auto 18px;display:flex;align-items:center;gap:16px;}
   .topnav .brand{display:inline-flex;align-items:center;line-height:0;text-decoration:none;}
   .topnav .brand-logo{height:48px;width:auto;display:block;mix-blend-mode:multiply;}
   .topnav .nav-btn{padding:11px 22px;border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:700;background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(230,63,30,.3);}
   .topnav .nav-btn:hover{background:var(--accent-dark);}
-  header{max-width:1360px;margin:0 auto 4px;}
+  header{max-width:var(--work-w);margin:0 auto 4px;}
   .eyebrow{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;}
   h1{font-size:clamp(22px,3.5vw,30px);font-weight:800;letter-spacing:-.5px;}
   h1 span{color:var(--steel-500);font-weight:400;}
-  .intro{max-width:1360px;margin:0 auto 18px;font-size:14px;color:var(--steel-500);line-height:1.5;}
+  .intro{max-width:var(--work-w);margin:0 auto 18px;font-size:14px;color:var(--steel-500);line-height:1.5;}
 
-  .app{max-width:1360px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start;}
-  @media (max-width:980px){.app{grid-template-columns:1fr;}}
-  .col-left{display:flex;flex-direction:column;gap:18px;min-width:0;}
+  .app{max-width:var(--work-w);margin:0 auto;display:block;}
+  .col-left{display:flex;flex-direction:column;gap:18px;min-width:0;width:100%;}
+  .col-left > .card{width:100%;}
   .block-h{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
   .block-h::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
   .panel-card{padding:18px;}
@@ -34,7 +34,88 @@
   .panel-card th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--steel-500);}
   .card{background:#fff;border:1px solid var(--steel-100);border-radius:var(--radius);box-shadow:0 1px 3px rgba(28,36,48,.06);}
 
+  /* écran d'accueil */
+  .welcome{position:fixed;inset:0;z-index:2000;background:linear-gradient(160deg,#f5f7f9,#e6ecf2);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .welcome.hidden{display:none;}
+  .welcome-box{background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(28,36,48,.22);padding:34px 30px;max-width:760px;width:100%;text-align:center;}
+  .welcome-box h2{font-size:clamp(19px,3vw,25px);font-weight:800;margin:6px 0 8px;letter-spacing:-.4px;}
+  .welcome-sub{font-size:14px;color:var(--steel-500);margin-bottom:24px;line-height:1.5;}
+  .welcome-choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:660px){.welcome-choices{grid-template-columns:1fr;}}
+  .choice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px 18px;border:2px solid var(--steel-100);background:#fff;border-radius:14px;cursor:pointer;text-align:center;transition:border-color .12s,transform .08s,box-shadow .12s;font-family:inherit;}
+  .choice:hover{border-color:var(--accent);box-shadow:0 8px 24px rgba(230,63,30,.14);transform:translateY(-2px);}
+  .choice-ico{font-size:30px;color:var(--accent);line-height:1;}
+  .choice-t{font-size:16px;font-weight:800;color:var(--steel-900);}
+  .choice-d{font-size:12.5px;color:var(--steel-500);line-height:1.5;}
+  /* bascule de mode */
+  .mode-bar{max-width:var(--work-w);margin:0 auto 18px;}
+  .mode-switch{display:inline-flex;gap:0;border:1.5px solid var(--steel-100);border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;}
+  .mode-switch button{padding:10px 18px;border:none;background:#fff;font-size:13.5px;font-weight:700;color:var(--steel-500);cursor:pointer;font-family:inherit;}
+  .mode-switch button.active{background:var(--accent);color:#fff;}
+  .mode-switch button:not(.active):hover{background:#f7f9fb;}
+  .intro{max-width:var(--work-w);font-size:14px;color:var(--steel-500);line-height:1.5;margin:0;}
+  .demande-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .btn-add-list{padding:11px 18px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .btn-add-list:hover{background:var(--accent-dark);}
+  /* mode liste : on masque le plan (le récapitulatif reste utile) */
+  /* mode liste : on masque le plan, mais on garde la MÊME largeur de colonne
+     qu'en mode plan pour que le configurateur (panneau droit sur ordi) ne recouvre rien */
+  body.mode-list #planCard{display:none;}
+  .shortcuts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:10px 16px 13px;border-top:1px solid var(--steel-100);font-size:12px;color:var(--steel-500);}
+  .shortcuts .sc-title{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--steel-300);}
+  .shortcuts kbd{display:inline-block;padding:2px 6px;border:1px solid var(--steel-100);border-bottom-width:2px;border-radius:4px;background:#fbfcfd;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--steel-700);}
+  @media (max-width:600px){ .shortcuts{display:none;} }
+  .flash-msg{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);background:var(--steel-900);color:#fff;padding:11px 20px;border-radius:9px;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:3000;}
+  .flash-msg.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .viz-zoom-hint{font-size:11.5px;color:var(--steel-300);text-align:center;margin-top:4px;}
+  /* popup détail gondole */
+  /* --- Configurateur : popup (mobile) / panneau latéral (ordi) --- */
+  .det-modal{display:none;position:fixed;inset:0;z-index:900;background:rgba(28,36,48,.55);align-items:center;justify-content:center;padding:24px;}
+  .det-modal.open{display:flex;}
+  .det-inner{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);width:min(460px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+  .det-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--steel-100);}
+  .det-head h2{font-size:15px;font-weight:700;color:var(--steel-900);display:flex;align-items:center;gap:8px;margin:0;}
+  .det-head h2::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
+  .det-head-btns{display:flex;gap:8px;}
+  .det-ok{width:38px;height:38px;border:1.5px solid var(--ok);background:var(--ok);color:#fff;border-radius:9px;font-size:19px;font-weight:800;cursor:pointer;line-height:1;}
+  .det-ok:hover{background:#155e34;border-color:#155e34;}
+  .det-close{width:38px;height:38px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;font-size:18px;font-weight:700;color:var(--steel-700);cursor:pointer;line-height:1;}
+  .det-close:hover{border-color:var(--accent);color:var(--accent);}
+  .det-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 18px;border-bottom:1px solid var(--steel-100);background:#fafcfd;}
+  .det-body{padding:18px;overflow-y:auto;}
+  /* MOBILE : popup plein écran */
+  @media (max-width:600px){
+    .det-modal{padding:0;}
+    .det-inner{width:100vw;height:100vh;max-height:100vh;border-radius:0;}
+  }
+  /* ORDI : panneau ancré à droite, superposé — la zone de travail ne bouge pas */
+  @media (min-width:981px){
+    /* la zone de travail est calée à gauche et laisse en permanence la place au configurateur */
+    :root{--work-w:min(1360px, calc(100vw - 440px));}
+    .topnav,header,.mode-bar,.app,.wide{margin-left:24px;margin-right:auto;}
+    .det-modal{background:transparent;pointer-events:none;justify-content:flex-end;align-items:flex-start;padding:0;}
+    .det-modal.open{display:flex;}
+    .det-inner{pointer-events:auto;width:390px;max-height:calc(100vh - 24px);margin:12px 12px 0 0;border-radius:12px;box-shadow:0 12px 40px rgba(28,36,48,.26);border:1px solid var(--steel-100);position:sticky;top:12px;}
+  }
+  .btn-3d{border-color:var(--accent)!important;color:var(--accent)!important;font-weight:700!important;display:inline-flex;align-items:center;gap:7px;}
+  .btn-add-plan{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;font-weight:700!important;}
+  .btn-add-plan:hover{background:var(--accent-dark)!important;}
+  .cube3d{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;font-size:9.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,#ff6a4d 0%,var(--accent) 45%,#a8280f 100%);box-shadow:inset -2px -2px 0 rgba(0,0,0,.18),inset 2px 2px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.2);letter-spacing:.3px;transform:perspective(40px) rotateX(8deg) rotateY(-12deg);}
+  .btn-3d:hover{background:var(--accent)!important;color:#fff!important;}
+  .btn-3d-full{width:100%;padding:12px;margin-bottom:4px;border:1.5px solid var(--accent);background:#fff;color:var(--accent);border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .btn-3d-full:hover{background:var(--accent);color:#fff;}
+  /* popup 3D */
+  .d3-modal{display:none;position:fixed;inset:0;z-index:1100;background:rgba(28,36,48,.82);align-items:center;justify-content:center;padding:24px;}
+  .d3-modal.open{display:flex;}
+  .d3-inner{position:relative;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.45);width:min(1100px,96vw);height:min(820px,92vh);display:flex;flex-direction:column;overflow:hidden;}
+  .d3-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--steel-100);}
+  .d3-head span{font-size:15px;font-weight:700;}
+  .d3-close{width:38px;height:38px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;font-size:18px;font-weight:700;color:var(--steel-700);cursor:pointer;line-height:1;}
+  .d3-close:hover{border-color:var(--accent);color:var(--accent);}
+  #d3Stage{flex:1;position:relative;background:linear-gradient(#fbfcfd,#e9eef3);cursor:grab;overflow:hidden;}
+  #d3Stage:active{cursor:grabbing;}
+  #d3Fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--steel-500);font-size:14px;line-height:1.6;}
+  .d3-hint{padding:10px 18px;font-size:12.5px;color:var(--steel-500);text-align:center;border-top:1px solid var(--steel-100);}
   /* popup zoom aperçu */
   .viz-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(28,36,48,.72);align-items:center;justify-content:center;padding:24px;}
   .viz-modal.open{display:flex;}
@@ -44,6 +125,23 @@
   .viz-modal-svg{display:block;width:100%;height:auto;max-height:80vh;}
   .viz-modal-cap{font-size:13.5px;color:var(--steel-500);text-align:center;margin-top:12px;line-height:1.5;}
   .viz-modal-cap b{color:var(--steel-900);}
+
+  /* boutons 3D */
+  .btn-3d{background:#eef2f6 !important;border-color:var(--steel-100) !important;color:var(--steel-700) !important;font-weight:700 !important;}
+  .btn-3d:hover{border-color:var(--accent) !important;color:var(--accent) !important;}
+  .btn-3d-full{width:100%;padding:11px;border:1.5px solid var(--accent);background:#fff;color:var(--accent);border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:2px;}
+  .btn-3d-full:hover{background:var(--accent);color:#fff;}
+  /* popup 3D */
+  .d3-modal{display:none;position:fixed;inset:0;z-index:1100;background:rgba(28,36,48,.8);align-items:center;justify-content:center;padding:20px;}
+  .d3-modal.open{display:flex;}
+  .d3-inner{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.45);width:min(1100px,96vw);height:min(760px,92vh);display:flex;flex-direction:column;overflow:hidden;}
+  .d3-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--steel-100);font-size:15px;font-weight:700;}
+  .d3-close{width:36px;height:36px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;font-size:17px;font-weight:700;color:var(--steel-700);cursor:pointer;line-height:1;}
+  .d3-close:hover{border-color:var(--accent);color:var(--accent);}
+  #d3Stage{flex:1 1 auto;position:relative;background:linear-gradient(#fbfcfd,#e9eef3);cursor:grab;}
+  #d3Stage:active{cursor:grabbing;}
+  #d3Fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--steel-500);font-size:14px;line-height:1.6;}
+  .d3-hint{padding:10px 18px;font-size:12.5px;color:var(--steel-500);border-top:1px solid var(--steel-100);text-align:center;}
 
   /* ---- Plan ---- */
   .toolbar{padding:12px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--steel-100);}
@@ -59,9 +157,7 @@
 
   /* ---- Colonne droite ---- */
   .side{display:flex;flex-direction:column;gap:16px;}
-  .top-actions{display:grid;grid-template-columns:1fr;gap:10px;}
-  .act-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:13px 12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 1px 3px rgba(28,36,48,.06);}
-  .act-btn:hover{background:var(--accent-dark);}
+
   .panel{padding:16px;}
   .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1.3px;color:var(--steel-500);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
   .panel h2::before{content:"";width:9px;height:9px;background:var(--accent);border-radius:2px;}
@@ -107,7 +203,6 @@
   .viz-cap{font-size:12px;color:var(--steel-500);text-align:center;line-height:1.5;margin-top:8px;}
   .viz-cap b{color:var(--steel-900);}
 
-  .sel-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
   .btn-dup,.btn-del-sel{width:100%;padding:10px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
   .btn-dup{color:var(--steel-700);} .btn-dup:hover{border-color:var(--steel-300);}
   .btn-del-sel{color:var(--accent);} .btn-del-sel:hover{border-color:var(--accent);}
@@ -118,7 +213,7 @@
   .swatch-hint{font-size:11.5px;color:var(--steel-300);margin-top:9px;line-height:1.4;}
 
   /* devis + nomenclature pleine largeur */
-  .wide{max-width:1360px;margin:16px auto 0;}
+  .wide{max-width:var(--work-w);margin:16px auto 0;}
   .wide.panel-card{padding:18px;}
   .wide h2{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
   .wide h2::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
@@ -152,6 +247,27 @@
 </head>
 <body>
 
+<!-- ÉCRAN D'ACCUEIL : choix du mode -->
+<div class="welcome" id="welcome">
+  <div class="welcome-box">
+    <div class="eyebrow">Rayonnages Services Lorraine</div>
+    <h2>Comment souhaitez-vous composer votre demande&nbsp;?</h2>
+    <p class="welcome-sub">Les deux méthodes donnent le même devis et la même nomenclature. Vous pourrez changer à tout moment.</p>
+    <div class="welcome-choices">
+      <button class="choice" id="chooseList">
+        <span class="choice-ico">☰</span>
+        <span class="choice-t">Je liste mes gondoles</span>
+        <span class="choice-d">Simple et rapide : vous ajoutez vos gondoles une par une et renseignez leurs caractéristiques. Sans plan.</span>
+      </button>
+      <button class="choice" id="choosePlan">
+        <span class="choice-ico">▦</span>
+        <span class="choice-t">Je dessine mon implantation</span>
+        <span class="choice-d">Vous placez vos gondoles sur un plan du magasin, à l'échelle, avec vue 3D.</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <nav class="topnav">
   <a class="brand" href="https://rsl.eu/" target="_blank" rel="noopener" aria-label="RSL — accueil">
     <img src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL" class="brand-logo">
@@ -163,17 +279,20 @@
   <div class="eyebrow">Rayonnages Services Lorraine</div>
   <h1>Configurateur &amp; plan d'implantation <span>· gondoles</span></h1>
 </header>
-<p class="intro">
-  Dessinez votre implantation à gauche, réglez le détail de chaque gondole à droite (options et tablettes intermédiaires),
-  puis récupérez le devis et la nomenclature complète en bas. Aucun prix ici — c'est une demande, pas une commande.
-</p>
+<div class="mode-bar">
+  <div class="mode-switch">
+    <button id="modeList" type="button">☰ Liste simple</button>
+    <button id="modePlan" type="button">▦ Plan d'implantation</button>
+  </div>
+  <p class="intro" id="introTxt"></p>
+</div>
 
 <div class="app">
 
   <!-- COLONNE GAUCHE : plan + devis + nomenclature -->
   <div class="col-left">
   <!-- PLAN -->
-  <div class="card">
+  <div class="card" id="planCard">
     <div class="toolbar">
       <div class="grp"><button id="btnRotate">⟳ Pivoter (R)</button></div>
       <div class="sep"></div>
@@ -182,15 +301,37 @@
       <div class="grp"><button id="btnClear">Tout effacer</button></div>
       <div class="sep"></div>
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
-      <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom · Suppr = retirer</span>
+      <div class="sep"></div>
+      <div class="grp"><button id="btnAdd" class="btn-add-plan">+ Ajouter une gondole</button></div>
+      <div class="sep"></div>
+      <div class="grp"><button id="btn3DPlan" class="btn-3d"><span class="cube3d">3D</span> Magasin</button></div>
+      <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom</span>
     </div>
-    <div class="plan-caption">Cliquez sur une gondole pour la sélectionner et la régler à droite</div>
+    <div class="plan-caption">Cliquez sur une gondole pour la sélectionner et la modifier</div>
     <svg id="plan" viewBox="0 0 1000 640" role="img" aria-label="Plan d'implantation"></svg>
+    <div class="shortcuts">
+      <span class="sc-title">Raccourcis clavier</span>
+      <span><kbd>R</kbd> pivoter</span>
+      <span><kbd>+</kbd> <kbd>−</kbd> longueur ±1 ml</span>
+      <span><kbd>*</kbd> dupliquer</span>
+      <span><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> copier-coller</span>
+      <span><kbd>Suppr</kbd> supprimer</span>
+    </div>
+  </div>
+
+  <!-- COLORIS GLOBAL -->
+  <div class="card panel-card">
+    <h2 class="block-h">Coloris de toutes les gondoles</h2>
+    <div class="swatches" id="planSwatches"></div>
+    <div class="swatch-hint">Applique le coloris à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la sur le plan.</div>
   </div>
 
   <!-- DEVIS -->
   <div class="card panel-card">
-    <h2 class="block-h">Ma demande</h2>
+    <div class="demande-head">
+      <h2 class="block-h" style="margin-bottom:0">Ma demande</h2>
+      <button id="btnAddList" class="btn-add-list">+ Ajouter une gondole</button>
+    </div>
     <div id="listZone">
       <div class="empty" id="listEmpty">Aucune gondole pour l'instant.</div>
       <table class="list" id="listTable" style="display:none">
@@ -221,20 +362,37 @@
         <thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th><th>Coloris</th></tr></thead>
         <tbody id="bomBody"></tbody>
       </table>
+      <button type="button" class="btn-copy" id="btnCopyBom" style="margin-top:14px">⊞ Copier la nomenclature pour Excel</button>
     </details>
   </div>
+
+  <!-- RÉCAPITULATIF (bas de page, sous la nomenclature) -->
+  <div class="card panel-card">
+    <h2 class="block-h">Récapitulatif du plan</h2>
+    <div class="totrow"><span class="k">Gondoles posées</span><span class="v" id="tGond">0</span></div>
+    <div class="totrow"><span class="k">Gondoles simple-face</span><span class="v" id="tSF">0 ml</span></div>
+    <div class="totrow"><span class="k">Gondoles double-face</span><span class="v" id="tDF">0 ml</span></div>
+    <div class="totrow"><span class="k">Métrage linéaire développé</span><span class="v" id="tDev">0 ml</span></div>
   </div>
+  </div>
+</div>
 
-  <!-- COLONNE DROITE : détail gondole -->
-  <div class="side">
-    <div class="top-actions">
-      <button class="act-btn" id="btnAdd">+ Ajouter une gondole</button>
+<!-- POPUP DÉTAIL GONDOLE -->
+<div class="det-modal" id="detModal">
+  <div class="det-inner">
+    <div class="det-head">
+      <h2 id="detTitle">Gondole</h2>
+      <div class="det-head-btns">
+        <button class="det-ok" id="detOk" aria-label="Valider" title="Valider">✓</button>
+        <button class="det-close" id="detClose" aria-label="Annuler" title="Annuler">✕</button>
+      </div>
     </div>
-
-    <div class="card panel">
-      <h2>Gondole sélectionnée</h2>
-      <div id="selEmpty" class="empty-sel">Cliquez sur une gondole du plan pour la configurer, ou ajoutez-en une.</div>
-      <div id="selForm" style="display:none">
+    <div class="det-actions">
+      <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
+      <button class="btn-del-sel" id="btnDelSel">✕ Supprimer</button>
+    </div>
+    <div class="det-body">
+      <div id="selForm">
         <div class="field"><label>Type</label><div class="seg" id="dFace"></div></div>
         <div class="field"><label>Longueur (× 1000 mm)</label>
           <div class="len-ctrl"><button id="lenM">−</button><input type="number" id="lenI" min="1" max="30" value="4"><button id="lenP">+</button><span class="u" id="lenU"></span></div>
@@ -259,25 +417,8 @@
           <div class="viz-zoom-hint">Cliquez sur l'aperçu pour l'agrandir</div>
         </details>
 
-        <div class="sel-actions">
-          <button class="btn-dup" id="btnDup">⧉ Dupliquer</button>
-          <button class="btn-del-sel" id="btnDelSel">✕ Supprimer</button>
-        </div>
+        <button class="btn-3d-full" id="btn3DGond"><span class="cube3d">3D</span> Voir cette gondole</button>
       </div>
-    </div>
-
-    <div class="card panel">
-      <h2>Coloris de toutes les gondoles</h2>
-      <div class="swatches" id="planSwatches"></div>
-      <div class="swatch-hint">Applique le coloris à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la ci-dessus.</div>
-    </div>
-
-    <div class="card panel">
-      <h2>Récapitulatif du plan</h2>
-      <div class="totrow"><span class="k">Gondoles posées</span><span class="v" id="tGond">0</span></div>
-      <div class="totrow"><span class="k">Gondoles simple-face</span><span class="v" id="tSF">0 ml</span></div>
-      <div class="totrow"><span class="k">Gondoles double-face</span><span class="v" id="tDF">0 ml</span></div>
-      <div class="totrow"><span class="k">Métrage linéaire développé</span><span class="v" id="tDev">0 ml</span></div>
     </div>
   </div>
 </div>
@@ -291,6 +432,35 @@
   </div>
 </div>
 
+<!-- POPUP 3D -->
+<div class="d3-modal" id="d3Modal">
+  <div class="d3-inner">
+    <div class="d3-head">
+      <span id="d3Title">Vue 3D</span>
+      <button class="d3-close" id="d3Close" aria-label="Fermer">✕</button>
+    </div>
+    <div id="d3Stage"><div id="d3Fallback">Chargement du moteur 3D…</div></div>
+    <div class="d3-hint">Glissez pour tourner à 360° · molette pour zoomer · double-clic pour recentrer</div>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- POPUP 3D -->
+<div class="d3-modal" id="d3Modal">
+  <div class="d3-inner">
+    <div class="d3-head">
+      <span id="d3Title">Vue 3D</span>
+      <button class="d3-close" id="d3Close" aria-label="Fermer">✕</button>
+    </div>
+    <div id="d3Stage">
+      <div id="d3Fallback">Chargement du moteur 3D…<br>Si rien ne s'affiche, vérifiez votre connexion internet.</div>
+    </div>
+    <div class="d3-hint">Glissez pour tourner · molette pour zoomer · double-clic pour recentrer</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ===== Données =====
 const DEST_EMAIL = "s.degardin@rsl.eu";
@@ -319,6 +489,10 @@ const faceLabel=face=>face==="SF"?"simple-face":"double-face";
 const fondsLabel=f=>f==="FL"?"lisses":"perforés";
 const plinthesParGondole=(face,len)=>(face==="SF"?1:2)*len;
 const chapiteauPossible=(face,h)=>face==="DF"&&h<=1700;
+// Épaisseur (section) du montant selon la hauteur : 60 mm jusqu'à H.2100, 80 mm au-delà
+const montantEp=h=>(h>=2400?80:60);
+// Profondeur hors-tout au sol : SF = profondeur ; DF = 2 profondeurs + l'épaisseur du montant central
+const profHorsTout=g=>(g.face==="DF" ? (2*g.p+montantEp(g.h)) : g.p);
 
 // ===== Helpers désignation =====
 function tabResume(profs){
@@ -595,7 +769,7 @@ function draw(g) {
 // ===================== État =====================
 let gondoles=[]; let nextId=1; let selId=null;
 function sel(){ return gondoles.find(g=>g.id===selId); }
-function newGondole(x,y){ return {id:nextId++,x,y,rot:0,face:"SF",h:2100,p:470,f:"FL",len:4,plinthes:false,chapiteau:false,color:planColor||"blanc",tabProfs:[]}; }
+function newGondole(x,y){ return {id:nextId++,x,y,rot:0,face:"SF",h:2100,p:470,f:"FL",len:1,plinthes:false,chapiteau:false,color:planColor||"blanc",tabProfs:[]}; }
 const chapOn=g=>g&&g.chapiteau&&chapiteauPossible(g.face,g.h);
 
 // ===================== Vue SVG plan =====================
@@ -606,7 +780,7 @@ const W=1000,Hn=640;
 let view={ox:60,oy:60,ppm:52};
 function worldToPx(mx,my){return[view.ox+mx*view.ppm,view.oy+my*view.ppm];}
 function pxToWorld(px,py){return[(px-view.ox)/view.ppm,(py-view.oy)/view.ppm];}
-function footprint(g){const L=g.len,D=(g.face==="DF"?2:1)*g.p/1000;return(g.rot%180===0)?{w:L,h:D}:{w:D,h:L};}
+function footprint(g){const L=g.len,D=profHorsTout(g)/1000;return(g.rot%180===0)?{w:L,h:D}:{w:D,h:L};}
 
 function drawGrid(){
   const g=E("g",{});
@@ -628,7 +802,7 @@ function drawGondole(g){
   const col=COLORIS[g.color]||COLORIS.blanc;
   const grp=E("g",{class:"gondole","data-id":g.id,style:"cursor:move"});
   grp.appendChild(E("rect",{x,y,width:w,height:h,fill:isSel?"#fde8e2":col.planFill,stroke:isSel?"#e63f1e":col.planEdge,"stroke-width":isSel?2.5:1.5,rx:2}));
-  const fondEp=Math.max(3,.06*view.ppm),fondCol=isSel?"#e63f1e":col.planBand,horiz=g.rot%180===0;
+  const fondEp=Math.max(3,(montantEp(g.h)/1000)*view.ppm),fondCol=isSel?"#e63f1e":col.planBand,horiz=g.rot%180===0;
   function band(isV,l0,l1,c){const off=fondEp/2;
     if(isV){grp.appendChild(E("line",{x1:c-off,y1:l0,x2:c-off,y2:l1,stroke:fondCol,"stroke-width":1.6}));grp.appendChild(E("line",{x1:c+off,y1:l0,x2:c+off,y2:l1,stroke:fondCol,"stroke-width":1.6}));}
     else{grp.appendChild(E("line",{x1:l0,y1:c-off,x2:l1,y2:c-off,stroke:fondCol,"stroke-width":1.6}));grp.appendChild(E("line",{x1:l0,y1:c+off,x2:l1,y2:c+off,stroke:fondCol,"stroke-width":1.6}));}}
@@ -641,7 +815,8 @@ function drawGondole(g){
   let tx=cx,ty=cy;
   if(isDF){ if(horiz) ty=y+h*0.27; else tx=x+w*0.27; }
   grp.appendChild(E("text",{x:tx,y:ty-2,"text-anchor":"middle","font-size":13,"font-weight":800,fill:"#1c2430","pointer-events":"none"},rp));
-  grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},`H.${g.h} · P.${g.p}`));
+  const lbl = isDF ? `H.${g.h} · P.2x${g.p}` : `H.${g.h} · P.${g.p}`;
+  grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},lbl));
   return grp;
 }
 function renderPlan(){
@@ -664,7 +839,7 @@ svg.addEventListener("contextmenu",e=>e.preventDefault());
 svg.addEventListener("pointerdown",e=>{
   const[sx,sy]=svgPoint(e);const el=e.target.closest(".gondole");const right=e.button===2;
   if(right||(!el&&e.button===0)){ pan={px:sx,py:sy,ox:view.ox,oy:view.oy}; if(!el){selId=null;} svg.setPointerCapture(e.pointerId); svg.style.cursor="grabbing"; renderAll(); return; }
-  if(el){ const id=Number(el.dataset.id);selId=id;const g=gondoles.find(x=>x.id===id);const[wx,wy]=pxToWorld(sx,sy);drag={id,dx:wx-g.x,dy:wy-g.y};svg.setPointerCapture(e.pointerId);renderAll(); }
+  if(el){ const id=Number(el.dataset.id);selId=id;const g=gondoles.find(x=>x.id===id);const[wx,wy]=pxToWorld(sx,sy);drag={id,dx:wx-g.x,dy:wy-g.y,moved:false};svg.setPointerCapture(e.pointerId);renderAll(); }
 });
 svg.addEventListener("pointermove",e=>{
   if(pan){const[sx,sy]=svgPoint(e);view.ox=pan.ox+(sx-pan.px);view.oy=pan.oy+(sy-pan.py);renderPlan();return;}
@@ -673,21 +848,88 @@ svg.addEventListener("pointermove",e=>{
   let nx=Math.round((wx-drag.dx)*4)/4,ny=Math.round((wy-drag.dy)*4)/4;
   snapGuides=[];
   if(snapEnabled){const r=snapToGondoles(g,nx,ny);nx=r.x;ny=r.y;snapGuides=r.guides;}
+  if(nx!==g.x||ny!==g.y)drag.moved=true;
   g.x=nx;g.y=ny;renderPlan();
 });
-svg.addEventListener("pointerup",e=>{drag=null;pan=null;snapGuides=[];svg.style.cursor="crosshair";renderAll();try{svg.releasePointerCapture(e.pointerId);}catch(_){}});
+svg.addEventListener("pointerup",e=>{
+  const wasClick = drag && !drag.moved;
+  drag=null;pan=null;snapGuides=[];svg.style.cursor="crosshair";renderAll();
+  try{svg.releasePointerCapture(e.pointerId);}catch(_){}
+  if(wasClick) openDetModal();   // clic simple sur une gondole (sans déplacement) => ouvre le détail
+});
 svg.addEventListener("wheel",e=>{e.preventDefault();const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const f=e.deltaY<0?1.1:.9;view.ppm=Math.max(18,Math.min(120,view.ppm*f));view.ox=sx-wx*view.ppm;view.oy=sy-wy*view.ppm;renderPlan();},{passive:false});
-window.addEventListener("keydown",e=>{ if(e.target.tagName==="INPUT")return;
+// ---- Copier / Coller une gondole (Ctrl+C / Ctrl+V) ----
+let clipGondole=null;          // copie interne
+let lastMouseWorld=null;       // dernière position souris sur le plan (en mètres)
+svg.addEventListener("pointermove",e=>{ const[sx,sy]=svgPoint(e); lastMouseWorld=pxToWorld(sx,sy); });
+svg.addEventListener("pointerleave",()=>{ lastMouseWorld=null; });
+
+function copySel(){
+  const g=sel(); if(!g) return false;
+  clipGondole={...g, tabProfs:(g.tabProfs||[]).slice()};
+  flashMsg("Gondole "+repereOf(g)+" copiée");
+  return true;
+}
+function pasteGondole(){
+  if(!clipGondole) return false;
+  const c={...clipGondole, id:nextId++, tabProfs:(clipGondole.tabProfs||[]).slice()};
+  if(lastMouseWorld){                       // coller sous la souris si elle est sur le plan
+    const fp=footprint(c);
+    c.x=Math.round((lastMouseWorld[0]-fp.w/2)*4)/4;
+    c.y=Math.round((lastMouseWorld[1]-fp.h/2)*4)/4;
+  } else {                                   // sinon, décalage par rapport à l'original
+    c.x=clipGondole.x+0.5; c.y=clipGondole.y+0.5;
+  }
+  gondoles.push(c); selId=c.id; renderAll();
+  flashMsg("Gondole "+repereOf(c)+" collée");
+  return true;
+}
+// petit message éphémère
+function flashMsg(txt){
+  let el=document.getElementById("flashMsg");
+  if(!el){ el=document.createElement("div"); el.id="flashMsg"; el.className="flash-msg"; document.body.appendChild(el); }
+  el.textContent=txt; el.classList.add("show");
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),1400);
+}
+
+window.addEventListener("keydown",e=>{
+  const tag=e.target.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA")return;
+  // sur ordi le configurateur est un panneau latéral : le plan reste utilisable au clavier
+  const sidePanel=window.innerWidth>=981;
+  const modalOpen=(document.getElementById("detModal").classList.contains("open")&&!sidePanel)||document.getElementById("d3Modal").classList.contains("open");
+  // Ctrl+C / Ctrl+V (ou Cmd sur Mac)
+  if((e.ctrlKey||e.metaKey)&&(e.key==="c"||e.key==="C")){ if(copySel())e.preventDefault(); return; }
+  if((e.ctrlKey||e.metaKey)&&(e.key==="v"||e.key==="V")){ if(pasteGondole())e.preventDefault(); return; }
+  if(modalOpen)return;   // les raccourcis ci-dessous n'agissent que sur le plan
   if((e.key==="Delete"||e.key==="Backspace")&&selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}
   if(e.key==="r"||e.key==="R")rotateSel();
+  // * : dupliquer la gondole sélectionnée
+  if(e.key==="*"||e.code==="NumpadMultiply"){ const g=sel(); if(g){ const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:(g.tabProfs||[]).slice()}; gondoles.push(c); selId=c.id; renderAll(); flashMsg("Gondole "+repereOf(c)+" dupliquée"); e.preventDefault(); } }
+  // + / − : allonger ou raccourcir la gondole sélectionnée d'une travée (1 ml)
+  if(e.key==="+"||e.key==="="||e.code==="NumpadAdd"){ const g=sel(); if(g){ g.len=Math.min(30,g.len+1); renderAll(); flashMsg("Gondole "+repereOf(g)+" : "+g.len+" ml"); e.preventDefault(); } }
+  if(e.key==="-"||e.key==="_"||e.code==="NumpadSubtract"){ const g=sel(); if(g){ g.len=Math.max(1,g.len-1); renderAll(); flashMsg("Gondole "+repereOf(g)+" : "+g.len+" ml"); e.preventDefault(); } }
 });
 function snapToGondoles(g,nx,ny){
   const fp=footprint(g);const meL=nx,meR=nx+fp.w,meT=ny,meB=ny+fp.h;
   const others=gondoles.filter(o=>o.id!==g.id);let bX=null,bY=null;
-  const cons=(ax,cand,dist)=>{if(dist>SNAP_M)return;if(ax==="x"){if(!bX||dist<bX.dist)bX={val:cand,dist,at:cand};}else{if(!bY||dist<bY.dist)bY={val:cand,dist,at:cand};}};
+  const cons=(ax,cand,dist,prio)=>{
+    if(dist>SNAP_M)return;
+    // "prio" (centrage) l'emporte sur un simple alignement de bord, à distance comparable
+    const w = prio ? dist*0.45 : dist;   // le centrage compte comme s'il était plus proche
+    if(ax==="x"){ if(!bX||w<bX.w) bX={val:cand,dist,w,at:cand}; }
+    else { if(!bY||w<bY.w) bY={val:cand,dist,w,at:cand}; }
+  };
   others.forEach(o=>{const ofp=footprint(o);const oL=o.x,oR=o.x+ofp.w,oT=o.y,oB=o.y+ofp.h;
+    const oCx=o.x+ofp.w/2, oCy=o.y+ofp.h/2;           // centres de l'autre gondole
+    const meCx=nx+fp.w/2,  meCy=ny+fp.h/2;            // mes centres
+    // bord contre bord + alignement des bords
     cons("x",oR,Math.abs(meL-oR));cons("x",oL-fp.w,Math.abs(meR-oL));cons("x",oL,Math.abs(meL-oL));cons("x",oR-fp.w,Math.abs(meR-oR));
-    cons("y",oB,Math.abs(meT-oB));cons("y",oT-fp.h,Math.abs(meB-oT));cons("y",oT,Math.abs(meT-oT));cons("y",oB-fp.h,Math.abs(meB-oB));});
+    cons("y",oB,Math.abs(meT-oB));cons("y",oT-fp.h,Math.abs(meB-oT));cons("y",oT,Math.abs(meT-oT));cons("y",oB-fp.h,Math.abs(meB-oB));
+    // centrage prioritaire : mon axe médian sur son axe médian (têtes de gondole centrées sur une DF)
+    cons("x",oCx-fp.w/2,Math.abs(meCx-oCx),true);
+    cons("y",oCy-fp.h/2,Math.abs(meCy-oCy),true);
+  });
   const guides=[];
   if(bX){nx=bX.val;const gx=bX.at;guides.push({x1:gx,y1:Math.min(ny,...others.map(o=>o.y))-.5,x2:gx,y2:Math.max(ny+fp.h,...others.map(o=>o.y+footprint(o).h))+.5});}
   if(bY){ny=bY.val;const gy=bY.at;guides.push({x1:Math.min(nx,...others.map(o=>o.x))-.5,y1:gy,x2:Math.max(nx+fp.w,...others.map(o=>o.x+footprint(o).w))+.5,y2:gy});}
@@ -695,7 +937,7 @@ function snapToGondoles(g,nx,ny){
 }
 
 // ===================== Barre d'outils =====================
-document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();});
+document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
 function rotateSel(){const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
 document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
@@ -716,7 +958,7 @@ function fitView(){
 function buildSeg(id,items,getV,setV){
   const el=document.getElementById(id);el.innerHTML="";
   items.forEach(it=>{const b=document.createElement("button");b.type="button";b.textContent=it.label??it;b.dataset.v=it.code??it;
-    b.addEventListener("click",()=>{const g=sel();if(!g)return;setV(g,b.dataset.v);renderAll();});el.appendChild(b);});
+    b.addEventListener("click",()=>{b.blur();const g=sel();if(!g)return;setV(g,b.dataset.v);renderAll();});el.appendChild(b);});
 }
 buildSeg("dFace",FACES,()=>sel()?.face,(g,v)=>g.face=v);
 buildSeg("dH",HAUTEURS,()=>sel()?.h,(g,v)=>g.h=Number(v));
@@ -725,16 +967,16 @@ buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>g.f=v);
 // coloris gondole
 (function(){const box=document.getElementById("dSwatches");Object.entries(COLORIS).forEach(([k,c])=>{const d=document.createElement("div");d.className="swatch";d.dataset.k=k;d.style.background=c.swatch;d.style.color=(k==="anthracite")?"#fff":"#1c2430";d.title=c.label+" — "+c.ral;d.textContent=c.ral;d.addEventListener("click",()=>{const g=sel();if(g){g.color=k;detectPlanColor();renderAll();}});box.appendChild(d);});})();
 // longueur
-document.getElementById("lenM").addEventListener("click",()=>{const g=sel();if(g){g.len=Math.max(1,g.len-1);renderAll();}});
-document.getElementById("lenP").addEventListener("click",()=>{const g=sel();if(g){g.len=Math.min(30,g.len+1);renderAll();}});
+document.getElementById("lenM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.max(1,g.len-1);renderAll();}});
+document.getElementById("lenP").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.min(30,g.len+1);renderAll();}});
 document.getElementById("lenI").addEventListener("input",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10);g.len=(isNaN(v)||v<1)?1:Math.min(30,v);renderAll();}});
 // plinthes / chapiteaux
 document.getElementById("dPlinthe").addEventListener("change",e=>{const g=sel();if(g){g.plinthes=e.target.checked;renderAll();}});
 document.getElementById("dChap").addEventListener("change",e=>{const g=sel();if(g){g.chapiteau=e.target.checked;renderAll();}});
 // tablettes niveaux
 function setNbNiveaux(n){const g=sel();if(!g)return;n=Math.max(0,Math.min(8,n));const cur=g.tabProfs.length;if(n>cur){for(let i=cur;i<n;i++)g.tabProfs.push(g.p);}else if(n<cur){g.tabProfs.length=n;}renderAll();}
-document.getElementById("tabM").addEventListener("click",()=>{const g=sel();if(g)setNbNiveaux(g.tabProfs.length-1);});
-document.getElementById("tabP2").addEventListener("click",()=>{const g=sel();if(g)setNbNiveaux(g.tabProfs.length+1);});
+document.getElementById("tabM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setNbNiveaux(g.tabProfs.length-1);});
+document.getElementById("tabP2").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setNbNiveaux(g.tabProfs.length+1);});
 document.getElementById("tabI").addEventListener("input",e=>{const v=parseInt(e.target.value,10);setNbNiveaux(isNaN(v)?0:v);});
 function buildTabLevels(){
   const g=sel();const box=document.getElementById("tabLevels");box.innerHTML="";if(!g)return;
@@ -746,8 +988,8 @@ function buildTabLevels(){
     row.appendChild(seg);box.appendChild(row);
   });
 }
-document.getElementById("btnDup").addEventListener("click",()=>{const g=sel();if(!g)return;const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:g.tabProfs.slice()};gondoles.push(c);selId=c.id;renderAll();});
-document.getElementById("btnDelSel").addEventListener("click",()=>{if(selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}});
+document.getElementById("btnDup").addEventListener("click",()=>{const g=sel();if(!g)return;const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:g.tabProfs.slice()};gondoles.push(c);selId=c.id;renderAll();detIsNew=true;detSnapshot={...c,tabProfs:c.tabProfs.slice()};});
+document.getElementById("btnDelSel").addEventListener("click",()=>{if(selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;closeDetModal();detectPlanColor();renderAll();}});
 
 // ---- Popup zoom de l'aperçu ----
 const vizModal=document.getElementById("vizModal");
@@ -768,9 +1010,8 @@ window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&vizModal.classList.c
 
 function renderDetail(){
   const g=sel();
-  document.getElementById("selEmpty").style.display=g?"none":"";
-  document.getElementById("selForm").style.display=g?"":"none";
-  if(!g)return;
+  if(!g){ closeDetModal(); return; }
+  document.getElementById("detTitle").textContent="Gondole "+repereOf(g);
   const mark=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
   mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);mark("dF",g.f);
   document.querySelectorAll("#dSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===(g.color||"blanc")));
@@ -786,6 +1027,48 @@ function renderDetail(){
   buildTabLevels();
   draw(g);
 }
+// ---- Modale détail ----
+const detModal=document.getElementById("detModal");
+let detSnapshot=null;      // état de la gondole à l'ouverture (pour annuler)
+let detIsNew=false;        // vrai si la gondole vient d'être créée (annuler = supprimer)
+
+function openDetModal(isNew){
+  const g=sel(); if(!g) return;
+  detIsNew=!!isNew;
+  detSnapshot={...g, tabProfs:(g.tabProfs||[]).slice()};   // copie de sauvegarde
+  detModal.classList.add("open");
+  document.body.classList.add("det-open");
+}
+function closeDetModal(){ detModal.classList.remove("open"); document.body.classList.remove("det-open"); detSnapshot=null; detIsNew=false; }
+
+// ✓ Valider : on garde les modifications
+function validateDet(){ closeDetModal(); renderAll(); }
+
+// ✕ Annuler : on restaure l'état d'origine (ou on supprime si c'était une création)
+function cancelDet(){
+  if(detIsNew){
+    gondoles=gondoles.filter(x=>x.id!==selId);
+    selId=null;
+  } else if(detSnapshot){
+    const i=gondoles.findIndex(x=>x.id===detSnapshot.id);
+    if(i>=0) gondoles[i]={...detSnapshot, tabProfs:(detSnapshot.tabProfs||[]).slice()};
+  }
+  closeDetModal();
+  detectPlanColor();
+  renderAll();
+}
+document.getElementById("detOk").addEventListener("click",validateDet);
+document.getElementById("detClose").addEventListener("click",cancelDet);
+detModal.addEventListener("click",e=>{ if(e.target===detModal && window.innerWidth<981) cancelDet(); });
+window.addEventListener("keydown",e=>{
+  if(!detModal.classList.contains("open"))return;
+  if(e.key==="Escape"){ cancelDet(); }
+  else if(e.key==="Enter"&&e.target.tagName!=="TEXTAREA"){
+    e.preventDefault();          // évite que Entrée "reclique" le dernier bouton utilisé (+/−)
+    if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+    validateDet();
+  }
+});
 
 // ===================== Récapitulatif =====================
 function renderTotals(){
@@ -821,7 +1104,7 @@ function renderList(){
     tr.innerHTML=`<td class="qty">${repere(idx)}</td><td>${designationText(g)}</td><td><button type="button" class="btn-del-row" data-id="${g.id}" style="width:26px;height:26px;border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;color:var(--steel-500);cursor:pointer">✕</button></td>`;
     body.appendChild(tr);
   });
-  body.querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",e=>{if(e.target.closest(".btn-del-row"))return;selId=Number(tr.dataset.id);renderAll();svg.scrollIntoView({behavior:"smooth",block:"nearest"});}));
+  body.querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",e=>{if(e.target.closest(".btn-del-row"))return;selId=Number(tr.dataset.id);renderAll();openDetModal();}));
   body.querySelectorAll(".btn-del-row").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();const id=Number(b.dataset.id);gondoles=gondoles.filter(g=>g.id!==id);if(selId===id)selId=null;renderAll();}));
 }
 
@@ -847,12 +1130,10 @@ function buildRequestText(){
 }
 function buildBomTable(){
   const bom=buildBom();if(bom.length===0)return"  (aucune)";
-  const rows=bom.map(i=>[i.code,i.des,String(i.qty),i.ral]);const head=["Réf.","Désignation","Qté","Coloris"];const all=[head,...rows];
-  const wR=Math.max(...all.map(r=>r[0].length)),wD=Math.max(...all.map(r=>r[1].length)),wQ=Math.max(...all.map(r=>r[2].length));
-  const pad=(s,w)=>s+" ".repeat(w-s.length),padL=(s,w)=>" ".repeat(w-s.length)+s;
-  const line=r=>`${pad(r[0],wR)}  ${pad(r[1],wD)}  ${padL(r[2],wQ)}  ${r[3]}`;
-  const sep=`${"-".repeat(wR)}  ${"-".repeat(wD)}  ${"-".repeat(wQ)}  -------`;
-  return[line(head),sep,...rows.map(line)].join("\n");
+  // colonnes séparées par des TABULATIONS : se colle directement en cellules dans Excel
+  const head=["Réf.","Désignation","Qté","Coloris"].join("\t");
+  const rows=bom.map(i=>[i.code,i.des,i.qty,i.ral].join("\t"));
+  return [head,...rows].join("\n");
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function buildRequestHTML(){
@@ -879,12 +1160,37 @@ document.getElementById("btnCopy").addEventListener("click",()=>{
   if(navigator.clipboard&&window.ClipboardItem){try{const item=new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})});navigator.clipboard.write([item]).then(done).catch(()=>navigator.clipboard.writeText(text).then(done).catch(fb));}catch(e){navigator.clipboard.writeText(text).then(done).catch(fb);}}
   else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(fb);}else fb();
 });
+// ---- Copie de la nomenclature seule (pour Excel) ----
+function buildBomHTMLOnly(){
+  const bom=buildBom();
+  let h=`<table border="1" cellpadding="4" style="border-collapse:collapse"><thead><tr>`;
+  ["Réf.","Désignation","Qté","Coloris"].forEach(t=>h+=`<th>${t}</th>`);
+  h+=`</tr></thead><tbody>`;
+  bom.forEach(i=>{ h+=`<tr><td>${esc(i.code)}</td><td>${esc(i.des)}</td><td>${i.qty}</td><td>${esc(i.ral)}</td></tr>`; });
+  h+=`</tbody></table>`;
+  return h;
+}
+document.getElementById("btnCopyBom").addEventListener("click",()=>{
+  if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
+  const text=buildBomTable();          // colonnes tabulées
+  const html=buildBomHTMLOnly();       // vrai tableau
+  const btn=document.getElementById("btnCopyBom");
+  const done=()=>{btn.textContent="✓ Nomenclature copiée !";btn.classList.add("done");setTimeout(()=>{btn.textContent="⊞ Copier la nomenclature pour Excel";btn.classList.remove("done");},1900);};
+  const fb=()=>{if(execCopyText(text))done();};
+  if(navigator.clipboard&&window.ClipboardItem){
+    try{const item=new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})});
+      navigator.clipboard.write([item]).then(done).catch(()=>navigator.clipboard.writeText(text).then(done).catch(fb));}
+    catch(e){navigator.clipboard.writeText(text).then(done).catch(fb);}
+  } else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(fb);} else fb();
+});
+
 document.getElementById("btnEmail").addEventListener("click",e=>{
   e.preventDefault();
   if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
   const soc=val("cSociete");const subject="Demande de devis gondoles"+(soc?" — "+soc:"");
   window.location.href=`mailto:${DEST_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildRequestText())}`;
 });
+
 
 // ===================== Démarrage =====================
 gondoles.push({...newGondole(1,1),face:"DF",len:5,h:2100,p:470});
@@ -893,6 +1199,204 @@ selId=null;
 detectPlanColor();
 fitView();
 renderAll();
+
+// ===================== Modes : Liste simple / Plan =====================
+const INTRO={
+  list:"Ajoutez vos gondoles une par une et renseignez leurs caractéristiques. Récupérez ensuite le devis et la nomenclature complète en bas. Aucun prix ici — c'est une demande, pas une commande.",
+  plan:"Dessinez votre implantation sur le plan, réglez le détail de chaque gondole en cliquant dessus, puis récupérez le devis et la nomenclature en bas. Aucun prix ici — c'est une demande, pas une commande."
+};
+function setMode(m){
+  document.body.classList.toggle("mode-list", m==="list");
+  document.getElementById("modeList").classList.toggle("active", m==="list");
+  document.getElementById("modePlan").classList.toggle("active", m!=="list");
+  document.getElementById("introTxt").textContent = m==="list"?INTRO.list:INTRO.plan;
+  if(m!=="list"){ requestAnimationFrame(()=>{ fitView(); }); }
+}
+document.getElementById("modeList").addEventListener("click",()=>setMode("list"));
+document.getElementById("modePlan").addEventListener("click",()=>setMode("plan"));
+
+// bouton Ajouter du bloc "Ma demande" (utile surtout en mode liste)
+document.getElementById("btnAddList").addEventListener("click",()=>{
+  const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);
+  const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
+  gondoles.push(g); selId=g.id; renderAll(); openDetModal(true);
+});
+
+// écran d'accueil
+const welcome=document.getElementById("welcome");
+function startWith(m){
+  if(m==="list"){ gondoles=[]; selId=null; nextId=1; renderAll(); }  // départ vierge pour le mode liste
+  setMode(m);
+  welcome.classList.add("hidden");
+}
+document.getElementById("chooseList").addEventListener("click",()=>startWith("list"));
+document.getElementById("choosePlan").addEventListener("click",()=>startWith("plan"));
+setMode("plan");   // état par défaut derrière l'écran d'accueil
+
+// ===================== Module 3D (Three.js) =====================
+(function(){
+  const modal=document.getElementById("d3Modal");
+  const stageEl=document.getElementById("d3Stage");
+  const fb=document.getElementById("d3Fallback");
+  let renderer,scene,camera,group,rafId,orbit,inited=false,bound=false;
+
+  const RAL3D={ blanc:{panel:0xf2e9d5,metal:0xd9cdb2}, gris:{panel:0xd7dce1,metal:0xb7bdc4}, anthracite:{panel:0x4a4f56,metal:0x565b61} };
+
+  function ensureInit(){
+    if(inited) return true;
+    if(typeof THREE==="undefined"){ fb.style.display="flex"; fb.innerHTML="Impossible de charger le moteur 3D.<br>Vérifiez votre connexion — en ligne, le rendu s'affiche normalement."; return false; }
+    try{
+      scene=new THREE.Scene(); scene.background=new THREE.Color(0xf3f6f9);
+      camera=new THREE.PerspectiveCamera(45,1,0.1,200);
+      renderer=new THREE.WebGLRenderer({antialias:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      renderer.shadowMap.enabled=true;
+      stageEl.appendChild(renderer.domElement);
+      scene.add(new THREE.HemisphereLight(0xffffff,0x9099a5,0.9));
+      const dir=new THREE.DirectionalLight(0xffffff,0.7); dir.position.set(6,10,7); dir.castShadow=true;
+      dir.shadow.mapSize.set(2048,2048); const s=20; dir.shadow.camera.left=-s;dir.shadow.camera.right=s;dir.shadow.camera.top=s;dir.shadow.camera.bottom=-s;
+      scene.add(dir);
+      const floor=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshStandardMaterial({color:0xe7ecf1,roughness:1}));
+      floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+      scene.add(new THREE.GridHelper(120,120,0xcdd6df,0xe6ebef));
+      orbit={target:new THREE.Vector3(0,1,0),radius:8,theta:Math.PI*0.25,phi:Math.PI*0.38,min:1.5,max:80};
+      bindControls();
+      inited=true; return true;
+    }catch(e){ fb.style.display="flex"; fb.innerHTML="Erreur 3D : "+(e&&e.message?e.message:e); return false; }
+  }
+  function applyCam(){
+    const r=orbit.radius,t=orbit.theta; let p=Math.max(0.12,Math.min(Math.PI-0.12,orbit.phi)); orbit.phi=p;
+    camera.position.set(orbit.target.x+r*Math.sin(p)*Math.sin(t), orbit.target.y+r*Math.cos(p), orbit.target.z+r*Math.sin(p)*Math.cos(t));
+    camera.lookAt(orbit.target);
+  }
+  function bindControls(){
+    if(bound) return; bound=true;
+    const el=renderer.domElement; let drag=false,lx=0,ly=0;
+    el.addEventListener("pointerdown",e=>{drag=true;lx=e.clientX;ly=e.clientY;el.setPointerCapture(e.pointerId);});
+    el.addEventListener("pointermove",e=>{if(!drag)return;orbit.theta-=(e.clientX-lx)*0.008;orbit.phi-=(e.clientY-ly)*0.008;lx=e.clientX;ly=e.clientY;applyCam();});
+    el.addEventListener("pointerup",e=>{drag=false;try{el.releasePointerCapture(e.pointerId);}catch(_){}});
+    el.addEventListener("wheel",e=>{e.preventDefault();orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*(e.deltaY<0?0.9:1.1)));applyCam();},{passive:false});
+    el.addEventListener("dblclick",()=>frameScene());
+  }
+  function mat(hex,r){ return new THREE.MeshStandardMaterial({color:hex,roughness:r==null?0.75:r,metalness:0.05}); }
+  function boxAt(w,h,d,x,y,z,material){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material); m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true; group.add(m); }
+
+  // construit UNE gondole dans le groupe, centrée à (cx,cz) au sol, orientée par rot (0/90/180/270)
+  function buildGondole(g,cx,cz){
+    const C=RAL3D[g.color]||RAL3D.blanc;
+    const panelMat=mat(C.panel,0.85), metalMat=mat(C.metal,0.5);
+    const L=g.len, Ht=g.h/1000, D=g.p/1000, isDF=g.face==="DF";
+    const mEp=montantEp(g.h)/1000;          // épaisseur réelle du montant (0.06 ou 0.08)
+    const Dtot=profHorsTout(g)/1000;        // profondeur hors-tout au sol
+    const pietH=0.1, th=0.025, fondEp=0.018;
+    const items=[];
+    const addBox=(w,h,d,x,y,z,m)=>items.push({w,h,d,x,y,z,m});
+    const x0=-L/2;
+
+    // Repère local centré sur l'emprise au sol (comme footprint) : z de -Dtot/2 à +Dtot/2
+    // DF : montant au centre (z=0), fonds de part et d'autre, tablettes des 2 côtés
+    // SF : montant côté fond (z=-Dtot/2+mEp/2), tablettes vers +z
+    const zMont = isDF ? 0 : (-Dtot/2 + mEp/2);
+
+    // montants + piétements
+    for(let k=0;k<=L;k++){ const x=x0+k;
+      addBox(mEp,Ht-pietH,mEp,x,pietH,zMont,metalMat);
+      if(isDF) addBox(mEp*1.3,pietH*0.5,Dtot*0.96,x,pietH*0.3,0,metalMat);
+      else     addBox(mEp*1.3,pietH*0.5,Dtot*0.96,x,pietH*0.3,0,metalMat);
+    }
+
+    // fonds : collés au montant, de part et d'autre en DF
+    if(isDF){
+      addBox(L,Ht-pietH,fondEp,0,pietH, mEp/2+fondEp/2, panelMat);   // fond côté +z
+      addBox(L,Ht-pietH,fondEp,0,pietH,-(mEp/2+fondEp/2),panelMat);  // fond côté -z
+    } else {
+      addBox(L,Ht-pietH,fondEp,0,pietH, zMont+mEp/2+fondEp/2, panelMat);
+    }
+
+    // tablettes : base + niveaux, partant du fond vers l'extérieur
+    const niveaux=[pietH]; const nb=(g.tabProfs?g.tabProfs.length:0);
+    for(let i=0;i<nb;i++){ niveaux.push(pietH+(Ht-pietH)*(0.35+i*0.22)); }
+    niveaux.forEach((y,idx)=>{
+      const prof = (idx===0 ? g.p : (g.tabProfs[idx-1]||g.p))/1000;
+      const yy=Math.min(y,Ht-0.1);
+      if(isDF){
+        const z0=mEp/2+fondEp;                       // départ au fond
+        addBox(L-mEp*0.4,th,prof,0,yy, z0+prof/2, panelMat);
+        addBox(L-mEp*0.4,th,prof,0,yy,-(z0+prof/2), panelMat);
+      } else {
+        const z0=zMont+mEp/2+fondEp;
+        addBox(L-mEp*0.4,th,prof,0,yy, z0+prof/2, panelMat);
+      }
+    });
+    if(isDF && g.h<=1700) addBox(L,0.02,mEp,0,Ht-0.02,0,metalMat);
+
+    // rotation autour de l'axe vertical selon g.rot, puis translation au centre
+    const rot=(g.rot||0)*Math.PI/180, cosr=Math.cos(rot), sinr=Math.sin(rot);
+    items.forEach(it=>{
+      // dimensions après rotation 90/270 : on échange w<->d
+      let w=it.w,d=it.d,x=it.x,z=it.z;
+      const rx=x*cosr - z*sinr, rz=x*sinr + z*cosr;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(it.w,it.h,it.d),it.m);
+      m.geometry.rotateY(rot);
+      m.position.set(cx+rx, it.y+it.h/2, cz+rz);
+      m.castShadow=true; m.receiveShadow=true; group.add(m);
+    });
+  }
+
+  function clearGroup(){ if(group){ scene.remove(group); group.traverse(o=>{if(o.geometry)o.geometry.dispose();}); } group=new THREE.Group(); scene.add(group); }
+
+  // Vue magasin : toutes les gondoles à leur position plan (x,y en mètres -> x,z en 3D)
+  function buildStore(){
+    clearGroup();
+    if(gondoles.length===0) return;
+    let mnx=Infinity,mnz=Infinity,mxx=-Infinity,mxz=-Infinity;
+    gondoles.forEach(g=>{
+      const fp=footprint(g);
+      const cx=g.x+fp.w/2, cz=g.y+fp.h/2;               // centre au sol (plan)
+      buildGondole(g,cx,cz);
+      mnx=Math.min(mnx,g.x);mnz=Math.min(mnz,g.y);mxx=Math.max(mxx,g.x+fp.w);mxz=Math.max(mxz,g.y+fp.h);
+    });
+    // recentrer le groupe autour de l'origine
+    const ctrX=(mnx+mxx)/2, ctrZ=(mnz+mxz)/2;
+    group.position.set(-ctrX,0,-ctrZ);
+    frameScene(Math.max(mxx-mnx,mxz-mnz));
+  }
+  function buildOne(g){
+    clearGroup();
+    buildGondole(g,0,0);
+    group.position.set(0,0,0);
+    frameScene(Math.max(g.len,(g.face==="DF"?g.p*2:g.p)/1000));
+  }
+  function frameScene(span){
+    const sp=span||6;
+    orbit.target.set(0, Math.min(1.2, sp*0.15), 0);
+    orbit.radius=Math.max(3, sp*1.7);
+    orbit.theta=Math.PI*0.25; orbit.phi=Math.PI*0.4;
+    applyCam();
+  }
+  function resize(){ const w=stageEl.clientWidth,h=stageEl.clientHeight; if(!w||!h)return; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+  function loop(){ rafId=requestAnimationFrame(loop); if(renderer&&scene&&camera) renderer.render(scene,camera); }
+
+  function open(mode){
+    modal.classList.add("open");
+    if(!ensureInit()) return;
+    fb.style.display="none";
+    requestAnimationFrame(()=>{
+      resize();
+      if(mode==="store"){ document.getElementById("d3Title").textContent="Vue 3D du magasin"; buildStore(); }
+      else{ const g=sel(); if(!g){ fb.style.display="flex"; fb.innerHTML="Sélectionnez d'abord une gondole."; return;} document.getElementById("d3Title").textContent="Gondole "+repereOf(g)+" — "+(g.face==="DF"?"double-face":"simple-face")+" · H."+g.h+" P."+g.p; buildOne(g); }
+      if(!rafId) loop();
+    });
+  }
+  function close(){ modal.classList.remove("open"); if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+
+  document.getElementById("btn3DPlan").addEventListener("click",()=>{ if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;} open("store"); });
+  document.getElementById("btn3DGond").addEventListener("click",()=>open("one"));
+  document.getElementById("d3Close").addEventListener("click",close);
+  modal.addEventListener("click",e=>{ if(e.target===modal) close(); });
+  window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("open")) close(); });
+  window.addEventListener("resize",()=>{ if(modal.classList.contains("open")) resize(); });
+})();
 
 </script>
 </body>
