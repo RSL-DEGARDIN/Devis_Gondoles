@@ -87,7 +87,12 @@
   .det-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--steel-100);}
   .det-head h2{font-size:15px;font-weight:700;color:var(--steel-900);display:flex;align-items:center;gap:8px;margin:0;}
   .det-head h2::before{content:"";width:10px;height:10px;background:var(--accent);border-radius:2px;}
-  .det-head-btns{display:flex;gap:8px;}
+  .det-head-btns{display:flex;gap:8px;align-items:center;}
+  .det-sep{width:1px;height:26px;background:var(--steel-100);margin:0 2px;}
+  .det-view-btn{width:38px;height:38px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}
+  .det-view-btn:hover{border-color:var(--accent);}
+  .cube2d{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;font-size:10px;font-weight:800;color:#fff;background:var(--steel-500);letter-spacing:.3px;}
+  .det-view-btn:hover .cube2d{background:var(--accent);}
   .det-ok{width:38px;height:38px;border:1.5px solid var(--ok);background:var(--ok);color:#fff;border-radius:9px;font-size:19px;font-weight:800;cursor:pointer;line-height:1;}
   .det-ok:hover{background:#155e34;border-color:#155e34;}
   .det-close{width:38px;height:38px;border:1.5px solid var(--steel-100);background:#fff;border-radius:9px;font-size:18px;font-weight:700;color:var(--steel-700);cursor:pointer;line-height:1;}
@@ -400,6 +405,9 @@
     <div class="det-head">
       <h2 id="detTitle">Gondole</h2>
       <div class="det-head-btns">
+        <button class="det-view-btn" id="detView2D" title="Aperçu 2D (vue de face + coupe)"><span class="cube2d">2D</span></button>
+        <button class="det-view-btn" id="detView3D" title="Aperçu 3D de cette gondole"><span class="cube3d">3D</span></button>
+        <span class="det-sep"></span>
         <button class="det-ok" id="detOk" aria-label="Valider" title="Valider">✓</button>
         <button class="det-close" id="detClose" aria-label="Annuler" title="Annuler">✕</button>
       </div>
@@ -1082,6 +1090,23 @@ detModal.addEventListener("click",e=>{ if(e.target===detModal && window.innerWid
 window.addEventListener("keydown",e=>{
   if(!detModal.classList.contains("open"))return;
   if(e.key==="Escape"){ cancelDet(); }
+  else if(e.key==="Tab"){
+    // naviguer d'une gondole à l'autre (Tab = suivante, Shift+Tab = précédente), en boucle
+    e.preventDefault();
+    if(gondoles.length<2) return;
+    // on garde les modifs en cours avant de changer
+    detIsNew=false; detSnapshot=null;
+    const i=gondoles.findIndex(g=>g.id===selId);
+    if(i<0) return;
+    const n=gondoles.length;
+    const j=e.shiftKey ? (i-1+n)%n : (i+1)%n;
+    selId=gondoles[j].id;
+    detectPlanColor();
+    renderAll();
+    // ré-armer la sauvegarde pour la nouvelle gondole (annuler = revenir à son état actuel)
+    const g=sel(); detSnapshot={...g, tabProfs:(g.tabProfs||[]).slice()}; detIsNew=false;
+    flashMsg("Gondole "+repereOf(g));
+  }
   else if(e.key==="Enter"&&e.target.tagName!=="TEXTAREA"){
     e.preventDefault();          // évite que Entrée "reclique" le dernier bouton utilisé (+/−)
     if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
@@ -1481,6 +1506,8 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
 
   document.getElementById("btn3DPlan").addEventListener("click",()=>{ if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;} open("store"); });
   document.getElementById("btn3DGond").addEventListener("click",()=>open("one"));
+  document.getElementById("detView3D").addEventListener("click",()=>{ if(sel())open("one"); });
+  document.getElementById("detView2D").addEventListener("click",()=>{ if(sel())openVizModal(); });
   document.getElementById("d3Close").addEventListener("click",close);
   modal.addEventListener("click",e=>{ if(e.target===modal) close(); });
   window.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("open")) close(); });
