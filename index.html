@@ -65,6 +65,17 @@
   .shortcuts .sc-title{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--steel-300);}
   .shortcuts kbd{display:inline-block;padding:2px 6px;border:1px solid var(--steel-100);border-bottom-width:2px;border-radius:4px;background:#fbfcfd;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--steel-700);}
   @media (max-width:600px){ .shortcuts{display:none;} }
+  .global-row{display:grid;grid-template-columns:3fr 1fr;gap:10px;align-items:stretch;}
+  @media (max-width:600px){.global-row{grid-template-columns:1fr;}}
+  .global-row .swatches{gap:10px;}
+  .glob-plinthe{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:42px;border:2px solid var(--steel-100);background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;padding:4px 10px;}
+  .glob-plinthe:hover{border-color:var(--steel-300);}
+  .glob-plinthe.on{border-color:var(--ok);background:var(--ok-bg);}
+  .glob-plinthe.off{border-color:var(--accent);background:#fdece7;}
+  .glob-plinthe .gp-t{font-size:12px;font-weight:800;color:var(--steel-700);line-height:1;}
+  .glob-plinthe .gp-s{font-size:11px;font-weight:700;color:var(--steel-500);line-height:1;}
+  .glob-plinthe.on .gp-s{color:var(--ok);}
+  .glob-plinthe.off .gp-s{color:var(--accent);}
   .flash-msg{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);background:var(--steel-900);color:#fff;padding:11px 20px;border-radius:9px;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:3000;}
   .flash-msg.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .viz-zoom-hint{font-size:11.5px;color:var(--steel-300);text-align:center;margin-top:4px;}
@@ -319,11 +330,17 @@
     </div>
   </div>
 
-  <!-- COLORIS GLOBAL -->
+  <!-- MODIFICATION GLOBALE -->
   <div class="card panel-card">
-    <h2 class="block-h">Coloris de toutes les gondoles</h2>
-    <div class="swatches" id="planSwatches"></div>
-    <div class="swatch-hint">Applique le coloris à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la sur le plan.</div>
+    <h2 class="block-h">Modification de toutes les gondoles</h2>
+    <div class="global-row">
+      <div class="swatches" id="planSwatches"></div>
+      <button type="button" class="glob-plinthe" id="globPlinthe">
+        <span class="gp-t">Plinthes</span>
+        <span class="gp-s" id="globPlintheState">—</span>
+      </button>
+    </div>
+    <div class="swatch-hint">S'applique à <b>toutes</b> les gondoles. Pour n'en changer qu'une, sélectionnez-la sur le plan.</div>
   </div>
 
   <!-- DEVIS -->
@@ -492,7 +509,9 @@ const chapiteauPossible=(face,h)=>face==="DF"&&h<=1700;
 // Épaisseur (section) du montant selon la hauteur : 60 mm jusqu'à H.2100, 80 mm au-delà
 const montantEp=h=>(h>=2400?80:60);
 // Profondeur hors-tout au sol : SF = profondeur ; DF = 2 profondeurs + l'épaisseur du montant central
-const profHorsTout=g=>(g.face==="DF" ? (2*g.p+montantEp(g.h)) : g.p);
+// Profondeur hors-tout au sol : la profondeur (370/470/570) se mesure hors montant,
+// on ajoute donc l'épaisseur du montant : SF = p + montant ; DF = 2p + montant
+const profHorsTout=g=>(g.face==="DF" ? (2*g.p+montantEp(g.h)) : (g.p+montantEp(g.h)));
 
 // ===== Helpers désignation =====
 function tabResume(profs){
@@ -828,7 +847,7 @@ function renderPlan(){
 }
 
 // ===================== Rendu global =====================
-function renderAll(){ renderPlan(); renderDetail(); renderTotals(); renderList(); renderBom(); }
+function renderAll(){ renderPlan(); renderDetail(); renderTotals(); renderList(); renderBom(); syncGlobPlinthe(); }
 function repere(idx){ let s="",n=idx; do{ s=String.fromCharCode(65+(n%26))+s; n=Math.floor(n/26)-1; }while(n>=0); return s; }
 function repereOf(g){ const i=gondoles.indexOf(g); return i<0?"":repere(i); }
 
@@ -1084,6 +1103,26 @@ function renderTotals(){
 // ===================== Coloris global =====================
 let planColor="blanc";
 (function(){const box=document.getElementById("planSwatches");Object.entries(COLORIS).forEach(([k,c])=>{const d=document.createElement("div");d.className="swatch";d.dataset.k=k;d.style.background=c.swatch;d.style.color=(k==="anthracite")?"#fff":"#1c2430";d.title=c.label+" — "+c.ral;d.textContent=c.ral;d.addEventListener("click",()=>{planColor=k;gondoles.forEach(g=>g.color=k);detectPlanColor();renderAll();});box.appendChild(d);});})();
+// ---- Plinthes : application globale ----
+const globPlintheBtn=document.getElementById("globPlinthe");
+globPlintheBtn.addEventListener("click",()=>{
+  if(gondoles.length===0){ flashMsg("Ajoutez d'abord une gondole"); return; }
+  const tout = gondoles.every(g=>g.plinthes);
+  const nouvelEtat = !tout;                    // si toutes en ont -> on retire ; sinon -> on met partout
+  gondoles.forEach(g=>g.plinthes=nouvelEtat);
+  renderAll();
+  flashMsg(nouvelEtat?"Plinthes ajoutées à toutes les gondoles":"Plinthes retirées de toutes les gondoles");
+});
+function syncGlobPlinthe(){
+  const st=document.getElementById("globPlintheState");
+  globPlintheBtn.classList.remove("on","off");
+  if(gondoles.length===0){ st.textContent="—"; return; }
+  const avec=gondoles.filter(g=>g.plinthes).length;
+  if(avec===gondoles.length){ st.textContent="Avec"; globPlintheBtn.classList.add("on"); }
+  else if(avec===0){ st.textContent="Sans"; globPlintheBtn.classList.add("off"); }
+  else { st.textContent="Mixte"; }
+}
+
 function detectPlanColor(){
   const sw=document.querySelectorAll("#planSwatches .swatch");
   if(gondoles.length===0){sw.forEach(d=>d.classList.toggle("active",d.dataset.k===planColor));return;}
@@ -1279,6 +1318,34 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
     el.addEventListener("dblclick",()=>frameScene());
   }
   function mat(hex,r){ return new THREE.MeshStandardMaterial({color:hex,roughness:r==null?0.75:r,metalness:0.05}); }
+  // Texture de perforations (générée une fois par couleur) : grille de trous sombres
+  const perfoTexCache={};
+  function perfoTexture(hex){
+    if(perfoTexCache[hex]) return perfoTexCache[hex];
+    const S=256, cv=document.createElement("canvas"); cv.width=cv.height=S;
+    const ctx=cv.getContext("2d");
+    // fond = couleur du panneau
+    const r=(hex>>16)&255,g=(hex>>8)&255,b=hex&255;
+    ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,0,S,S);
+    // trous : petits ronds sombres en quinconce
+    const step=S/8, rad=step*0.22;
+    // couleur des trous = version assombrie du panneau
+    ctx.fillStyle=`rgb(${(r*0.35)|0},${(g*0.35)|0},${(b*0.35)|0})`;
+    for(let iy=0;iy<8;iy++){
+      for(let ix=0;ix<8;ix++){
+        const ox=(iy%2)?step*0.5:0;
+        const cx=ix*step+step*0.5+ox, cy=iy*step+step*0.5;
+        ctx.beginPath(); ctx.arc(cx%S,cy,rad,0,Math.PI*2); ctx.fill();
+      }
+    }
+    const tex=new THREE.CanvasTexture(cv);
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    perfoTexCache[hex]=tex; return tex;
+  }
+  function perfoMat(hex){
+    const t=perfoTexture(hex);
+    return new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
+  }
   function boxAt(w,h,d,x,y,z,material){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material); m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true; group.add(m); }
 
   // construit UNE gondole dans le groupe, centrée à (cx,cz) au sol, orientée par rot (0/90/180/270)
@@ -1286,7 +1353,8 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
     const C=RAL3D[g.color]||RAL3D.blanc;
     const panelMat=mat(C.panel,0.85), metalMat=mat(C.metal,0.5);
     const L=g.len, Ht=g.h/1000, D=g.p/1000, isDF=g.face==="DF";
-    const mEp=montantEp(g.h)/1000;          // épaisseur réelle du montant (0.06 ou 0.08)
+    const mEp=montantEp(g.h)/1000;          // PROFONDEUR du montant (0.06 ou 0.08) — sens de la profondeur
+    const mLa=0.030;                        // LARGEUR du montant : toujours 30 mm — sens de la longueur
     const Dtot=profHorsTout(g)/1000;        // profondeur hors-tout au sol
     const pietH=0.1, th=0.025, fondEp=0.018;
     const items=[];
@@ -1298,34 +1366,55 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
     // SF : montant côté fond (z=-Dtot/2+mEp/2), tablettes vers +z
     const zMont = isDF ? 0 : (-Dtot/2 + mEp/2);
 
-    // montants + piétements
+    // montants (du sol au sommet) + piétements (30 large × 100 haut × profondeur gondole)
+    // le piétement chevauche les 100 premiers mm du montant ; les fonds démarrent donc à 100 mm
     for(let k=0;k<=L;k++){ const x=x0+k;
-      addBox(mEp,Ht-pietH,mEp,x,pietH,zMont,metalMat);
-      if(isDF) addBox(mEp*1.3,pietH*0.5,Dtot*0.96,x,pietH*0.3,0,metalMat);
-      else     addBox(mEp*1.3,pietH*0.5,Dtot*0.96,x,pietH*0.3,0,metalMat);
+      addBox(mLa,Ht,mEp,x,0,zMont,metalMat);                          // montant : part du sol
+      if(isDF){
+        addBox(mLa,pietH,D,x,0, mEp/2+D/2, metalMat);                 // piétement côté +z
+        addBox(mLa,pietH,D,x,0,-(mEp/2+D/2),metalMat);                // piétement côté -z
+      } else {
+        addBox(mLa,pietH,D,x,0, zMont+mEp/2+D/2, metalMat);           // piétement côté fond
+      }
     }
 
-    // fonds : collés au montant, de part et d'autre en DF
-    if(isDF){
-      addBox(L,Ht-pietH,fondEp,0,pietH, mEp/2+fondEp/2, panelMat);   // fond côté +z
-      addBox(L,Ht-pietH,fondEp,0,pietH,-(mEp/2+fondEp/2),panelMat);  // fond côté -z
-    } else {
-      addBox(L,Ht-pietH,fondEp,0,pietH, zMont+mEp/2+fondEp/2, panelMat);
+    // fonds : collés au montant, de part et d'autre en DF. Un panneau par travée (1000 mm).
+    // Fonds perforés (FP) : matériau à texture de trous ; lisses (FL) : panneau uni.
+    const isPerfo = g.f==="FP";
+    let fondMat=panelMat;
+    if(isPerfo){
+      const t=perfoTexture(C.panel).clone(); t.needsUpdate=true;
+      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.repeat.set(3, Math.max(3,Math.round((Ht-pietH)*3.2)));
+      fondMat=new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
+    }
+    for(let m=0;m<L;m++){
+      const xc=x0+m+0.5;
+      if(isDF){
+        addBox(1,Ht-pietH,fondEp,xc,pietH, mEp/2+fondEp/2, fondMat);
+        addBox(1,Ht-pietH,fondEp,xc,pietH,-(mEp/2+fondEp/2),fondMat);
+      } else {
+        addBox(1,Ht-pietH,fondEp,xc,pietH, zMont+mEp/2+fondEp/2, fondMat);
+      }
     }
 
-    // tablettes : base + niveaux, partant du fond vers l'extérieur
+    // tablettes : base + niveaux. Chaque tablette fait 1000 mm et va d'axe de montant
+    // à axe de montant (elle démarre à la moitié d'un piétement et finit à la moitié du suivant).
     const niveaux=[pietH]; const nb=(g.tabProfs?g.tabProfs.length:0);
     for(let i=0;i<nb;i++){ niveaux.push(pietH+(Ht-pietH)*(0.35+i*0.22)); }
     niveaux.forEach((y,idx)=>{
       const prof = (idx===0 ? g.p : (g.tabProfs[idx-1]||g.p))/1000;
       const yy=Math.min(y,Ht-0.1);
-      if(isDF){
-        const z0=mEp/2+fondEp;                       // départ au fond
-        addBox(L-mEp*0.4,th,prof,0,yy, z0+prof/2, panelMat);
-        addBox(L-mEp*0.4,th,prof,0,yy,-(z0+prof/2), panelMat);
-      } else {
-        const z0=zMont+mEp/2+fondEp;
-        addBox(L-mEp*0.4,th,prof,0,yy, z0+prof/2, panelMat);
+      for(let m=0;m<L;m++){
+        const xc=x0+m+0.5;                            // centre de la travée (1000 mm)
+        if(isDF){
+          const z0=mEp/2+fondEp;
+          addBox(1,th,prof,xc,yy, z0+prof/2, panelMat);
+          addBox(1,th,prof,xc,yy,-(z0+prof/2), panelMat);
+        } else {
+          const z0=zMont+mEp/2+fondEp;
+          addBox(1,th,prof,xc,yy, z0+prof/2, panelMat);
+        }
       }
     });
     if(isDF && g.h<=1700) addBox(L,0.02,mEp,0,Ht-0.02,0,metalMat);
