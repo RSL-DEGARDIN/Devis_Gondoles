@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurateur rayonnages EPSILINE — RSL</title>
+<style>
+:root{
+  --acier:#3d4753;        /* structure galva foncée */
+  --acier-clair:#8b98a6;
+  --fond:#eef1f4;
+  --papier:#ffffff;
+  --trait:#c9d2db;
+  --bois:#c89a5b;
+  --encre:#1b222b;
+  --signal:#0f6ea8;       /* bleu plan technique */
+  --alerte:#b4441f;
+  --ok:#1f7a4d;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--fond);color:var(--encre);
+  font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;
+}
+header{
+  background:var(--acier);color:#fff;padding:14px 20px;
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+}
+header h1{font-size:17px;margin:0;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+header .meta{font-size:11.5px;color:#b8c3ce;letter-spacing:.04em}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--papier);border:1px solid var(--trait);border-radius:4px;padding:16px}
+.card h2{
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--acier-clair);
+  margin:0 0 12px;font-weight:700;border-bottom:1px solid var(--trait);padding-bottom:7px
+}
+label{display:block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#5d6b7a;margin:10px 0 3px;font-weight:600}
+select,input[type=number]{
+  width:100%;padding:8px 9px;border:1px solid var(--trait);border-radius:3px;
+  background:#fbfcfd;font:inherit;color:var(--encre)
+}
+select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.optgrp{display:flex;flex-direction:column;gap:4px;margin-top:3px}
+.travees{display:flex;flex-direction:column;gap:6px;margin-top:3px;margin-bottom:4px}
+.tvl{display:flex;align-items:center;gap:10px}
+.tvl .lab{font-size:13px;color:var(--encre);flex:0 0 72px;font-weight:600;font-variant-numeric:tabular-nums}
+.tvl .stepper{flex:0 0 118px}
+.tvl .stepper input{font-weight:600}
+.tvl .cnt{font-size:11.5px;color:#8b98a6;flex:1}
+.opt{
+  display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--trait);
+  border-radius:3px;cursor:pointer;background:#fbfcfd;font-size:12.5px;user-select:none
+}
+.opt:hover{border-color:var(--acier-clair)}
+.opt.on{border-color:var(--signal);background:#f2f8fc;color:#0c4d74;font-weight:600}
+.opt .mark{
+  width:15px;height:15px;border-radius:50%;border:2px solid var(--trait);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center
+}
+.opt.on .mark{border-color:var(--signal)}
+.opt.on .mark::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--signal)}
+button{
+  font:inherit;font-weight:600;cursor:pointer;border-radius:3px;border:1px solid transparent;padding:10px 14px
+}
+.btn-main{background:var(--signal);color:#fff;width:100%;margin-top:16px;letter-spacing:.03em}
+.btn-main:hover{background:#0c5d8f}
+.btn-ghost{background:#fff;border-color:var(--trait);color:var(--acier);padding:7px 12px;font-size:12.5px}
+.btn-ghost:hover{border-color:var(--acier-clair)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--trait);border:1px solid var(--trait);margin-bottom:14px}
+.stat{background:#fff;padding:9px 10px}
+.stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#7a8794}
+.note{font-size:12px;padding:8px 10px;border-left:3px solid;margin-top:10px;background:#f7f9fb}
+.note.warn{border-color:var(--alerte);color:#7c2f14;background:#fdf3ef}
+.note.info{border-color:var(--signal);color:#134a6b}
+svg{width:100%;height:auto;display:block;background:linear-gradient(#fbfcfd,#eef1f4)}
+.apwrap{position:relative;cursor:zoom-in;border-radius:3px;overflow:hidden}
+.zoombtn{
+  position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:4px;
+  background:rgba(255,255,255,.92);border:1px solid var(--trait);color:var(--acier);
+  font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.12)
+}
+.zoombtn:hover{background:#fff;border-color:var(--signal);color:var(--signal)}
+.modal{
+  position:fixed;inset:0;background:rgba(27,34,43,.82);display:none;z-index:100;
+  align-items:center;justify-content:center;padding:24px
+}
+.modal.on{display:flex}
+.modal-box{background:#fff;border-radius:6px;padding:14px;max-width:1100px;width:100%;max-height:92vh;position:relative}
+.modal-box svg{width:100%;height:auto;max-height:82vh}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.modal-head .ttl{font-size:13px;font-weight:600;color:var(--encre)}
+.modal-close{background:none;border:none;font-size:26px;line-height:1;color:#7a8794;cursor:pointer;padding:0 4px}
+.modal-close:hover{color:var(--alerte)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#7a8794;
+  border-bottom:1px solid var(--trait);padding:6px 6px
+}
+td{padding:6px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ref{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:#4b5866}
+tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;padding-top:9px}
+.devis-item{border:1px solid var(--trait);border-radius:3px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.devis-item .d{flex:1}
+.devis-item .t{font-weight:600}
+.devis-item .s{font-size:12px;color:#6b7885}
+.devis-item .p{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.stepper{display:flex;align-items:stretch;border:1px solid var(--trait);border-radius:3px;overflow:hidden}
+.stepper button{
+  background:#f2f5f8;border:none;width:34px;font-size:17px;color:var(--acier);
+  padding:0;flex:0 0 auto;line-height:1
+}
+.stepper button:hover{background:#e6ebf0}
+.stepper button:active{background:#dbe2e9}
+.stepper input{
+  border:none;border-left:1px solid var(--trait);border-right:1px solid var(--trait);
+  border-radius:0;text-align:center;width:100%;-moz-appearance:textfield
+}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.mod{background:none;border:1px solid var(--trait);color:var(--signal);font-size:11.5px;padding:3px 9px;border-radius:3px;cursor:pointer;font-weight:600;white-space:nowrap}
+.mod:hover{border-color:var(--signal);background:#f2f8fc}
+.mod.actif{background:var(--signal);color:#fff;border-color:var(--signal)}
+.editbar{font-size:12px;color:var(--signal);background:#eef4f8;border-radius:3px;padding:7px 10px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+.editbar.on{display:flex}
+.editbar button{background:none;border:none;color:#134a6b;text-decoration:underline;cursor:pointer;font-size:12px;padding:0}
+.x{background:none;border:none;color:#a4b0bc;font-size:17px;padding:0 4px;cursor:pointer;line-height:1}
+.x:hover{color:var(--alerte)}
+.vide{color:#8b98a6;font-size:13px;padding:14px 0}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--acier);margin-top:10px;padding-top:10px}
+.total b{font-size:21px;font-variant-numeric:tabular-nums}
+.recap{border-top:2px solid var(--acier);margin-top:10px;padding-top:10px}
+.recap-l{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-variant-numeric:tabular-nums}
+.recap-l span:first-child{color:#5d6b7a}
+.recap-l.grand{border-top:1px solid var(--trait);margin-top:6px;padding-top:8px;font-weight:700}
+.recap-l.sub-ht{border-top:1px solid var(--trait);margin-top:5px;padding-top:7px;font-weight:600}
+.payzone{margin-top:12px}
+.btn-pay{
+  width:100%;padding:13px;border:none;border-radius:4px;background:#635bff;color:#fff;
+  font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em
+}
+.btn-pay:hover:not(:disabled){background:#5249e0}
+.btn-pay:disabled{background:#c9d2db;cursor:not-allowed}
+.paynote{font-size:11.5px;color:#8b98a6;text-align:center;margin-top:6px}
+.recap-l.grand b{font-size:20px}
+.recap-l .sub{font-size:11px;color:#8b98a6;margin-left:6px}
+.recap-l .txp{display:flex;align-items:center;gap:8px;flex:1;margin-right:14px}
+.recap-l .txp>span:first-child{white-space:nowrap}
+.recap-l .txp select{margin:0 auto;width:130px;flex:0 0 auto}
+.recap-l .txp .sub{margin-left:0}
+.recap .warn{font-size:12px;color:#7c2f14}
+.recap select{padding:3px 6px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:12.5px;color:var(--encre)}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#eef4f8;color:var(--signal);padding:2px 7px;border-radius:2px;font-weight:600}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>Configurateur rayonnages</h1>
+  <span class="meta">EPSILINE galvanisé — chiffrage au détail — tarif 11/05/2026</span>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ COLONNE GAUCHE : SAISIE ============ -->
+  <div class="card">
+    <h2>Rayonnage à configurer</h2>
+
+    <label for="pf">Profondeur de tablette</label>
+    <select id="pf"></select>
+
+    <label for="ht">Hauteur de poteau</label>
+    <select id="ht"></select>
+
+    <label for="nv">Niveaux</label>
+    <div class="stepper">
+      <button type="button" data-step="nv" data-d="-1">−</button>
+      <input type="number" id="nv" min="2" step="1">
+      <button type="button" data-step="nv" data-d="1">+</button>
+    </div>
+
+    <label>Travées par longueur</label>
+    <div class="travees" id="travees"></div>
+
+    <div class="row2">
+      <div>
+        <label>Recouvrement</label>
+        <div class="optgrp" id="rec">
+          <div class="opt" data-v="aucun"><span class="mark"></span>Aucun (tablette nue)</div>
+          <div class="opt on" data-v="iso"><span class="mark"></span>Dessus isobois</div>
+          <div class="opt" data-v="tole"><span class="mark"></span>Dessus tôle galva</div>
+        </div>
+      </div>
+      <div>
+        <label>Appui au sol</label>
+        <div class="optgrp" id="pd">
+          <div class="opt on" data-v="pied"><span class="mark"></span>Pied plastique</div>
+          <div class="opt" data-v="platine"><span class="mark"></span>Platine métal galva</div>
+          <div class="opt" data-v="calage"><span class="mark"></span>Platine de calage</div>
+          <div class="opt" data-v="aucun"><span class="mark"></span>Aucun</div>
+        </div>
+      </div>
+    </div>
+
+    <label for="qt">Rayonnages identiques</label>
+    <div class="stepper">
+      <button type="button" data-step="qt" data-d="-1">−</button>
+      <input type="number" id="qt" min="1" step="1" value="1">
+      <button type="button" data-step="qt" data-d="1">+</button>
+    </div>
+
+    <div class="editbar" id="editbar">
+      <span>Modification d'un rayonnage du devis</span>
+      <button type="button" id="cancelEdit">Annuler</button>
+    </div>
+    <button class="btn-main" id="add">Ajouter au devis</button>
+  </div>
+
+  <!-- ============ COLONNE DROITE : APERÇU + NOMENCLATURE ============ -->
+  <div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Aperçu <span id="apTag" class="tag"></span></h2>
+      <div id="stats" class="stats"></div>
+      <div class="apwrap" id="apwrap" title="Agrandir">
+        <svg id="dessin" viewBox="0 0 700 420" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
+        <button class="zoombtn" id="zoom" title="Agrandir l'aperçu" aria-label="Agrandir">⤢</button>
+      </div>
+      <div id="alertes"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h2>Nomenclature de ce rayonnage</h2>
+      <table>
+        <thead><tr>
+          <th>Composant</th><th>Référence</th><th class="num">Qté</th>
+          <th class="num">P.U. HT</th><th class="num">Total HT</th>
+        </tr></thead>
+        <tbody id="bom"></tbody>
+        <tfoot><tr>
+          <td colspan="4">Total rayonnage HT</td><td class="num" id="bomTotal">—</td>
+        </tr></tfoot>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Devis en cours</h2>
+      <div id="devis"></div>
+      <div id="recap"></div>
+      <div class="actions">
+        <button class="btn-ghost" id="pdf" style="border-color:var(--signal);color:var(--signal)">📄 Devis PDF</button>
+        <button class="btn-ghost" id="copy">Copier le devis</button>
+        <button class="btn-ghost" id="csv">Exporter la nomenclature (CSV)</button>
+        <button class="btn-ghost" id="clear">Vider le devis</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="ttl" id="modalTtl">Aperçu du rayonnage</span>
+      <button class="modal-close" id="modalClose" aria-label="Fermer">×</button>
+    </div>
+    <svg id="dessinBig" viewBox="0 0 700 420" role="img" aria-label="Vue agrandie du rayonnage"></svg>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   PAIEMENT — webhook Make qui crée la session Stripe Checkout
+   Colle ici l'URL du webhook Make (module « Custom webhook »).
+   Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
+   ========================================================== */
+const MAKE_WEBHOOK_URL = ''; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
+
+/* ==========================================================
+   DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
+   ========================================================== */
+const LONGUEURS = [1000,1250,1500];
+const PROFS     = [300,388,500,600,700,800,1000];
+const HAUTEURS  = [1760,2000,2280,2520,2760,3000];
+
+const POTEAU = {
+  1760:{ref:'AS01001760EAAC099',pu:9.08150},
+  2000:{ref:'AS01002000EAAC099',pu:10.34225},
+  2280:{ref:'AS01002280EAAC099',pu:11.78750},
+  2520:{ref:'AS01002520EAAC099',pu:13.04825},
+  2760:{ref:'AS01002760EAAC099',pu:14.28850},
+  3000:{ref:'AS01003000EAAC099',pu:15.51850}
+};
+
+// prix indexés [longueur][profondeur]
+const PU_TAB = {
+  1000:[13.29425,14.16550,17.44550,18.50125,20.47950,21.56600,24.82550],
+  1250:[15.69275,16.35900,19.83375,21.13550,22.87800,24.60000,27.66475],
+  1500:[17.31225,17.95800,21.35075,23.55450,24.82550,28.95625,29.62250]
+};
+const PU_ISO = {
+  1000:[2.26525,2.65475,3.21850,3.78225,4.54075,5.10450,6.24225],
+  1250:[2.83925,3.58750,4.34600,5.29925,5.66825,6.62150,8.50750],
+  1500:[3.78225,4.73550,6.42675,7.38000,8.32300,9.46075,10.58825]
+};
+const PU_TOLE = {
+  1000:[8.42550,10.51650,12.90475,14.68825,17.08675,19.50575,23.37000],
+  1250:[10.21925,12.90475,15.86700,18.27575,21.30975,23.37000,29.37650],
+  1500:[11.10075,14.08350,17.34300,19.80300,23.06250,25.50200,32.08250]
+};
+// charge de service par niveau (kg), flèche 1/200
+const CHARGE = {
+  1000:[221,221,180,180,235,215,159],
+  1250:[148,148,150,150,216,162,162],
+  1500:[71,71,76,120,117,110,94]
+};
+// nombre de profils centraux de la tablette (sert au dessin)
+const PROFILS = {300:1,388:1,500:2,600:2,700:2,800:3,1000:3};
+
+const ACCESSOIRE = {
+  pied:    {ref:'AS23000040AC00000',pu:0.70725,lib:'Pied plastique'},
+  platine: {ref:'AS23006752BB00099',pu:1.51700,lib:'Platine métal galvanisée 67×52×2,5'},
+  calage:  {ref:'AS23006752CB00099',pu:0.98400,lib:'Platine de calage'}
+};
+
+// codes de référence
+const CL = {1000:'0100',1250:'0125',1500:'0150'};
+const CP = {300:'30',388:'38',500:'50',600:'60',700:'70',800:'80',1000:'10'};
+// tablettes tubulaires à 1 tube central renforcé : suffixe 0199
+const TAB_0199 = ['1000x500','1000x600','1250x500','1250x600'];
+
+function refTablette(L,P){
+  const s = TAB_0199.includes(L+'x'+P) ? 'AAA0199' : 'AAA0099';
+  return 'AS02'+CL[L]+CP[P]+s;
+}
+const refIso  = (L,P) => 'AS03'+CL[L]+CP[P]+'AAA0000';
+const refTole = (L,P) => 'AS03'+CL[L]+CP[P]+'GGA0099';
+
+/* ==========================================================
+   RÈGLES DE STRUCTURE
+   ========================================================== */
+const PREMIER = 40;        // 1er niveau à 40 mm du sol
+const PAS     = 40;        // perforation au pas de 40 mm
+const EP_TAB  = 32;        // épaisseur prise par la tablette dans le pas
+const ECART_MAX = 500;     // espace maximum entre 2 tablettes (montage)
+
+// nombre maximum de tablettes pour une hauteur de poteau
+function maxNiveaux(H){ return Math.floor((H-PREMIER)/(88+EP_TAB)) + 1; }
+
+// écartement utile obtenu si les n tablettes sont réparties régulièrement
+function ecartement(H,n){
+  if(n < 2) return null;
+  const pas = Math.floor((H-PREMIER)/(n-1)/PAS)*PAS;   // multiple de 40 mm
+  return {pas, utile: pas - EP_TAB};
+}
+
+const eur = v => v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+
+/* ==========================================================
+   TRANSPORT — grille au 15/02/2026 (Epsiline = grille 1)
+   dep -> [forfait 0-150, forfait 151-300, puis % par tranche] ou 'C' (consultation)
+   tranches % : 301-1500, 1501-2600, 2601-5200, 5201-7800, 7801-10000, >10000
+   forfait si total < 300 € · % appliqué au total HT au-delà
+   ========================================================== */
+const TRANSPORT = {"01":[24.0312,39.1986,0.10812,0.0765,0.06528,0.05202,0.04284,0.0306],"02":[24.61199,43.30027,0.088478,0.059345,0.045318,0.036686,0.031291,0.020501],"03":[27.6726,40.9326,0.1173,0.08364,0.07446,0.04692,0.04284,0.02856],"04":[41.3202,53.9988,0.15198,0.10914,0.10404,0.07446,0.06528,0.04998],"05":[40.7388,52.8462,0.1479,0.10914,0.10404,0.07446,0.06528,0.04998],"06":[33.2214,52.8054,0.1377,0.11322,0.10914,0.07344,0.06222,0.04896],"07":[38.25,50.1534,0.1428,0.10506,0.09792,0.07854,0.0561,0.04182],"08":[23.17692,29.27327,0.102505,0.055029,0.05395,0.033449,0.026975,0.019422],"09":[40.341,53.0502,0.1377,0.10812,0.10404,0.0867,0.0765,0.051],"10":[29.27327,38.82242,0.116532,0.07553,0.069056,0.042081,0.03237,0.020501],"11":[40.341,53.0502,0.14382,0.11628,0.10506,0.0867,0.07446,0.0561],"12":[39.1986,51.306,0.1479,0.11628,0.08976,0.07956,0.06528,0.051],"13":[28.917,40.6266,0.11934,0.0918,0.08874,0.07344,0.06834,0.04896],"14":[30.50333,38.82242,0.098189,0.069056,0.05395,0.042081,0.034528,0.026975],"15":[39.1986,51.1224,0.14382,0.08976,0.08364,0.07344,0.06222,0.04284],"16":[30.9264,40.9326,0.15606,0.08976,0.0816,0.0612,0.051,0.03264],"17":[32.4768,43.6254,0.1428,0.08976,0.0816,0.0612,0.051,0.03264],"18":[30.3756,42.4626,0.1224,0.0765,0.06528,0.04998,0.03978,0.02448],"19":[35.9448,57.0894,0.1377,0.08976,0.07956,0.06528,0.05406,0.03876],"20":"C","21":[27.1116,37.0872,0.1071,0.0765,0.06528,0.04998,0.03978,0.0255],"22":[35.547,44.1966,0.1377,0.09792,0.06528,0.05814,0.03978,0.03264],"23":[34.986,45.3594,0.13056,0.0765,0.06528,0.05814,0.04998,0.03264],"24":[33.4356,44.0028,0.11934,0.08976,0.08364,0.06324,0.05406,0.03876],"25":[34.7718,42.8604,0.1224,0.0816,0.07242,0.05304,0.04488,0.03162],"26":[27.6726,39.1986,0.09792,0.08874,0.08364,0.05202,0.051,0.04998],"27":[27.03974,37.0097,0.094952,0.067977,0.052871,0.034528,0.03237,0.020501],"28":[28.054,37.0097,0.111137,0.06474,0.05395,0.042081,0.035607,0.02158],"29":[36.3222,48.2358,0.1428,0.08874,0.0816,0.07242,0.0561,0.03876],"30":[29.784,43.8294,0.11016,0.10812,0.10812,0.06528,0.06426,0.051],"31":[26.5812,38.505,0.11628,0.0918,0.08262,0.06222,0.05304,0.04488],"32":[41.1162,53.9988,0.1377,0.10608,0.09792,0.0816,0.06732,0.04998],"33":[35.3022,56.3346,0.10404,0.08364,0.0816,0.06426,0.0612,0.04182],"34":[31.0794,53.3868,0.10608,0.09486,0.09486,0.06528,0.06426,0.05304],"35":[34.4046,41.3202,0.10914,0.0765,0.05814,0.03978,0.03366,0.03162],"36":[35.547,42.4626,0.1173,0.06528,0.0612,0.04692,0.03978,0.02754],"37":[28.0602,38.046,0.10608,0.07956,0.07752,0.04998,0.03978,0.02754],"38":[24.2352,35.1594,0.10506,0.07038,0.06732,0.051,0.051,0.03366],"39":[28.8354,42.8604,0.11016,0.0765,0.0663,0.0561,0.04692,0.03162],"40":[34.4046,45.543,0.1275,0.10404,0.09792,0.07854,0.0714,0.051],"41":[30.9264,41.3202,0.10506,0.06426,0.05406,0.03978,0.0357,0.02346],"42":[25.1838,39.5862,0.09792,0.06426,0.06426,0.04284,0.04182,0.03366],"43":[32.283,44.1966,0.12648,0.08772,0.07446,0.0612,0.05202,0.0357],"44":[34.221,43.095,0.09894,0.07446,0.06834,0.051,0.04284,0.0306],"45":[30.28753,46.75307,0.105742,0.061503,0.049634,0.042081,0.035607,0.020501],"46":[41.1162,44.7678,0.1479,0.10404,0.08874,0.07344,0.06732,0.04692],"47":[35.1696,39.1986,0.1479,0.0969,0.09282,0.07548,0.06528,0.051],"48":[40.1676,54.1926,0.1581,0.1224,0.1224,0.07548,0.06528,0.051],"49":[28.8354,45.543,0.10506,0.0765,0.06426,0.05814,0.0459,0.02856],"50":[35.547,51.1224,0.10914,0.07242,0.06426,0.0459,0.04284,0.02856],"51":[27.03974,46.36463,0.103584,0.058266,0.049634,0.035607,0.03237,0.019422],"52":[34.35536,43.30027,0.102505,0.063661,0.060424,0.042081,0.041002,0.023738],"53":[29.2026,31.3242,0.1173,0.07242,0.06834,0.04386,0.03978,0.02448],"54":[37.60315,43.71029,0.124085,0.055029,0.05395,0.03237,0.029133,0.023738],"55":[30.89177,38.63899,0.102505,0.072293,0.055029,0.03237,0.029133,0.025896],"56":[39.1986,41.3202,0.12852,0.08466,0.07752,0.06324,0.051,0.03468],"57":[29.47828,41.87599,0.102505,0.058266,0.049634,0.036686,0.029133,0.02158],"58":[35.3634,45.543,0.11526,0.06732,0.05814,0.051,0.03978,0.02448],"59":[17.4798,38.25055,0.061503,0.03237,0.030212,0.018343,0.015106,0.011869],"60":[23.57615,41.87599,0.088478,0.059345,0.046397,0.033449,0.029133,0.019422],"61":[30.89177,45.73881,0.116532,0.067977,0.060424,0.04316,0.035607,0.023738],"62":[18.70986,38.25055,0.06474,0.046397,0.044239,0.020501,0.020501,0.012948],"63":[32.4768,43.2378,0.10812,0.06528,0.06018,0.04386,0.04284,0.03366],"64":[32.6808,43.2378,0.1479,0.11322,0.08364,0.07446,0.06732,0.04998],"65":[33.4356,40.9326,0.13668,0.11832,0.08262,0.07446,0.06732,0.04998],"66":[33.6294,45.543,0.13974,0.11322,0.09792,0.07446,0.06732,0.05202],"67":[29.93146,47.476,0.110058,0.071214,0.051792,0.033449,0.03237,0.024817],"68":[31.09678,48.79238,0.120848,0.05395,0.05395,0.036686,0.03237,0.026975],"69":[16.6056,39.4128,0.0765,0.04386,0.04284,0.03978,0.03876,0.03162],"70":[29.6004,41.514,0.10404,0.07344,0.05202,0.051,0.04182,0.02856],"71":[24.99,45.543,0.08772,0.06834,0.05814,0.04182,0.0408,0.03264],"72":[28.4478,40.1676,0.11424,0.06018,0.04386,0.04182,0.03264,0.02244],"73":[21.1446,35.547,0.0765,0.06732,0.06222,0.05814,0.04692,0.03468],"74":[21.5118,40.1676,0.11832,0.07446,0.06324,0.05814,0.04692,0.03468],"75":[28.054,34.57116,0.113295,0.061503,0.049634,0.034528,0.030212,0.020501],"76":[27.41739,67.41592,0.090636,0.05395,0.045318,0.03237,0.031291,0.020501],"77":[25.63704,46.37542,0.110058,0.05395,0.052871,0.03237,0.030212,0.020501],"78":[26.64051,37.20392,0.113295,0.056108,0.052871,0.033449,0.031291,0.020501],"79":[30.9264,40.9326,0.10914,0.0714,0.06528,0.05202,0.04386,0.02958],"80":[23.57615,41.87599,0.088478,0.059345,0.036686,0.030212,0.024817,0.015106],"81":[29.6004,43.2378,0.1173,0.0969,0.08772,0.0765,0.06834,0.04998],"82":[29.6004,43.2378,0.11934,0.09996,0.08976,0.07446,0.06528,0.04998],"83":[29.2434,48.3072,0.1224,0.09486,0.08874,0.0765,0.0663,0.04998],"84":[29.0088,43.6254,0.10506,0.09792,0.09792,0.06426,0.05508,0.04182],"85":[34.4046,44.5842,0.11118,0.0765,0.0663,0.051,0.04998,0.03162],"86":[30.3756,41.8914,0.1173,0.0765,0.06426,0.051,0.04182,0.02958],"87":[33.4356,44.3904,0.10914,0.0765,0.06834,0.05508,0.051,0.02958],"88":[31.5068,42.49102,0.114374,0.069056,0.061503,0.047476,0.041002,0.026975],"89":[31.5068,44.71376,0.123006,0.069056,0.055029,0.042081,0.036686,0.025896],"90":[32.283,39.1986,0.11016,0.07956,0.07854,0.051,0.04182,0.02958],"91":[30.50333,42.28601,0.111137,0.061503,0.045318,0.033449,0.029133,0.020501],"92":[29.68329,45.73881,0.113295,0.05395,0.042081,0.034528,0.029133,0.019422],"93":[29.68329,46.40779,0.113295,0.05395,0.042081,0.041002,0.029133,0.019422],"94":[29.68329,45.73881,0.113295,0.05395,0.042081,0.03237,0.029133,0.019422],"95":[31.5068,41.68177,0.113295,0.052871,0.051792,0.03237,0.029133,0.019422],"AUTRE":"C"};
+
+function calculTransport(total, dep){
+  const g = TRANSPORT[dep];
+  if(!g) return {val:null, txt:'—'};
+  if(g === 'C') return {val:null, txt:'Sur consultation', consult:true};
+  if(total <= 0) return {val:0, txt:'0,00 €'};
+  if(total <= 150)  return {val:g[0], txt:'forfait'};
+  if(total <= 300)  return {val:g[1], txt:'forfait'};
+  let pct;
+  if(total <= 1500)      pct=g[2];
+  else if(total <= 2600) pct=g[3];
+  else if(total <= 5200) pct=g[4];
+  else if(total <= 7800) pct=g[5];
+  else if(total <= 10000)pct=g[6];
+  else                   pct=g[7];
+  return {val: total*pct, txt:(pct*100).toLocaleString('fr-FR',{maximumFractionDigits:3})+' %'};
+}
+
+/* ==========================================================
+   ÉTAT
+   ========================================================== */
+const $ = id => document.getElementById(id);
+let devis = [];
+
+// groupes d'options (recouvrement, appui au sol) — lecture / écriture
+const getOpt = id => $(id).querySelector('.opt.on').dataset.v;
+const setOpt = (id,v) => $(id).querySelectorAll('.opt').forEach(o=>
+  o.classList.toggle('on', o.dataset.v===v));
+let editIndex = -1;   // -1 = ajout ; sinon index du rayonnage en cours d'édition
+let departement = ''; // département de livraison (donnée globale du devis)
+
+// nombre de travées par longueur (ordre d'affichage = 1000 puis 1250 puis 1500)
+let nbTravees = {1000:3, 1250:0, 1500:0};
+
+// construit le tableau des longueurs, travées de 1000 d'abord, puis 1250, puis 1500
+function longsFromCompteur(){
+  const arr = [];
+  LONGUEURS.forEach(L => { for(let i=0;i<(nbTravees[L]||0);i++) arr.push(L); });
+  return arr;
+}
+const totalTravees = () => LONGUEURS.reduce((s,L)=>s+(nbTravees[L]||0),0);
+
+function initSelects(){
+  $('pf').innerHTML = PROFS.map(v=>`<option value="${v}">${v} mm</option>`).join('');
+  $('ht').innerHTML = HAUTEURS.map(v=>`<option value="${v}"${v===2000?' selected':''}>${v} mm</option>`).join('');
+  $('pf').value = 500;
+  $('nv').value = 5;
+}
+
+function lire(){
+  const P = +$('pf').value, H = +$('ht').value;
+  const max = maxNiveaux(H);
+  $('nv').max = max;
+  let n = Math.min(Math.max(+$('nv').value||2,2),max);
+  if(+$('nv').value !== n) $('nv').value = n;
+  const q = Math.max(+$('qt').value||1,1);
+  const lg = longsFromCompteur();
+  const t = lg.length;
+  return {P,H,n,t,q,longs:lg,rec:getOpt('rec'),pd:getOpt('pd'),max};
+}
+
+/* ==========================================================
+   NOMENCLATURE
+   travée départ : 4 poteaux · travée suite : 2 poteaux
+   → 2 × travées + 2 poteaux au total
+   ========================================================== */
+function nomenclature(c){
+  const iP = PROFS.indexOf(c.P);
+  const nbPoteaux = 2*c.t + 2;
+  const lignes = [];
+
+  // poteaux : nombre inchangé, indépendant des longueurs (poteaux communs partagés)
+  lignes.push({lib:`Poteau galvanisé ${c.H} mm`, ref:POTEAU[c.H].ref, qte:nbPoteaux, pu:POTEAU[c.H].pu});
+
+  // tablettes regroupées par longueur de travée
+  const parLong = {};
+  c.longs.forEach(L => parLong[L] = (parLong[L]||0) + c.n);   // n niveaux par travée
+  const longsTriees = Object.keys(parLong).map(Number).sort((a,b)=>a-b);
+
+  longsTriees.forEach(L=>{
+    const q = parLong[L];
+    lignes.push({lib:`Tablette tubulaire ${L}×${c.P}`, ref:refTablette(L,c.P), qte:q, pu:PU_TAB[L][iP]});
+  });
+  if(c.rec==='iso') longsTriees.forEach(L=>
+    lignes.push({lib:`Dessus isobois naturel ${L}×${c.P}`, ref:refIso(L,c.P), qte:parLong[L], pu:PU_ISO[L][iP]}));
+  if(c.rec==='tole') longsTriees.forEach(L=>
+    lignes.push({lib:`Dessus tôle galvanisée ${L}×${c.P}`, ref:refTole(L,c.P), qte:parLong[L], pu:PU_TOLE[L][iP]}));
+
+  if(c.pd!=='aucun'){
+    const a = ACCESSOIRE[c.pd];
+    lignes.push({lib:a.lib, ref:a.ref, qte:nbPoteaux, pu:a.pu});
+  }
+  lignes.forEach(l => l.total = l.qte * l.pu);
+  return lignes;
+}
+
+const totalLignes = l => l.reduce((s,x)=>s+x.total,0);
+
+// formate les longueurs façon "2x1000+1250+1500" (ordre 1000,1250,1500)
+function fmtLongs(longs){
+  return LONGUEURS.filter(L=>longs.includes(L)).map(L=>{
+    const n = longs.filter(x=>x===L).length;
+    return n>1 ? `${n}x${L}` : `${L}`;
+  }).join('+');
+}
+
+function libelle(c){
+  const rec = {aucun:'tablettes nues', iso:'dessus isobois', tole:'dessus tôle galva'}[c.rec];
+  const pd = {pied:'pieds plastique', platine:'platines métal', calage:'platines de calage', aucun:'sans appui'}[c.pd];
+  return `Rayonnage H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}`;
+}
+
+/* ==========================================================
+   DESSIN — projection cavalière, redessinée à chaque choix
+   ========================================================== */
+function svgMarkup(c){
+  const DX = 0.46, DY = 0.30;                       // fuyante
+  const prof = c.P, haut = c.H;
+  // bornes horizontales cumulées : une par poteau (t+1 bornes)
+  const bornes = [0];
+  c.longs.forEach(L => bornes.push(bornes[bornes.length-1] + L));
+  const larg = bornes[bornes.length-1];             // largeur totale (somme des travées)
+  const largTot = larg + 30;                        // +30 mm : poteaux extérieurs débordants
+  const W = largTot + prof*DX, Hh = haut + prof*DY;
+  const s = Math.min(600/W, 340/Hh);                // échelle d'ajustement
+  const ox = (700 - W*s)/2 + 15*s, oy = 385 - prof*DY*s;
+
+  const X = (x,z) => ox + (x + z*DX)*s;
+  const Y = (y,z) => oy - (y + z*DY)*s;
+  const pt = (x,y,z) => X(x,z)+','+Y(y,z);
+
+  const e = ecartement(c.H, c.n);
+  const niveaux = [];
+  for(let i=0;i<c.n;i++) niveaux.push(PREMIER + i*(e?e.pas:0));
+
+  const POT = 40;                                    // largeur apparente du poteau
+  const o = [];
+  o.push(`<rect x="0" y="0" width="700" height="420" fill="none"/>`);
+
+  // ---- ombre au sol
+  o.push(`<polygon points="${pt(0,0,0)} ${pt(larg,0,0)} ${pt(larg,0,prof)} ${pt(0,0,prof)}"
+           fill="#000" opacity=".07"/>`);
+
+  const poteauX = bornes.slice();                    // abscisse de chaque poteau
+
+  // ---- poteaux arrière (z = prof)
+  const poteau = (x,z,face) => {
+    const w = POT;
+    return `<polygon points="${pt(x-w/2,0,z)} ${pt(x+w/2,0,z)} ${pt(x+w/2,c.H,z)} ${pt(x-w/2,c.H,z)}"
+            fill="${face}" stroke="#5c6875" stroke-width=".7"/>`;
+  };
+  poteauX.forEach(x => o.push(poteau(x, prof, '#7d8a97')));
+
+  // ---- tablettes, du bas vers le haut
+  const nbTubes = PROFILS[c.P] + 2;
+  niveaux.forEach(y=>{
+    for(let k=0;k<c.t;k++){
+      const x0 = bornes[k], x1 = bornes[k+1];
+      const rempli = c.rec!=='aucun';
+      if(rempli){
+        // recouvrement : surface pleine (isobois ou tôle)
+        const fill = c.rec==='iso' ? '#c89a5b' : '#c2cad3';
+        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y,prof)} ${pt(x0,y,prof)}"
+                fill="${fill}" stroke="#6d7a87" stroke-width=".7"/>`);
+      } else {
+        // tablette tubulaire nue : tubes fins (section 20×20 mm) avec du vide entre eux
+        const larg_tube = 20;                        // section réelle du tube, en mm
+        for(let j=0;j<nbTubes;j++){
+          const zc = prof*(j+0.5)/nbTubes;            // centre du tube
+          const za = zc - larg_tube/2, zb = zc + larg_tube/2;
+          o.push(`<polygon points="${pt(x0,y,za)} ${pt(x1,y,za)} ${pt(x1,y,zb)} ${pt(x0,y,zb)}"
+                  fill="#c3ccd5" stroke="#7a8794" stroke-width=".6"/>`);
+        }
+      }
+      // chant de façade
+      if(rempli){
+        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y-26,0)} ${pt(x0,y-26,0)}"
+                fill="${c.rec==='iso'?'#a87f45':'#aab5c0'}" stroke="#6d7a87" stroke-width=".7"/>`);
+      } else {
+        // deux tubes de façade (section 20 mm), superposés
+        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y-20,0)} ${pt(x0,y-20,0)}"
+                fill="#aab5c0" stroke="#7a8794" stroke-width=".6"/>`);
+        o.push(`<polygon points="${pt(x0,y-24,0)} ${pt(x1,y-24,0)} ${pt(x1,y-44,0)} ${pt(x0,y-44,0)}"
+                fill="#aab5c0" stroke="#7a8794" stroke-width=".6"/>`);
+      }
+    }
+  });
+
+  // ---- poteaux avant (z = 0) — dessinés en dernier
+  poteauX.forEach(x => o.push(poteau(x, 0, '#9aa6b2')));
+
+  // ---- étiquette de charge sur la tablette du haut de chaque travée
+  const iPo = PROFS.indexOf(c.P);
+  const yTop = niveaux[c.n-1];
+  for(let k=0;k<c.t;k++){
+    const cx = X((bornes[k]+bornes[k+1])/2, 0);
+    const cy = Y(yTop, 0) - 30;                       // au-dessus de la tablette haute
+    const kg = CHARGE[c.longs[k]][iPo];
+    const txt = `${kg} kg`;
+    const w = 40 + txt.length*6.4;
+    const ix = cx - w/2 + 13;                         // centre du pictogramme
+    const tx = ix + 11;                               // début du texte, à droite de l'icône
+    o.push(`<g font-family="Inter,Arial">
+      <rect x="${cx-w/2}" y="${cy-11}" width="${w}" height="19" rx="9.5"
+            fill="#fff" stroke="#0f6ea8" stroke-width="1"/>
+      <path d="M ${ix-4} ${cy+4} L ${ix-2.6} ${cy-4} L ${ix+2.6} ${cy-4} L ${ix+4} ${cy+4} Z"
+            fill="#0f6ea8"/>
+      <path d="M ${ix-1.6} ${cy-4} a 1.6 1.6 0 0 1 3.2 0"
+            fill="none" stroke="#0f6ea8" stroke-width="1"/>
+      <text x="${tx}" y="${cy+3.5}" fill="#0c4d74" font-size="10.5"
+            font-weight="600" text-anchor="start">${txt}</text>
+    </g>`);
+  }
+
+  // ---- cotes
+  const cote = (x1,y1,x2,y2,txt,dx=0,dy=0) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#0f6ea8" stroke-width=".9"/>
+     <text x="${(x1+x2)/2+dx}" y="${(y1+y2)/2+dy}" fill="#0f6ea8" font-size="11"
+       font-family="Inter,Arial" text-anchor="middle">${txt}</text>`;
+  // largeur : une cote par travée (montre les longueurs mixtes)
+  for(let k=0;k<c.t;k++){
+    const xa = X(bornes[k],0), xb = X(bornes[k+1],0), yb = Y(0,0)+22;
+    o.push(cote(xa+ (k===0?-15*s:0), yb, xb + (k===c.t-1?15*s:0), yb, `${c.longs[k]}`, 0, 13));
+    // petits traits de séparation
+    o.push(`<line x1="${xa}" y1="${yb-4}" x2="${xa}" y2="${yb+4}" stroke="#0f6ea8" stroke-width=".9"/>`);
+  }
+  o.push(`<text x="${(X(0,0)+X(larg,0))/2}" y="${Y(0,0)+50}" fill="#5d6b7a" font-size="10.5"
+     font-family="Inter,Arial" text-anchor="middle">${largTot} mm hors tout</text>`);
+  // hauteur, reportée le long du poteau arrière droit
+  o.push(cote(X(larg,prof)+22, Y(0,prof), X(larg,prof)+22, Y(c.H,prof), `${c.H} mm`, 26, 0));
+  // profondeur, en bas le long de la fuyante
+  o.push(cote(X(larg,0)+8, Y(0,0)+6, X(larg,prof)+8, Y(0,prof)+6, `${prof} mm`, 30, 12));
+
+  return o.join('');
+}
+
+function dessiner(c){
+  $('dessin').innerHTML = svgMarkup(c);
+}
+
+/* ==========================================================
+   RENDU
+   ========================================================== */
+function rendreTravees(){
+  $('travees').innerHTML = LONGUEURS.map(L=>{
+    const n = nbTravees[L]||0;
+    return `<div class="tvl">
+      <span class="lab">L.${L}</span>
+      <div class="stepper">
+        <button type="button" data-tvl="${L}" data-d="-1">−</button>
+        <input type="number" data-tvl-inp="${L}" min="0" max="20" value="${n}">
+        <button type="button" data-tvl="${L}" data-d="1">+</button>
+      </div>
+      <span class="cnt">${n>0 ? n+' travée'+(n>1?'s':'') : ''}</span>
+    </div>`;
+  }).join('');
+  const setN = (L,v)=>{ nbTravees[L] = Math.max(0, Math.min(20, v)); };
+  $('travees').querySelectorAll('button[data-tvl]').forEach(b=>{
+    b.onclick = ()=>{
+      const L = +b.dataset.tvl;
+      setN(L, (nbTravees[L]||0) + (+b.dataset.d));
+      if(totalTravees() < 1) setN(L, nbTravees[L]+1);   // garder au moins 1 travée
+      rendre();
+    };
+  });
+  $('travees').querySelectorAll('input[data-tvl-inp]').forEach(inp=>{
+    inp.onchange = ()=>{
+      const L = +inp.dataset.tvlInp;
+      setN(L, +inp.value||0);
+      if(totalTravees() < 1) setN(L, 1);
+      rendre();
+    };
+  });
+}
+
+function rendre(){
+  rendreTravees();
+  const c = lire();
+  const e = ecartement(c.H,c.n);
+  const lignes = nomenclature(c);
+  const tot = totalLignes(lignes);
+
+  // longueur totale et libellé dimensions
+  const iP = PROFS.indexOf(c.P);
+  const uniques = [...new Set(c.longs)];
+  const lgTag = fmtLongs(c.longs);
+  const largeurTot = c.longs.reduce((s,L)=>s+L,0) + 30;
+
+  $('apTag').textContent = `H.${c.H}  P.${c.P}  L.${lgTag}`;
+
+  $('stats').innerHTML = `
+    <div class="stat"><b>${largeurTot} mm</b><span>Longueur totale</span></div>
+    <div class="stat"><b>${e?e.utile:'—'} mm</b><span>Écartement utile</span></div>
+    <div class="stat"><b>${eur(tot)}</b><span>Prix 1 rayonnage HT</span></div>`;
+
+  const al = [];
+  if(e && e.utile > ECART_MAX)
+    al.push(`<div class="note warn"><b>Écartement ${e.utile} mm</b> — le montage impose 500 mm maximum entre 2 tablettes. Ajoutez un niveau ou réduisez la hauteur de poteau.</div>`);
+  if(c.n >= c.max)
+    al.push(`<div class="note info">Maximum atteint : ${c.max} niveaux pour un poteau de ${c.H} mm.</div>`);
+  const faibles = uniques.filter(L=>c.P<=388 && L===1500);
+  if(faibles.length)
+    al.push(`<div class="note info">Charge limitée à ${CHARGE[1500][iP]} kg par niveau sur les travées de 1500 en profondeur ${c.P} — vérifiez le besoin client.</div>`);
+  $('alertes').innerHTML = al.join('');
+
+  $('bom').innerHTML = lignes.map(l=>`<tr>
+      <td>${l.lib}</td><td class="ref">${l.ref}</td>
+      <td class="num">${l.qte}</td><td class="num">${eur(l.pu)}</td><td class="num">${eur(l.total)}</td>
+    </tr>`).join('');
+  $('bomTotal').textContent = eur(tot * c.q);
+
+  dessiner(c);
+}
+
+function rendreDevis(){
+  if(!devis.length){
+    $('devis').innerHTML = `<div class="vide">Aucun rayonnage pour l'instant. Configurez à gauche, puis ajoutez au devis.</div>`;
+  } else {
+    $('devis').innerHTML = devis.map((d,i)=>`
+      <div class="devis-item">
+        <div class="d">
+          <div class="t">${d.q > 1 ? d.q+' × ' : ''}${d.lib}</div>
+        </div>
+        <div class="p">${eur(d.total)}</div>
+        <button class="mod${editIndex===i?' actif':''}" data-i="${i}" title="Recharger dans le formulaire">Modifier</button>
+        <button class="x" data-i="${i}" title="Retirer">×</button>
+      </div>`).join('');
+    $('devis').querySelectorAll('.x').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      devis.splice(i,1);
+      if(editIndex===i) sortirEdition();
+      else if(editIndex>i) editIndex--;
+      rendreDevis();
+    });
+    $('devis').querySelectorAll('.mod').forEach(b=>b.onclick=()=>chargerPourEdition(+b.dataset.i));
+  }
+
+  const marchandise = devis.reduce((s,d)=>s+d.total,0);
+  const dep = departement;
+  const t = calculTransport(marchandise, dep);
+
+  const optsDep = () => {
+    const deps = Object.keys(TRANSPORT).filter(d=>d!=='AUTRE').sort();
+    return `<option value="">— dépt —</option>` +
+      deps.map(d=>`<option value="${d}"${d===dep?' selected':''}>${d}</option>`).join('') +
+      `<option value="AUTRE"${dep==='AUTRE'?' selected':''}>Autres</option>`;
+  };
+  const selDep = `<select id="dep">${optsDep()}</select>`;
+
+  if(!devis.length){
+    $('recap').innerHTML = '';
+  } else {
+    // total HT dépend de l'état du transport
+    let ligneTransport, htLabel, totalHT, payable = false;
+    if(!dep){
+      ligneTransport = `<span>Transport ${selDep}</span><span class="warn">choisir un département</span>`;
+      htLabel = 'Total HT'; totalHT = marchandise;
+    } else if(t.consult){
+      ligneTransport = `<span>Transport ${selDep}</span><span class="warn">sur consultation</span>`;
+      htLabel = 'Total HT hors transport'; totalHT = marchandise;
+    } else {
+      ligneTransport = `<span class="txp"><span>Transport <span class="sub">${t.txt}</span></span>${selDep}</span><span>${eur(t.val)}</span>`;
+      htLabel = 'Total HT rendu'; totalHT = marchandise + t.val; payable = true;
+    }
+    const tva = totalHT * 0.20;
+    const ttc = totalHT + tva;
+
+    $('recap').innerHTML = `
+      <div class="recap">
+        <div class="recap-l"><span>Marchandise HT</span><span>${eur(marchandise)}</span></div>
+        <div class="recap-l">${ligneTransport}</div>
+        <div class="recap-l sub-ht"><span>${htLabel}</span><span>${eur(totalHT)}</span></div>
+        <div class="recap-l"><span>TVA 20 %</span><span>${eur(tva)}</span></div>
+        <div class="recap-l grand"><span>Total TTC</span><b>${eur(ttc)}</b></div>
+      </div>
+      <div class="payzone">
+        <button class="btn-pay" id="pay"${payable?'':' disabled'}>
+          ${payable ? 'Payer '+eur(ttc)+' en ligne' : 'Choisissez un département pour payer'}
+        </button>
+        ${payable ? '' : '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>'}
+      </div>`;
+    $('dep').onchange = e => { departement = e.target.value; rendreDevis(); };
+    if(payable) $('pay').onclick = () => payer(ttc, totalHT, tva, t.val, dep);
+  }
+}
+
+/* ---- nomenclature consolidée du devis (regroupée par référence) ---- */
+function consolide(){
+  const m = new Map();
+  devis.forEach(d => d.lignes.forEach(l=>{
+    const k = l.ref;
+    const q = l.qte * d.q;
+    if(m.has(k)) m.get(k).qte += q;
+    else m.set(k,{lib:l.lib,ref:l.ref,qte:q,pu:l.pu});
+  }));
+  return [...m.values()].map(l=>({...l,total:l.qte*l.pu}));
+}
+
+/* ==========================================================
+   ÉDITION D'UN RAYONNAGE DU DEVIS
+   ========================================================== */
+function chargerPourEdition(i){
+  const c = devis[i].cfg;
+  $('pf').value = c.P; $('ht').value = c.H;
+  $('nv').value = c.n; $('qt').value = c.q;
+  nbTravees = {1000:0,1250:0,1500:0};
+  c.longs.forEach(L => nbTravees[L] = (nbTravees[L]||0) + 1);
+  setOpt('rec', c.rec); setOpt('pd', c.pd);
+  editIndex = i;
+  $('editbar').classList.add('on');
+  $('add').textContent = 'Mettre à jour le rayonnage';
+  rendre(); rendreDevis();
+  document.querySelector('.grid').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function sortirEdition(){
+  editIndex = -1;
+  $('editbar').classList.remove('on');
+  $('add').textContent = 'Ajouter au devis';
+}
+
+/* ==========================================================
+   ACTIONS
+   ========================================================== */
+function entree(c){
+  const lignes = nomenclature(c);
+  return {lib:libelle(c), q:c.q, cfg:c, lignes, total: totalLignes(lignes)*c.q};
+}
+
+$('add').onclick = ()=>{
+  const c = lire();
+  if(editIndex >= 0){
+    devis[editIndex] = entree(c);
+    sortirEdition();
+    rendreDevis();
+  } else {
+    devis.push(entree(c));
+    $('qt').value = 1;
+    rendreDevis();
+    $('devis').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+};
+
+$('cancelEdit').onclick = ()=>{ sortirEdition(); rendreDevis(); };
+
+$('clear').onclick = ()=>{ devis = []; sortirEdition(); rendreDevis(); };
+
+$('copy').onclick = ()=>{
+  if(!devis.length) return;
+  const marchandise = devis.reduce((s,d)=>s+d.total,0);
+  const dep = departement, t = calculTransport(marchandise, dep);
+  const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 11/05/2026 (prix HT)',''];
+  devis.forEach(d=>{
+    l.push(`${d.q>1?d.q+' × ':''}${d.lib}    ${eur(d.total)}`);
+    d.lignes.forEach(x=> l.push(`    ${String(x.qte*d.q).padStart(4)} × ${x.ref}  ${x.lib}`));
+    l.push('');
+  });
+  l.push(`Marchandise HT : ${eur(marchandise)}`);
+  if(!dep) l.push('Transport : département non renseigné');
+  else if(t.consult) l.push(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep}) : sur consultation`);
+  else {
+    l.push(`Transport dépt ${dep} (${t.txt}) : ${eur(t.val)}`);
+    l.push(`TOTAL HT RENDU : ${eur(marchandise + t.val)}`);
+  }
+  navigator.clipboard.writeText(l.join('\n'));
+  $('copy').textContent = 'Devis copié';
+  setTimeout(()=>$('copy').textContent='Copier le devis',1800);
+};
+
+$('csv').onclick = ()=>{
+  if(!devis.length) return;
+  const rows = [['Reference','Designation','Quantite','PU HT','Total HT']];
+  consolide().forEach(l=>rows.push([l.ref,l.lib,l.qte,l.pu.toFixed(5),l.total.toFixed(2)]));
+  const csv = rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = 'nomenclature-epsiline.csv';
+  a.click();
+};
+
+/* ==========================================================
+   EXPORT PDF DU DEVIS
+   ========================================================== */
+// convertit un SVG (chaîne <svg…>) en PNG dataURL via canvas
+function svgToPng(svgInner, scale=2){
+  return new Promise((resolve,reject)=>{
+    const vw = 700, vh = 420;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}">`
+              + `<rect width="${vw}" height="${vh}" fill="#ffffff"/>` + svgInner + `</svg>`;
+    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = ()=>{
+      const cv = document.createElement('canvas');
+      cv.width = vw*scale; cv.height = vh*scale;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.drawImage(img,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url);
+      resolve({data:cv.toDataURL('image/png'), w:vw, h:vh});
+    };
+    img.onerror = e=>{ URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+$('pdf').onclick = async ()=>{
+  if(!devis.length) return;
+  const btn = $('pdf'); const label = btn.textContent;
+  btn.textContent = 'Génération…'; btn.disabled = true;
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4'});
+    const M = 15, PW = 210, PH = 297;
+    let y = M;
+
+    // ---- en-tête
+    doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
+    doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
+    const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    doc.text('Date : '+dateStr, PW-M, 16, {align:'right'});
+    y = 30;
+
+    // ---- SYNTHÈSE : une ligne par rayonnage + vignette
+    doc.setTextColor(30); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Synthèse', M, y); y += 5;
+
+    // pré-rendu des vignettes
+    const vignettes = [];
+    for(const d of devis) vignettes.push(await svgToPng(svgMarkup(d.cfg), 2));
+
+    for(let i=0;i<devis.length;i++){
+      const d = devis[i], v = vignettes[i];
+      const imgW = 55, imgH = imgW * v.h / v.w;
+      const blocH = Math.max(imgH, 20) + 6;
+      if(y + blocH > PH - 30){ doc.addPage(); y = M; }
+
+      doc.setDrawColor(220); doc.setLineWidth(0.2);
+      doc.line(M, y, PW-M, y); y += 4;
+
+      doc.addImage(v.data,'PNG', M, y, imgW, imgH);
+      const tx = M + imgW + 6;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(30);
+      const titre = `${d.q>1?d.q+' × ':''}${d.lib}`;
+      doc.text(doc.splitTextToSize(titre, PW-M-tx), tx, y+4);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90);
+      doc.text(`Prix HT : ${eur(d.total)}`, tx, y+imgH-2);
+
+      y += Math.max(imgH, 16) + 4;
+    }
+
+    // ---- DÉTAIL : nomenclature consolidée
+    if(y > PH - 60){ doc.addPage(); y = M; } else y += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30);
+    doc.text('Nomenclature détaillée', M, y); y += 2;
+
+    const body = consolide().map(l=>[l.ref, l.lib, String(l.qte), eur(l.pu), eur(l.total)]);
+    doc.autoTable({
+      startY: y+3, margin:{left:M, right:M},
+      head:[['Référence','Désignation','Qté','P.U. HT','Total HT']],
+      body,
+      styles:{fontSize:8, cellPadding:1.6},
+      headStyles:{fillColor:[61,71,83], textColor:255, fontSize:8},
+      columnStyles:{0:{cellWidth:32, font:'courier', fontSize:7.5},
+                    2:{halign:'right', cellWidth:14},
+                    3:{halign:'right', cellWidth:24},
+                    4:{halign:'right', cellWidth:24}},
+      alternateRowStyles:{fillColor:[245,248,250]}
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // ---- RÉCAP marchandise + transport + total
+    const marchandise = devis.reduce((s,d)=>s+d.total,0);
+    const dep = departement, t = calculTransport(marchandise, dep);
+    if(y > PH - 45){ doc.addPage(); y = M; }
+    const rx = PW - M, lx = PW - M - 80;
+    const ligne = (lib, val, bold=false)=>{
+      doc.setFont('helvetica', bold?'bold':'normal'); doc.setFontSize(bold?11:9.5);
+      doc.setTextColor(bold?30:90);
+      doc.text(lib, lx, y); doc.text(val, rx, y, {align:'right'}); y += bold?7:5.5;
+    };
+    doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
+    ligne('Marchandise HT', eur(marchandise));
+    if(!dep) ligne('Transport', 'département non renseigné');
+    else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
+    else {
+      ligne(`Transport dépt ${dep} (${t.txt})`, eur(t.val));
+      doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
+      ligne('TOTAL HT RENDU', eur(marchandise + t.val), true);
+    }
+
+    // ---- pied de page
+    const pages = doc.getNumberOfPages();
+    for(let p=1;p<=pages;p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150);
+      doc.text('RSL — Rayonnages Services Lorraine  ·  Heillecourt/Nancy', M, PH-8);
+      doc.text(`${p} / ${pages}`, PW-M, PH-8, {align:'right'});
+    }
+
+    doc.save(`devis-rayonnages-epsiline-${dateStr.replace(/\//g,'-')}.pdf`);
+  } catch(err){
+    console.error(err);
+    alert("La génération du PDF a échoué. Réessayez ; si le problème persiste, vérifiez la connexion (les librairies PDF se chargent en ligne).");
+  } finally {
+    btn.textContent = label; btn.disabled = false;
+  }
+};
+
+/* ==========================================================
+   PAIEMENT STRIPE via webhook Make
+   ========================================================== */
+async function payer(ttc, ht, tva, transport, dep){
+  if(!MAKE_WEBHOOK_URL){
+    alert("Le paiement en ligne n'est pas encore activé : l'URL du webhook Make n'a pas été renseignée dans le configurateur.");
+    return;
+  }
+  const btn = $('pay'); const label = btn.textContent;
+  btn.textContent = 'Redirection vers le paiement…'; btn.disabled = true;
+
+  // charge utile : détail complet du devis pour Make/Stripe
+  const payload = {
+    date: new Date().toISOString(),
+    departement: dep,
+    montants: {
+      marchandise_ht: +devis.reduce((s,d)=>s+d.total,0).toFixed(2),
+      transport_ht: +transport.toFixed(2),
+      total_ht: +ht.toFixed(2),
+      tva: +tva.toFixed(2),
+      total_ttc: +ttc.toFixed(2),
+      // Stripe attend un entier en centimes
+      montant_stripe_centimes: Math.round(ttc*100),
+      devise: 'eur'
+    },
+    rayonnages: devis.map(d=>({
+      designation: d.lib,
+      quantite: d.q,
+      prix_ht: +d.total.toFixed(2)
+    })),
+    nomenclature: consolide().map(l=>({
+      reference: l.ref, designation: l.lib,
+      quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
+    }))
+  };
+
+  try{
+    const rep = await fetch(MAKE_WEBHOOK_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!rep.ok) throw new Error('HTTP '+rep.status);
+
+    // Make peut répondre soit du JSON {url:...}, soit l'URL en texte brut
+    const txt = (await rep.text()).trim();
+    let url = txt;
+    try { const j = JSON.parse(txt); url = j.url || j.checkout_url || j.URL || txt; } catch(_){}
+
+    if(url && /^https:\/\//.test(url)){
+      window.location.href = url;               // redirection vers Stripe Checkout
+    } else {
+      throw new Error('Réponse inattendue : '+txt.slice(0,120));
+    }
+  } catch(err){
+    console.error(err);
+    alert("Le paiement n'a pas pu démarrer.\n\nVérifiez que le scénario Make est actif et qu'il répond bien l'URL Stripe.\n\nDétail : "+err.message);
+    btn.textContent = label; btn.disabled = false;
+  }
+}
+
+['pf','ht','nv','qt'].forEach(id=>{
+  $(id).addEventListener('input', rendre);
+  $(id).addEventListener('change', rendre);
+});
+
+// groupes d'options : clic pour cocher
+['rec','pd'].forEach(id=>{
+  $(id).querySelectorAll('.opt').forEach(o=>{
+    o.onclick = ()=>{ setOpt(id, o.dataset.v); rendre(); };
+  });
+});
+
+// ---- zoom en popup de l'aperçu
+function ouvrirZoom(){
+  const c = lire();
+  $('dessinBig').innerHTML = svgMarkup(c);
+  $('modalTtl').textContent = `Aperçu — H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} · ${c.n} niveaux`;
+  $('modal').classList.add('on');
+}
+function fermerZoom(){ $('modal').classList.remove('on'); }
+$('zoom').onclick = e => { e.stopPropagation(); ouvrirZoom(); };
+$('apwrap').onclick = ouvrirZoom;
+$('modalClose').onclick = fermerZoom;
+$('modal').onclick = e => { if(e.target === $('modal')) fermerZoom(); };
+document.addEventListener('keydown', e => { if(e.key==='Escape') fermerZoom(); });
+
+// steppers − / + (nv, qt) — les steppers de travées ont leur propre handler
+document.querySelectorAll('.stepper button[data-step]').forEach(b=>{
+  b.onclick = ()=>{
+    const inp = $(b.dataset.step);
+    const min = inp.min!=='' ? +inp.min : -Infinity;
+    const max = inp.max!=='' ? +inp.max : Infinity;
+    let v = (+inp.value||min) + (+b.dataset.d);
+    v = Math.max(min, Math.min(max, v));
+    inp.value = v;
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+  };
+});
+
+initSelects();
+rendre();
+rendreDevis();
+</script>
+</body>
+</html>
