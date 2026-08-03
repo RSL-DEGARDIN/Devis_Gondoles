@@ -35,6 +35,17 @@ header .retour{
   white-space:nowrap;transition:background .15s,border-color .15s;
 }
 header .retour:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.6)}
+.bandeau-paiement{
+  position:relative;padding:14px 44px 14px 20px;font-size:14px;font-weight:500;
+  text-align:center;letter-spacing:.02em;
+}
+.bandeau-paiement.ok{background:#eaf6ef;color:#166534;border-bottom:2px solid #86c9a4}
+.bandeau-paiement.annule{background:#fdecec;color:#9b2c2c;border-bottom:2px solid #e5a3a3}
+.bandeau-close{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:inherit;opacity:.6;
+}
+.bandeau-close:hover{opacity:1}
 .wrap{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
 .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
@@ -172,6 +183,12 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 .coderemise.ok button:hover{background:#1a7a4c;color:#fff;border-color:#1a7a4c}
 .code-msg{font-size:12px;color:#8b98a6;flex:1 0 100%}
 .code-msg.err{color:#c0392b}
+.coord{margin-top:12px;padding-top:11px;border-top:1px solid var(--trait)}
+.coord-t{font-size:11.5px;letter-spacing:.04em;color:#5d6b7a;margin-bottom:7px;font-weight:600}
+.coord-t .req{color:#c0392b;font-weight:400;text-transform:none;letter-spacing:0}
+.coord-f{display:flex;gap:7px;flex-wrap:wrap}
+.coord-f input{flex:1 1 140px;padding:7px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px}
+.coord-f input:focus{outline:none;border-color:var(--acier);background:#fff}
 .recap select{padding:3px 6px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:12.5px;color:var(--encre)}
 .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#eef4f8;color:var(--signal);padding:2px 7px;border-radius:2px;font-weight:600}
@@ -309,6 +326,10 @@ const MAKE_VERIF_CODE_URL = 'https://hook.eu2.make.com/mnpm5jf706d8n3vdxgpwb7rug
 let remise = 0;        // taux en % appliqué (0 = aucune)
 let codeRemise = '';   // code validé
 let codeSaisi = '';    // ce que le client a tapé (conservé à l'affichage)
+
+// coordonnées client (obligatoires avant paiement)
+let clientEmail = '';
+let clientTel = '';
 
 /* ==========================================================
    DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
@@ -794,6 +815,34 @@ function rendreDevis(){
            <span id="code-msg" class="code-msg"></span>
          </div>`;
 
+    // validation coordonnées : email format correct + téléphone non vide
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
+    const telOk = clientTel.trim().length >= 6;
+    const coordOk = emailOk && telOk;
+    const peutPayer = payable && coordOk;
+
+    // bloc coordonnées client (obligatoire pour payer)
+    const zoneCoord = `
+      <div class="coord">
+        <div class="coord-t">Vos coordonnées <span class="req">(obligatoire pour commander)</span></div>
+        <div class="coord-f">
+          <input type="email" id="cli-email" placeholder="Adresse email *" value="${clientEmail}" autocomplete="email">
+          <input type="tel" id="cli-tel" placeholder="Téléphone *" value="${clientTel}" autocomplete="tel">
+        </div>
+      </div>`;
+
+    // message d'incitation si paiement bloqué par coordonnées
+    let payLabel, payNote = '';
+    if(!payable){
+      payLabel = 'Choisissez un département pour payer';
+      payNote = '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>';
+    } else if(!coordOk){
+      payLabel = 'Payer '+eur(ttc)+' en ligne';
+      payNote = '<div class="paynote">Renseignez votre email et votre téléphone pour valider la commande.</div>';
+    } else {
+      payLabel = 'Payer '+eur(ttc)+' en ligne';
+    }
+
     $('recap').innerHTML = `
       <div class="recap">
         <div class="recap-l"><span>Marchandise HT</span><span>${eur(marchandise)}</span></div>
@@ -804,13 +853,34 @@ function rendreDevis(){
         <div class="recap-l grand"><span>Total TTC</span><b>${eur(ttc)}</b></div>
       </div>
       ${zoneCode}
+      ${zoneCoord}
       <div class="payzone">
-        <button class="btn-pay" id="pay"${payable?'':' disabled'}>
-          ${payable ? 'Payer '+eur(ttc)+' en ligne' : 'Choisissez un département pour payer'}
-        </button>
-        ${payable ? '' : '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>'}
+        <button class="btn-pay" id="pay"${peutPayer?'':' disabled'}>${payLabel}</button>
+        ${payNote}
       </div>`;
     $('dep').onchange = e => { departement = e.target.value; rendreDevis(); };
+    // coordonnées : mise à jour sans re-render à chaque frappe (pour ne pas perdre le focus)
+    const emailInp = $('cli-email');
+    const telInp = $('cli-tel');
+    const majBtnPay = () => {
+      const eOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
+      const tOk = clientTel.trim().length >= 6;
+      const btn = $('pay');
+      if(!btn) return;
+      const ok = payable && eOk && tOk;
+      btn.disabled = !ok;
+      const note = document.querySelector('.payzone .paynote');
+      if(payable && !(eOk && tOk)){
+        if(!note){
+          const d = document.createElement('div');
+          d.className = 'paynote';
+          d.textContent = 'Renseignez votre email et votre téléphone pour valider la commande.';
+          $('pay').after(d);
+        }
+      } else if(note && payable){ note.remove(); }
+    };
+    if(emailInp) emailInp.oninput = e => { clientEmail = e.target.value; majBtnPay(); };
+    if(telInp) telInp.oninput = e => { clientTel = e.target.value; majBtnPay(); };
     // gestion du code remise
     if(remise > 0){
       $('code-retirer').onclick = () => { remise = 0; codeRemise = ''; codeSaisi = ''; rendreDevis(); };
@@ -820,7 +890,10 @@ function rendreDevis(){
       const btn = $('code-appliquer');
       if(btn) btn.onclick = () => verifierCode();
     }
-    if(payable) $('pay').onclick = () => payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise});
+    if(peutPayer || payable) $('pay').onclick = () => {
+      if($('pay').disabled) return;
+      payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise}, {email:clientEmail.trim(), tel:clientTel.trim()});
+    };
   }
 }
 
@@ -1100,7 +1173,7 @@ async function verifierCode(){
 /* ==========================================================
    PAIEMENT STRIPE via webhook Make
    ========================================================== */
-async function payer(ttc, ht, tva, transport, dep, remiseInfo){
+async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   if(!MAKE_WEBHOOK_URL){
     alert("Le paiement en ligne n'est pas encore activé : l'URL du webhook Make n'a pas été renseignée dans le configurateur.");
     return;
@@ -1128,6 +1201,10 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo){
   const payload = {
     date: new Date().toISOString(),
     departement: dep,
+    client: {
+      email: coord?.email || '',
+      telephone: coord?.tel || ''
+    },
     montants: {
       marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
       remise_taux: remiseInfo?.remise_taux || 0,
@@ -1221,6 +1298,25 @@ document.querySelectorAll('.stepper button[data-step]').forEach(b=>{
 initSelects();
 rendre();
 rendreDevis();
+
+/* ---- retour de paiement Stripe (?paiement=ok | annule) ---- */
+(function retourPaiement(){
+  const p = new URLSearchParams(location.search).get('paiement');
+  if(!p) return;
+  const banniere = document.createElement('div');
+  banniere.className = 'bandeau-paiement ' + (p==='ok' ? 'ok' : 'annule');
+  banniere.innerHTML = p==='ok'
+    ? '✓ Votre paiement a bien été enregistré. Un reçu vous a été envoyé par email. Merci !'
+    : 'Paiement annulé — votre commande n\'a pas été validée. Vous pouvez réessayer.';
+  const fermer = document.createElement('button');
+  fermer.textContent = '×'; fermer.className = 'bandeau-close';
+  fermer.onclick = () => banniere.remove();
+  banniere.appendChild(fermer);
+  document.body.prepend(banniere);
+  // nettoie l'URL pour ne pas ré-afficher au rechargement
+  history.replaceState(null, '', location.pathname);
+  if(p==='ok') setTimeout(()=>banniere.remove(), 12000);
+})();
 </script>
 </body>
 </html>
