@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Configurateur rayonnages — RSL</title>
+<title>Configurateur rayonnages EPSILINE — RSL</title>
 <style>
 :root{
   --acier:#3d4753;        /* structure galva foncée */
@@ -160,6 +160,18 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 .recap-l .txp select{margin:0 auto;width:130px;flex:0 0 auto}
 .recap-l .txp .sub{margin-left:0}
 .recap .warn{font-size:12px;color:#7c2f14}
+.recap-l.remise span:first-child{color:#1a7a4c}
+.recap-l.remise span:last-child{color:#1a7a4c;font-weight:600}
+.coderemise{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
+.coderemise input{padding:6px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px;width:130px;text-transform:uppercase}
+.coderemise button{padding:6px 12px;border:1px solid var(--acier);background:#fff;color:var(--acier);border-radius:3px;font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s,color .15s}
+.coderemise button:hover{background:var(--acier);color:#fff}
+.coderemise.ok{background:#eaf6ef;border:1px solid #b7e0c8;border-radius:3px;padding:8px 11px;justify-content:space-between;color:#1a7a4c;font-size:13px}
+.coderemise.ok b{letter-spacing:.04em}
+.coderemise.ok button{border-color:#b7e0c8;color:#1a7a4c;padding:3px 9px;font-size:11.5px}
+.coderemise.ok button:hover{background:#1a7a4c;color:#fff;border-color:#1a7a4c}
+.code-msg{font-size:12px;color:#8b98a6;flex:1 0 100%}
+.code-msg.err{color:#c0392b}
 .recap select{padding:3px 6px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:12.5px;color:var(--encre)}
 .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#eef4f8;color:var(--signal);padding:2px 7px;border-radius:2px;font-weight:600}
@@ -290,7 +302,13 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
    Colle ici l'URL du webhook Make (module « Custom webhook »).
    Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
    ========================================================== */
-const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
+const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // webhook du scénario "Rayonnages Strippe" (paiement)
+const MAKE_VERIF_CODE_URL = 'https://hook.eu2.make.com/mnpm5jf706d8n3vdxgpwb7rugpk0f7qp'; // webhook du scénario "Verif code remise" (renvoie {"taux": 20})
+
+// état de la remise (code privilégié)
+let remise = 0;        // taux en % appliqué (0 = aucune)
+let codeRemise = '';   // code validé
+let codeSaisi = '';    // ce que le client a tapé (conservé à l'affichage)
 
 /* ==========================================================
    DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
@@ -737,31 +755,55 @@ function rendreDevis(){
   const selDep = `<select id="dep">${optsDep()}</select>`;
 
   if(!devis.length){
+    remise = 0; codeRemise = ''; codeSaisi = '';
     $('recap').innerHTML = '';
   } else {
     // total HT dépend de l'état du transport
+    // REMISE : s'applique sur la marchandise uniquement ; le transport reste calculé sur le brut
+    const remiseVal = marchandise * (remise/100);
+    const marchandiseNette = marchandise - remiseVal;
+
     let ligneTransport, htLabel, totalHT, payable = false;
     if(!dep){
       ligneTransport = `<span>Transport ${selDep}</span><span class="warn">choisir un département</span>`;
-      htLabel = 'Total HT'; totalHT = marchandise;
+      htLabel = 'Total HT'; totalHT = marchandiseNette;
     } else if(t.consult){
       ligneTransport = `<span>Transport ${selDep}</span><span class="warn">sur consultation</span>`;
-      htLabel = 'Total HT hors transport'; totalHT = marchandise;
+      htLabel = 'Total HT hors transport'; totalHT = marchandiseNette;
     } else {
       ligneTransport = `<span class="txp"><span>Transport <span class="sub">${t.txt}</span></span>${selDep}</span><span>${eur(t.val)}</span>`;
-      htLabel = 'Total HT rendu'; totalHT = marchandise + t.val; payable = true;
+      htLabel = 'Total HT rendu'; totalHT = marchandiseNette + t.val; payable = true;
     }
     const tva = totalHT * 0.20;
     const ttc = totalHT + tva;
 
+    // ligne remise (affichée seulement si un taux est actif)
+    const ligneRemise = remise > 0
+      ? `<div class="recap-l remise"><span>Remise ${remise} % <span class="sub">(${codeRemise})</span></span><span>− ${eur(remiseVal)}</span></div>`
+      : '';
+
+    // zone code remise : champ + bouton, ou confirmation si déjà appliqué
+    const zoneCode = remise > 0
+      ? `<div class="coderemise ok">
+           <span>✓ Code <b>${codeRemise}</b> appliqué (−${remise} %)</span>
+           <button type="button" id="code-retirer">retirer</button>
+         </div>`
+      : `<div class="coderemise">
+           <input type="text" id="code-input" placeholder="Code remise" value="${codeSaisi}" autocomplete="off">
+           <button type="button" id="code-appliquer">Appliquer</button>
+           <span id="code-msg" class="code-msg"></span>
+         </div>`;
+
     $('recap').innerHTML = `
       <div class="recap">
         <div class="recap-l"><span>Marchandise HT</span><span>${eur(marchandise)}</span></div>
+        ${ligneRemise}
         <div class="recap-l">${ligneTransport}</div>
         <div class="recap-l sub-ht"><span>${htLabel}</span><span>${eur(totalHT)}</span></div>
         <div class="recap-l"><span>TVA 20 %</span><span>${eur(tva)}</span></div>
         <div class="recap-l grand"><span>Total TTC</span><b>${eur(ttc)}</b></div>
       </div>
+      ${zoneCode}
       <div class="payzone">
         <button class="btn-pay" id="pay"${payable?'':' disabled'}>
           ${payable ? 'Payer '+eur(ttc)+' en ligne' : 'Choisissez un département pour payer'}
@@ -769,7 +811,16 @@ function rendreDevis(){
         ${payable ? '' : '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>'}
       </div>`;
     $('dep').onchange = e => { departement = e.target.value; rendreDevis(); };
-    if(payable) $('pay').onclick = () => payer(ttc, totalHT, tva, t.val, dep);
+    // gestion du code remise
+    if(remise > 0){
+      $('code-retirer').onclick = () => { remise = 0; codeRemise = ''; codeSaisi = ''; rendreDevis(); };
+    } else {
+      const inp = $('code-input');
+      if(inp) inp.oninput = e => { codeSaisi = e.target.value; };
+      const btn = $('code-appliquer');
+      if(btn) btn.onclick = () => verifierCode();
+    }
+    if(payable) $('pay').onclick = () => payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise});
   }
 }
 
@@ -837,7 +888,7 @@ $('copy').onclick = ()=>{
   if(!devis.length) return;
   const marchandise = devis.reduce((s,d)=>s+d.total,0);
   const dep = departement, t = calculTransport(marchandise, dep);
-  const l = ['DEVIS RAYONNAGES — tarif au 11/05/2026 (prix HT)',''];
+  const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 11/05/2026 (prix HT)',''];
   devis.forEach(d=>{
     l.push(`${d.q>1?d.q+' × ':''}${d.lib}    ${eur(d.total)}`);
     d.lignes.forEach(x=> l.push(`    ${String(x.qte*d.q).padStart(4)} × ${x.ref}  ${x.lib}`));
@@ -905,7 +956,7 @@ $('pdf').onclick = async ()=>{
     // ---- en-tête
     doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
     doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text('DEVIS RAYONNAGES ', M, 10);
+    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
     doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
     const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -971,13 +1022,20 @@ $('pdf').onclick = async ()=>{
       doc.text(lib, lx, y); doc.text(val, rx, y, {align:'right'}); y += bold?7:5.5;
     };
     doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
+    const remiseValPdf = marchandise * (remise/100);
+    const marchandiseNettePdf = marchandise - remiseValPdf;
     ligne('Marchandise HT', eurPdf(marchandise));
+    if(remise > 0){
+      doc.setTextColor(26,122,76);
+      ligne(`Remise ${remise} % (${codeRemise})`, '− '+eurPdf(remiseValPdf));
+      doc.setTextColor(90);
+    }
     if(!dep) ligne('Transport', 'département non renseigné');
     else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
     else {
       ligne(`Transport dépt ${dep} (${t.txt})`, eurPdf(t.val));
       doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
-      ligne('TOTAL HT RENDU', eurPdf(marchandise + t.val), true);
+      ligne('TOTAL HT RENDU', eurPdf(marchandiseNettePdf + t.val), true);
     }
 
     // ---- pied de page
@@ -1001,7 +1059,48 @@ $('pdf').onclick = async ()=>{
 /* ==========================================================
    PAIEMENT STRIPE via webhook Make
    ========================================================== */
-async function payer(ttc, ht, tva, transport, dep){
+/* ==========================================================
+   VÉRIFICATION DU CODE REMISE via webhook Make
+   Le code n'est JAMAIS dans la page : Make répond le taux.
+   ========================================================== */
+async function verifierCode(){
+  const code = (codeSaisi||'').trim();
+  const msg = $('code-msg');
+  if(!code){ if(msg){msg.textContent='Saisissez un code.'; msg.className='code-msg err';} return; }
+
+  if(!MAKE_VERIF_CODE_URL){
+    if(msg){msg.textContent="Vérification non activée (URL manquante)."; msg.className='code-msg err';}
+    return;
+  }
+
+  const btn = $('code-appliquer');
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  try{
+    const rep = await fetch(MAKE_VERIF_CODE_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code })
+    });
+    const data = await rep.json();
+    const taux = Number(data && data.taux) || 0;
+    if(taux > 0){
+      remise = taux; codeRemise = code.toUpperCase(); rendreDevis();
+    } else {
+      if(btn){ btn.disabled=false; btn.textContent='Appliquer'; }
+      const m = $('code-msg');
+      if(m){ m.textContent='Code non valide.'; m.className='code-msg err'; }
+    }
+  } catch(err){
+    console.error(err);
+    if(btn){ btn.disabled=false; btn.textContent='Appliquer'; }
+    const m = $('code-msg');
+    if(m){ m.textContent='Erreur de vérification. Réessayez.'; m.className='code-msg err'; }
+  }
+}
+
+/* ==========================================================
+   PAIEMENT STRIPE via webhook Make
+   ========================================================== */
+async function payer(ttc, ht, tva, transport, dep, remiseInfo){
   if(!MAKE_WEBHOOK_URL){
     alert("Le paiement en ligne n'est pas encore activé : l'URL du webhook Make n'a pas été renseignée dans le configurateur.");
     return;
@@ -1030,7 +1129,10 @@ async function payer(ttc, ht, tva, transport, dep){
     date: new Date().toISOString(),
     departement: dep,
     montants: {
-      marchandise_ht: +devis.reduce((s,d)=>s+d.total,0).toFixed(2),
+      marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
+      remise_taux: remiseInfo?.remise_taux || 0,
+      remise_ht: +(remiseInfo?.remise_val || 0).toFixed(2),
+      code_remise: remiseInfo?.code || '',
       transport_ht: +transport.toFixed(2),
       total_ht: +ht.toFixed(2),
       tva: +tva.toFixed(2),
