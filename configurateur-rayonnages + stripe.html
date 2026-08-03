@@ -1198,6 +1198,12 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   const csvNomenclature = [csvHeader, ...csvRows]
     .map(r => r.map(csvCell).join(csvSep)).join('\r\n');
 
+  // résumé compact des rayonnages pour les metadata Stripe (limite 500 caractères/valeur)
+  let resumeRayonnages = devis
+    .map(d => `${d.q>1?d.q+'x ':''}${d.lib} — ${eur(d.total)}`)
+    .join(' | ');
+  if(resumeRayonnages.length > 480) resumeRayonnages = resumeRayonnages.slice(0,477) + '…';
+
   const payload = {
     date: new Date().toISOString(),
     departement: dep,
@@ -1205,6 +1211,7 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
       email: coord?.email || '',
       telephone: coord?.tel || ''
     },
+    resume_rayonnages: resumeRayonnages,
     montants: {
       marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
       remise_taux: remiseInfo?.remise_taux || 0,
