@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Configurateur RAYONNAGES — RSL</title>
+<title>Configurateur rayonnages EPSILINE — RSL</title>
 <style>
 :root{
   --acier:#3d4753;        /* structure galva foncée */
@@ -281,7 +281,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
    Colle ici l'URL du webhook Make (module « Custom webhook »).
    Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
    ========================================================== */
-const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
+const MAKE_WEBHOOK_URL = ''; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
 
 /* ==========================================================
    DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
@@ -362,6 +362,14 @@ function ecartement(H,n){
 }
 
 const eur = v => v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+// version PDF : jsPDF ne rend pas l'espace insécable fin (U+202F) de toLocaleString ;
+// on formate avec un espace normal comme séparateur de milliers
+const eurPdf = v => {
+  const neg = v < 0 ? '-' : '';
+  const [ent, dec] = Math.abs(v).toFixed(2).split('.');
+  const entSep = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${neg}${entSep},${dec} €`;
+};
 
 /* ==========================================================
    TRANSPORT — grille au 15/02/2026 (Epsiline = grille 1)
@@ -820,7 +828,7 @@ $('copy').onclick = ()=>{
   if(!devis.length) return;
   const marchandise = devis.reduce((s,d)=>s+d.total,0);
   const dep = departement, t = calculTransport(marchandise, dep);
-  const l = ['DEVIS RAYONNAGES — tarif au 11/05/2026 (prix HT)',''];
+  const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 11/05/2026 (prix HT)',''];
   devis.forEach(d=>{
     l.push(`${d.q>1?d.q+' × ':''}${d.lib}    ${eur(d.total)}`);
     d.lignes.forEach(x=> l.push(`    ${String(x.qte*d.q).padStart(4)} × ${x.ref}  ${x.lib}`));
@@ -888,7 +896,7 @@ $('pdf').onclick = async ()=>{
     // ---- en-tête
     doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
     doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text('DEVIS RAYONNAGES ', M, 10);
+    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
     doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
     const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -918,7 +926,7 @@ $('pdf').onclick = async ()=>{
       const titre = `${d.q>1?d.q+' × ':''}${d.lib}`;
       doc.text(doc.splitTextToSize(titre, PW-M-tx), tx, y+4);
       doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90);
-      doc.text(`Prix HT : ${eur(d.total)}`, tx, y+imgH-2);
+      doc.text(`Prix HT : ${eurPdf(d.total)}`, tx, y+imgH-2);
 
       y += Math.max(imgH, 16) + 4;
     }
@@ -928,7 +936,7 @@ $('pdf').onclick = async ()=>{
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30);
     doc.text('Nomenclature détaillée', M, y); y += 2;
 
-    const body = consolide().map(l=>[l.ref, l.lib, String(l.qte), eur(l.pu), eur(l.total)]);
+    const body = consolide().map(l=>[l.ref, l.lib, String(l.qte), eurPdf(l.pu), eurPdf(l.total)]);
     doc.autoTable({
       startY: y+3, margin:{left:M, right:M},
       head:[['Référence','Désignation','Qté','P.U. HT','Total HT']],
@@ -954,13 +962,13 @@ $('pdf').onclick = async ()=>{
       doc.text(lib, lx, y); doc.text(val, rx, y, {align:'right'}); y += bold?7:5.5;
     };
     doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
-    ligne('Marchandise HT', eur(marchandise));
+    ligne('Marchandise HT', eurPdf(marchandise));
     if(!dep) ligne('Transport', 'département non renseigné');
     else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
     else {
-      ligne(`Transport dépt ${dep} (${t.txt})`, eur(t.val));
+      ligne(`Transport dépt ${dep} (${t.txt})`, eurPdf(t.val));
       doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
-      ligne('TOTAL HT RENDU', eur(marchandise + t.val), true);
+      ligne('TOTAL HT RENDU', eurPdf(marchandise + t.val), true);
     }
 
     // ---- pied de page
@@ -993,6 +1001,22 @@ async function payer(ttc, ht, tva, transport, dep){
   btn.textContent = 'Redirection vers le paiement…'; btn.disabled = true;
 
   // charge utile : détail complet du devis pour Make/Stripe
+  const lignesNomen = consolide();
+
+  // CSV nomenclature construit ici : ordre des colonnes garanti, séparateur ; pour Excel FR
+  const csvSep = ';';
+  const csvCell = v => {
+    const s = String(v).replace(/"/g,'""');
+    return /[";\n]/.test(s) ? `"${s}"` : s;
+  };
+  const csvNum = v => String(v).replace('.', ',');   // virgule décimale FR
+  const csvHeader = ['Reference','Designation','Quantite','PU HT','Total HT'];
+  const csvRows = lignesNomen.map(l => [
+    l.ref, l.lib, l.qte, csvNum(l.pu.toFixed(5)), csvNum(l.total.toFixed(2))
+  ]);
+  const csvNomenclature = [csvHeader, ...csvRows]
+    .map(r => r.map(csvCell).join(csvSep)).join('\r\n');
+
   const payload = {
     date: new Date().toISOString(),
     departement: dep,
@@ -1011,10 +1035,12 @@ async function payer(ttc, ht, tva, transport, dep){
       quantite: d.q,
       prix_ht: +d.total.toFixed(2)
     })),
-    nomenclature: consolide().map(l=>({
+    nomenclature: lignesNomen.map(l=>({
       reference: l.ref, designation: l.lib,
       quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
-    }))
+    })),
+    // CSV prêt à l'emploi (ordre des colonnes garanti)
+    csv_nomenclature: csvNomenclature
   };
 
   try{
