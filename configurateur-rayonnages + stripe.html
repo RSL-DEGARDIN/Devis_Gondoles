@@ -26,8 +26,15 @@ header{
   background:var(--acier);color:#fff;padding:14px 20px;
   display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
 }
+header .logo{height:34px;width:auto;display:block;background:#fff;padding:3px 6px;border-radius:3px}
 header h1{font-size:17px;margin:0;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
 header .meta{font-size:11.5px;color:#b8c3ce;letter-spacing:.04em}
+header .retour{
+  margin-left:auto;color:#fff;text-decoration:none;font-size:12px;letter-spacing:.04em;
+  border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:6px 12px;
+  white-space:nowrap;transition:background .15s,border-color .15s;
+}
+header .retour:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.6)}
 .wrap{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
 .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
@@ -162,8 +169,10 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 </head>
 <body>
 <header>
+  <img class="logo" src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL — Rayonnages Services Lorraine">
   <h1>Configurateur rayonnages</h1>
   <span class="meta">EPSILINE galvanisé — chiffrage au détail — tarif 11/05/2026</span>
+  <a class="retour" href="https://rsl.eu/">← Retour au site</a>
 </header>
 
 <div class="wrap">
@@ -281,7 +290,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
    Colle ici l'URL du webhook Make (module « Custom webhook »).
    Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
    ========================================================== */
-const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
+const MAKE_WEBHOOK_URL = ''; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
 
 /* ==========================================================
    DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
