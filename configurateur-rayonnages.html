@@ -77,6 +77,25 @@ button{
 .note.warn{border-color:var(--alerte);color:#7c2f14;background:#fdf3ef}
 .note.info{border-color:var(--signal);color:#134a6b}
 svg{width:100%;height:auto;display:block;background:linear-gradient(#fbfcfd,#eef1f4)}
+.apwrap{position:relative;cursor:zoom-in;border-radius:3px;overflow:hidden}
+.zoombtn{
+  position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:4px;
+  background:rgba(255,255,255,.92);border:1px solid var(--trait);color:var(--acier);
+  font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.12)
+}
+.zoombtn:hover{background:#fff;border-color:var(--signal);color:var(--signal)}
+.modal{
+  position:fixed;inset:0;background:rgba(27,34,43,.82);display:none;z-index:100;
+  align-items:center;justify-content:center;padding:24px
+}
+.modal.on{display:flex}
+.modal-box{background:#fff;border-radius:6px;padding:14px;max-width:1100px;width:100%;max-height:92vh;position:relative}
+.modal-box svg{width:100%;height:auto;max-height:82vh}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.modal-head .ttl{font-size:13px;font-weight:600;color:var(--encre)}
+.modal-close{background:none;border:none;font-size:26px;line-height:1;color:#7a8794;cursor:pointer;padding:0 4px}
+.modal-close:hover{color:var(--alerte)}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{
   text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#7a8794;
@@ -200,7 +219,10 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
     <div class="card" style="margin-bottom:16px">
       <h2>Aperçu <span id="apTag" class="tag"></span></h2>
       <div id="stats" class="stats"></div>
-      <svg id="dessin" viewBox="0 0 700 420" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
+      <div class="apwrap" id="apwrap" title="Agrandir">
+        <svg id="dessin" viewBox="0 0 700 420" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
+        <button class="zoombtn" id="zoom" title="Agrandir l'aperçu" aria-label="Agrandir">⤢</button>
+      </div>
       <div id="alertes"></div>
     </div>
 
@@ -232,6 +254,16 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
   </div>
 
 </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="ttl" id="modalTtl">Aperçu du rayonnage</span>
+      <button class="modal-close" id="modalClose" aria-label="Fermer">×</button>
+    </div>
+    <svg id="dessinBig" viewBox="0 0 700 420" role="img" aria-label="Vue agrandie du rayonnage"></svg>
+  </div>
 </div>
 
 <script>
@@ -549,7 +581,7 @@ function svgMarkup(c){
     o.push(`<line x1="${xa}" y1="${yb-4}" x2="${xa}" y2="${yb+4}" stroke="#0f6ea8" stroke-width=".9"/>`);
   }
   o.push(`<text x="${(X(0,0)+X(larg,0))/2}" y="${Y(0,0)+50}" fill="#5d6b7a" font-size="10.5"
-     font-family="Inter,Arial" text-anchor="middle">${largTot} mm hors tout · ${c.t} travée${c.t>1?'s':''}</text>`);
+     font-family="Inter,Arial" text-anchor="middle">${largTot} mm hors tout</text>`);
   // hauteur, reportée le long du poteau arrière droit
   o.push(cote(X(larg,prof)+22, Y(0,prof), X(larg,prof)+22, Y(c.H,prof), `${c.H} mm`, 26, 0));
   // profondeur, en bas le long de la fuyante
@@ -931,6 +963,20 @@ $('pdf').onclick = async ()=>{
     o.onclick = ()=>{ setOpt(id, o.dataset.v); rendre(); };
   });
 });
+
+// ---- zoom en popup de l'aperçu
+function ouvrirZoom(){
+  const c = lire();
+  $('dessinBig').innerHTML = svgMarkup(c);
+  $('modalTtl').textContent = `Aperçu — H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} · ${c.n} niveaux`;
+  $('modal').classList.add('on');
+}
+function fermerZoom(){ $('modal').classList.remove('on'); }
+$('zoom').onclick = e => { e.stopPropagation(); ouvrirZoom(); };
+$('apwrap').onclick = ouvrirZoom;
+$('modalClose').onclick = fermerZoom;
+$('modal').onclick = e => { if(e.target === $('modal')) fermerZoom(); };
+document.addEventListener('keydown', e => { if(e.key==='Escape') fermerZoom(); });
 
 // steppers − / + (nv, qt) — les steppers de travées ont leur propre handler
 document.querySelectorAll('.stepper button[data-step]').forEach(b=>{
