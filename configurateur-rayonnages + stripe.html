@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Configurateur rayonnages EPSILINE — RSL</title>
+<title>Configurateur rayonnages — RSL</title>
 <style>
 :root{
   --acier:#3d4753;        /* structure galva foncée */
@@ -290,7 +290,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
    Colle ici l'URL du webhook Make (module « Custom webhook »).
    Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
    ========================================================== */
-const MAKE_WEBHOOK_URL = ''; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
+const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // ← à renseigner, ex. 'https://hook.eu2.make.com/xxxxxxxx'
 
 /* ==========================================================
    DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
@@ -837,7 +837,7 @@ $('copy').onclick = ()=>{
   if(!devis.length) return;
   const marchandise = devis.reduce((s,d)=>s+d.total,0);
   const dep = departement, t = calculTransport(marchandise, dep);
-  const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 11/05/2026 (prix HT)',''];
+  const l = ['DEVIS RAYONNAGES — tarif au 11/05/2026 (prix HT)',''];
   devis.forEach(d=>{
     l.push(`${d.q>1?d.q+' × ':''}${d.lib}    ${eur(d.total)}`);
     d.lignes.forEach(x=> l.push(`    ${String(x.qte*d.q).padStart(4)} × ${x.ref}  ${x.lib}`));
@@ -905,7 +905,7 @@ $('pdf').onclick = async ()=>{
     // ---- en-tête
     doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
     doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
+    doc.text('DEVIS RAYONNAGES ', M, 10);
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
     doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
     const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
