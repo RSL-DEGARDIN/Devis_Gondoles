@@ -1204,7 +1204,16 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
     .join(' | ');
   if(resumeRayonnages.length > 480) resumeRayonnages = resumeRayonnages.slice(0,477) + '…';
 
+  // référence commande RAY-jjmmaa-XXXX (lien entre la commande et le paiement Stripe)
+  const now = new Date();
+  const jj = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const aa = String(now.getFullYear()).slice(-2);
+  const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
+  const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
+
   const payload = {
+    reference: reference,
     date: new Date().toISOString(),
     departement: dep,
     client: {
