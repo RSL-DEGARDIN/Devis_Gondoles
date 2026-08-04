@@ -1226,14 +1226,6 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
   const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
 
-  // génère le devis PDF en base64 pour l'archivage Airtable (option B : pièce jointe)
-  let pdfBase64 = '';
-  try{
-    const docPdf = await construirePDF();
-    const uri = docPdf.output('datauristring');   // "data:application/pdf;base64,XXXX"
-    pdfBase64 = uri.split(',')[1] || '';
-  }catch(e){ console.error('PDF non généré pour Airtable', e); }
-
   const payload = {
     reference: reference,
     date: new Date().toISOString(),
@@ -1266,10 +1258,7 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
       quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
     })),
     // CSV prêt à l'emploi (ordre des colonnes garanti)
-    csv_nomenclature: csvNomenclature,
-    // devis PDF en base64 (archivage Airtable)
-    pdf_base64: pdfBase64,
-    pdf_nom: nomPDF()
+    csv_nomenclature: csvNomenclature
   };
 
   try{
