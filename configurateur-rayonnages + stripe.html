@@ -1016,15 +1016,12 @@ function svgToPng(svgInner, scale=2){
   });
 }
 
-$('pdf').onclick = async ()=>{
-  if(!devis.length) return;
-  const btn = $('pdf'); const label = btn.textContent;
-  btn.textContent = 'Génération…'; btn.disabled = true;
-  try{
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({unit:'mm', format:'a4'});
-    const M = 15, PW = 210, PH = 297;
-    let y = M;
+// Construit le devis PDF et retourne l'objet jsPDF (réutilisé : bouton PDF + envoi au paiement)
+async function construirePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const M = 15, PW = 210, PH = 297;
+  let y = M;
 
     // ---- en-tête
     doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
@@ -1120,7 +1117,24 @@ $('pdf').onclick = async ()=>{
       doc.text(`${p} / ${pages}`, PW-M, PH-8, {align:'right'});
     }
 
-    doc.save(`devis-rayonnages-epsiline-${dateStr.replace(/\//g,'-')}.pdf`);
+    return doc;
+}
+
+// Nom de fichier PDF standard
+function nomPDF(){
+  const d = new Date();
+  const s = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+  return `devis-rayonnages-epsiline-${s}.pdf`;
+}
+
+// Bouton « Télécharger le PDF »
+$('pdf').onclick = async ()=>{
+  if(!devis.length) return;
+  const btn = $('pdf'); const label = btn.textContent;
+  btn.textContent = 'Génération…'; btn.disabled = true;
+  try{
+    const doc = await construirePDF();
+    doc.save(nomPDF());
   } catch(err){
     console.error(err);
     alert("La génération du PDF a échoué. Réessayez ; si le problème persiste, vérifiez la connexion (les librairies PDF se chargent en ligne).");
@@ -1212,6 +1226,14 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
   const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
 
+  // génère le devis PDF en base64 pour l'archivage Airtable (option B : pièce jointe)
+  let pdfBase64 = '';
+  try{
+    const docPdf = await construirePDF();
+    const uri = docPdf.output('datauristring');   // "data:application/pdf;base64,XXXX"
+    pdfBase64 = uri.split(',')[1] || '';
+  }catch(e){ console.error('PDF non généré pour Airtable', e); }
+
   const payload = {
     reference: reference,
     date: new Date().toISOString(),
@@ -1244,7 +1266,10 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
       quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
     })),
     // CSV prêt à l'emploi (ordre des colonnes garanti)
-    csv_nomenclature: csvNomenclature
+    csv_nomenclature: csvNomenclature,
+    // devis PDF en base64 (archivage Airtable)
+    pdf_base64: pdfBase64,
+    pdf_nom: nomPDF()
   };
 
   try{
