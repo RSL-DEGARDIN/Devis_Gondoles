@@ -328,14 +328,11 @@ tbody tr:hover{background:#FAFAF8}
         <div class="totaux" id="totaux"></div>
 
         <div class="barre-actions">
-          <button class="btn-secondaire" id="btnNomenclature">Nomenclature</button>
           <button class="btn-secondaire" id="btnPdf">PDF</button>
           <button class="btn-secondaire" id="btnCsv">CSV</button>
           <button class="btn-secondaire" id="btnCopier">Copier</button>
           <button class="btn-lien" id="btnVider">Vider le devis</button>
         </div>
-
-        <div id="nomenclature"></div>
 
         <div class="note">
           Charges maximales uniformément réparties par paire de lisses, selon EN 15512:2020.
@@ -343,6 +340,11 @@ tbody tr:hover{background:#FAFAF8}
           Un calcul des charges totales par travée par le Bureau Technique est nécessaire à chaque commande.
         </div>
       </div>
+    </div>
+
+    <div class="carte">
+      <h2>Récapitulatif</h2>
+      <div class="corps"><div id="nomenclature"></div></div>
     </div>
   </div>
 </div>
@@ -363,8 +365,12 @@ tbody tr:hover{background:#FAFAF8}
       <div class="barre-actions">
         <button class="btn-principal" id="btnEnvoyer" style="width:auto;padding-left:28px;padding-right:28px">Envoyer la demande</button>
         <button class="btn-secondaire" id="btnCopierDemande">Copier la demande</button>
+        <button class="btn-secondaire" id="btnGmail">Ouvrir dans Gmail</button>
+        <button class="btn-secondaire" id="btnOutlook">Ouvrir dans Outlook web</button>
+        <button class="btn-secondaire" id="btnMailto">Messagerie par défaut</button>
       </div>
-      <div class="aide">Le mail s’ouvre prérempli dans votre messagerie, adressé à s.degardin@rsl.eu. Vérifiez-le avant de l’envoyer.</div>
+      <div class="aide" id="refDemande" style="font-size:13px;color:var(--ok);margin-top:2px"></div>
+      <div class="aide">La demande est adressée à s.degardin@rsl.eu. Le bouton principal la copie dans le presse-papier — les trois autres ouvrent un brouillon prérempli dans la messagerie de votre choix.</div>
     </div>
   </div>
 </div>
@@ -818,7 +824,7 @@ function rendreDevis(){
   const b = $('lignes');
   if (!devis.length){
     b.innerHTML = '<div class="vide">Aucun rayonnage. Configurez une travée puis ajoutez-la au devis.</div>';
-    rendreTotaux(); $('nomenclature').innerHTML=''; $('nomenclature').dataset.on='0';
+    rendreTotaux(); rendreNomenclature();
     return;
   }
   b.innerHTML = `<table><thead><tr>
@@ -849,7 +855,7 @@ function rendreDevis(){
     }));
   b.querySelectorAll('button[data-mod]').forEach(x =>
     x.addEventListener('click', ()=> modifier(+x.dataset.mod)));
-  rendreTotaux();
+  rendreTotaux(); rendreNomenclature();
 }
 
 /* ------------------------------------------------------------------ */
@@ -896,17 +902,37 @@ function rendreTotaux(){
 }
 
 /* ------------------------------------------------------------------ */
-function afficherNomenclature(){
+function rendreNomenclature(){
   const z = $('nomenclature');
-  if (!devis.length){ z.innerHTML=''; return; }
-  if (z.dataset.on === '1'){ z.innerHTML=''; z.dataset.on='0'; return; }
-  z.dataset.on = '1';
-  z.innerHTML = `<h2 style="margin:22px 0 8px;font-size:14px">Nomenclature consolidée</h2>
-    <table><thead><tr><th>Référence</th><th>Désignation</th><th class="num">Qté</th><th class="num">PU tarif</th><th class="num">Total</th></tr></thead>
-    <tbody>${agreger().map(l=>`<tr>
+  if (!devis.length){
+    z.innerHTML = '<div class="vide">La nomenclature s\u2019affichera dès qu\u2019un rack sera au devis.</div>';
+    return;
+  }
+  const lignes = agreger();
+  const total = lignes.reduce((s,l)=>s + l.qte*l.pu, 0);
+  z.innerHTML = `<table>
+    <thead><tr><th>Référence</th><th>Désignation</th><th class="num">Qté</th><th class="num">PU tarif</th><th class="num">Total HT</th></tr></thead>
+    <tbody>${lignes.map(l=>`<tr>
       <td class="mono">${l.ref}</td><td>${l.des}</td>
       <td class="num">${l.qte}</td><td class="num">${eur(l.pu)}</td><td class="num">${eur(l.qte*l.pu)}</td>
-    </tr>`).join('')}</tbody></table>`;
+    </tr>`).join('')}</tbody>
+    <tfoot><tr>
+      <td colspan="4" style="text-align:right;font-weight:600;border-bottom:0;padding-top:9px">Total marchandise au tarif HT</td>
+      <td class="num" style="font-weight:600;border-bottom:0;padding-top:9px">${eur(total)}</td>
+    </tr></tfoot></table>`;
+}
+
+/* Nomenclature en texte aligné, pour le mail et le presse-papier */
+function nomenclatureTexte(){
+  const lignes = agreger();
+  const lg = [];
+  lg.push('REFERENCE'.padEnd(19) + 'QTE'.padStart(5) + '  ' + 'PU HT'.padStart(11) + '  ' + 'TOTAL HT'.padStart(12) + '  DESIGNATION');
+  lg.push('-'.repeat(96));
+  for (const l of lignes){
+    lg.push(l.ref.padEnd(19) + String(l.qte).padStart(5) + '  ' +
+            eur(l.pu).padStart(11) + '  ' + eur(l.qte*l.pu).padStart(12) + '  ' + l.des);
+  }
+  return lg.join('\n');
 }
 
 function lignesCsv(){
@@ -934,8 +960,7 @@ function copier(){
     t += `   ${r.niveaux} niveau(x) de lisses ${r.s}x50x1,5, ${r.charge} kg/niveau\n`;
     t += `   ${nbEchelles(r)} échelles ${r.montage?'assemblées en usine':'à boulonner'} — ${eur(r.ht)}\n`;
   });
-  t += '\nNOMENCLATURE\n';
-  agreger().forEach(l => { t += `${l.ref}  x${l.qte}  ${l.des}  ${eur(l.qte*l.pu)}\n`; });
+  t += '\nNOMENCLATURE GLOBALE\n' + nomenclatureTexte() + '\n';
   t += `\nMarchandise au tarif HT : ${eur(c.tarif)}\n`;
   if (c.rem.taux) t += `Remise ${c.rem.code} ${Math.round(c.rem.taux*100)} % : -${eur(c.montantRemise)}\n`;
   t += `Transport HT : ${c.consult?'sur consultation':eur(c.port)}\n`;
@@ -1012,6 +1037,53 @@ function construirePdf(){
 /*  Demande client                                                     */
 /* ------------------------------------------------------------------ */
 const DESTINATAIRE = 's.degardin@rsl.eu';
+/* Webhook Make. La clé de routage est le champ « source » du JSON. */
+const WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z';
+const SOURCE      = 'configurateur-epsirack';
+const PREFIXE_REF = 'EPS';
+
+function referenceDemande(){
+  const d = new Date();
+  const jj = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const aa = String(d.getFullYear()).slice(-2);
+  const alea = Math.random().toString(36).slice(2,6).toUpperCase();
+  return `${PREFIXE_REF}-${jj}${mm}${aa}-${alea}`;
+}
+
+/* CSV de la nomenclature : ordre des colonnes figé, décimales françaises. */
+function csvNomenclature(){
+  const sep = ';';
+  const cell = v => {
+    const t = String(v).replace(/"/g,'""');
+    return /[";\n]/.test(t) ? `"${t}"` : t;
+  };
+  const nb = n => n.toFixed(2).replace('.',',');
+  const l = [['Référence','Désignation','Quantité','PU HT','Total HT'].join(sep)];
+  for (const x of agreger())
+    l.push([x.ref, x.des, x.qte, nb(x.pu), nb(x.qte*x.pu)].map(cell).join(sep));
+  return l.join('\r\n');
+}
+
+/* Tableau HTML prêt à coller dans un mail Make. */
+function htmlNomenclature(){
+  const c = chiffres();
+  const td = 'padding:6px 9px;border-bottom:1px solid #e4e4e0';
+  const th = 'padding:7px 9px;background:#1F2328;color:#fff;text-align:left;font-size:12px';
+  const lignes = agreger().map(x => `<tr>
+      <td style="${td};font-family:monospace">${x.ref}</td>
+      <td style="${td}">${x.des}</td>
+      <td style="${td};text-align:right">${x.qte}</td>
+      <td style="${td};text-align:right">${eur(x.pu)}</td>
+      <td style="${td};text-align:right">${eur(x.qte*x.pu)}</td></tr>`).join('');
+  return `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;width:100%">
+    <thead><tr><th style="${th}">Référence</th><th style="${th}">Désignation</th>
+      <th style="${th};text-align:right">Qté</th><th style="${th};text-align:right">PU HT</th>
+      <th style="${th};text-align:right">Total HT</th></tr></thead>
+    <tbody>${lignes}</tbody>
+    <tfoot><tr><td colspan="4" style="${td};text-align:right;font-weight:bold">Marchandise au tarif HT</td>
+      <td style="${td};text-align:right;font-weight:bold">${eur(c.tarif)}</td></tr></tfoot></table>`;
+}
 
 function texteDemande(){
   const c = chiffres();
@@ -1036,6 +1108,9 @@ function texteDemande(){
     L.push(`   ${eur(r.ht)}`);
   });
   L.push('');
+  L.push('NOMENCLATURE GLOBALE');
+  L.push(nomenclatureTexte());
+  L.push('');
   L.push('CHIFFRAGE');
   L.push(`Marchandise au tarif HT : ${eur(c.tarif)}`);
   if (c.rem.taux) L.push(`Remise ${c.rem.code} ${Math.round(c.rem.taux*100)} % : -${eur(c.montantRemise)}`);
@@ -1053,20 +1128,83 @@ function verifierDemande(){
   return true;
 }
 
+function sujetDemande(){
+  const soc = ($('cSociete').value || '').trim();
+  return `Demande de devis EPSIRACK${soc ? ' — ' + soc : ''}`;
+}
+
+function chargeUtile(reference){
+  const c = chiffres();
+  const v = id => ($(id).value || '').trim();
+  return {
+    source: SOURCE,
+    gamme: 'EPSIRACK',
+    flux: 'demande_devis',
+    paiement: false,
+    reference: reference,
+    destinataire: DESTINATAIRE,
+    date: new Date().toISOString().slice(0,10),
+    date_heure: new Date().toISOString(),
+    client: {societe:v('cSociete'), nom:v('cNom'), email:v('cEmail'), telephone:v('cTel'),
+             livraison:v('cCp'), delai:v('cDelai'), precisions:v('cMessage')},
+    departement: $('departement').value,
+    codeRemise: c.rem.code,
+    racks: devis.map(r => ({
+      libelle: titreRack(r), gamme: NOM_GAMME[r.g], racks: r.racks, face: r.face,
+      travees: r.travees, niveaux: r.niveaux, longueur: r.L, profondeur: r.p, hauteur: r.h,
+      chargeNiveau: r.charge, sectionLisse: r.s,
+      echelles: r.montage ? 'assemblées en usine' : 'à boulonner',
+      totalHT: +r.ht.toFixed(2),
+    })),
+    resume_racks: devis.map(r => titreRack(r)).join(' | ').slice(0,480),
+    nomenclature: agreger().map(l => ({ref:l.ref, designation:l.des, qte:l.qte,
+      pu:+l.pu.toFixed(4), total:+(l.qte*l.pu).toFixed(2)})),
+    csv_nomenclature: csvNomenclature(),
+    html_nomenclature: htmlNomenclature(),
+    totaux: {tarifHT:+c.tarif.toFixed(2), remise:+c.montantRemise.toFixed(2),
+             transportHT: c.consult ? null : +c.port.toFixed(2),
+             totalHT:+c.ht.toFixed(2), totalTTC:+c.ttc.toFixed(2), poidsKg:+c.poids.toFixed(1)},
+    texte: texteDemande(),
+  };
+}
+
+/* Ouvre un brouillon prérempli ; si l'URL dépasse la limite des navigateurs,
+   le corps part dans le presse-papier et le brouillon s'ouvre vide. */
+function ouvrirBrouillon(fabriquer){
+  if (!verifierDemande()) return;
+  const sujet = sujetDemande(), corps = texteDemande();
+  const complet = fabriquer(sujet, corps);
+  if (complet.length <= 1900){ window.open(complet, '_blank', 'noopener'); return; }
+  const vide = fabriquer(sujet, '');
+  navigator.clipboard.writeText(corps).then(
+    ()=>{ toast('Demande copiée — collez-la dans le brouillon'); window.open(vide, '_blank', 'noopener'); },
+    ()=>{ window.open(vide, '_blank', 'noopener'); });
+}
+
 function envoyerDemande(){
   if (!verifierDemande()) return;
-  const soc = ($('cSociete').value || '').trim();
-  const sujet = `Demande de devis EPSIRACK${soc ? ' — ' + soc : ''}`;
-  const corps = texteDemande();
-  const lien = `mailto:${DESTINATAIRE}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
-  if (lien.length > 1900){
-    navigator.clipboard.writeText(corps).then(()=>{
-      toast('Demande trop longue pour la messagerie — copiée, collez-la dans votre mail');
-      window.location.href = `mailto:${DESTINATAIRE}?subject=${encodeURIComponent(sujet)}`;
-    }, ()=> window.location.href = lien);
+  if (!WEBHOOK_URL){
+    navigator.clipboard.writeText(texteDemande()).then(
+      ()=> toast(`Demande copiée — collez-la dans un mail à ${DESTINATAIRE}`),
+      ()=> toast('Copie impossible'));
     return;
   }
-  window.location.href = lien;
+  const ref = referenceDemande();
+  const bouton = $('btnEnvoyer');
+  bouton.disabled = true; bouton.textContent = 'Envoi en cours…';
+  fetch(WEBHOOK_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+                      body: JSON.stringify(chargeUtile(ref))})
+    .then(r => {
+      if (!r.ok) throw new Error(r.status);
+      bouton.textContent = 'Demande envoyée';
+      $('refDemande').innerHTML = `Demande transmise à RSL sous la référence <strong>${ref}</strong>. Vous serez recontacté rapidement.`;
+      toast('Demande envoyée à RSL — ' + ref);
+    })
+    .catch(()=>{
+      bouton.disabled = false; bouton.textContent = 'Envoyer la demande';
+      $('refDemande').innerHTML = 'L\u2019envoi automatique a échoué. Utilisez « Copier la demande » et transmettez-la par mail.';
+      toast('Envoi impossible — utilisez la copie');
+    });
 }
 
 /* ------------------------------------------------------------------ */
@@ -1127,7 +1265,6 @@ document.querySelectorAll('input[name="montage"],input[name="face"]').forEach(r 
 $('departement').addEventListener('change', rendreTotaux);
 $('codeRemise').addEventListener('input', rendreTotaux);
 $('ajouter').addEventListener('click', ajouter);
-$('btnNomenclature').addEventListener('click', afficherNomenclature);
 $('btnPdf').addEventListener('click', construirePdf);
 $('btnCsv').addEventListener('click', telechargerCsv);
 $('btnCopier').addEventListener('click', copier);
@@ -1136,6 +1273,12 @@ $('btnCopierDemande').addEventListener('click', ()=>{
   if (!devis.length) return toast('Le devis est vide');
   navigator.clipboard.writeText(texteDemande()).then(()=>toast('Demande copiée'), ()=>toast('Copie impossible'));
 });
+$('btnGmail').addEventListener('click', ()=> ouvrirBrouillon((su, body) =>
+  `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(DESTINATAIRE)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`));
+$('btnOutlook').addEventListener('click', ()=> ouvrirBrouillon((su, body) =>
+  `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(DESTINATAIRE)}&subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`));
+$('btnMailto').addEventListener('click', ()=> ouvrirBrouillon((su, body) =>
+  `mailto:${DESTINATAIRE}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`));
 $('btnVider').addEventListener('click', ()=>{
   if (devis.length && confirm('Vider le devis ?')){ devis=[]; quitterEdition(); rendreDevis(); }
 });
