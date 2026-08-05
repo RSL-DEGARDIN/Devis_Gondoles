@@ -423,19 +423,22 @@ function lignesAuto(c){
   const nEch = nbEchelles(c);
   const ech = echelle(c.g, c.h, c.p, c.montage);
   const li  = lisse(c.g, c.s, c.L);
+  const q = (id, defaut) => qteInclus[id] !== undefined ? qteInclus[id] : defaut;
+  const nSabot = q('sabot', nEch);
   const base = [
     {id:'echelle', nom:`Échelle H.${c.h} P.${c.p} — ${c.montage?'assemblée en usine':'à boulonner'}`,
-     art:ech, qte:nEch, aide:''},
-    {id:'lisse',   nom:`Lisse ${c.s}×50×1,5 L.${c.L}`, art:li, qte:nbLisses(c),
-     aide:''},
-    {id:'ancrage', nom:'Lot de 2 ancrages M12x110', art:a.ancrage, qte:nEch, aide:'1 lot par échelle'},
-    {id:'sabot',   nom:'Sabot de protection de poteau H.400', art:a.protPot, qte:nEch, aide:'1 par échelle'},
-    {id:'plaque',  nom:'Plaque de charge', art:a.plaque, qte:c.racks*c.face, aide: c.face===2?'1 par face et par rack':'1 par rack'},
+     art:ech, qte:q('echelle', nEch), aide:''},
+    {id:'lisse',   nom:`Lisse ${c.s}×50×1,5 L.${c.L}`, art:li, qte:q('lisse', nbLisses(c)), aide:''},
+    {id:'sabot',   nom:'Sabot de protection de poteau H.400', art:a.protPot, qte:nSabot, aide:'1 par échelle'},
+    {id:'ancrage', nom:'Lot de 2 ancrages M12x110', art:a.ancrage, qte:q('ancrage', nEch + 2*nSabot),
+     aide:'1 lot par échelle + 2 lots par sabot'},
+    {id:'plaque',  nom:'Plaque de charge', art:a.plaque, qte:q('plaque', c.racks*c.face),
+     aide: c.face===2?'1 par face et par rack':'1 par rack'},
   ];
   if (c.face === 2)
-    base.push({id:'entretoise', nom:'Entretoise de jumelage L.200', art:a.entretoise, qte:nEch,
-               aide:'1 par échelle, implantation dos à dos'});
-  return base.map(x => Object.assign({}, x, {qte: qteInclus[x.id] !== undefined ? qteInclus[x.id] : x.qte}));
+    base.push({id:'entretoise', nom:'Entretoise de jumelage L.200', art:a.entretoise,
+               qte:q('entretoise', nEch), aide:'1 par échelle, implantation dos à dos'});
+  return base;
 }
 
 /* Options à quantité libre                                            */
@@ -455,6 +458,8 @@ function catalogueOptions(c){
     {id:'calage1',   nom:'Platine de calage ép. 1 mm',           art:a.calage1, aide:'rattrapage de niveau'},
     {id:'calage3',   nom:'Platine de calage ép. 3 mm',           art:a.calage3, aide:'rattrapage de niveau'},
     {id:'goupille',  nom:'Goupille de sécurité supplémentaire',  art:a.goupille, aide:'les lisses sont livrées avec goupilles'},
+    {id:'entretoise',nom:'Entretoise de jumelage L.200',          art:a.entretoise,
+     aide:'implantation dos à dos', dispo: c.face===1},
   ];
 }
 
@@ -1096,6 +1101,7 @@ document.addEventListener('click', ev => {
     const id = bInc.dataset.incpas;
     const input = document.querySelector(`input[data-inc="${id}"]`);
     qteInclus[id] = pas(input, +bInc.dataset.delta);
+    if (id === 'sabot') rendreInclus();
     rendrePrixLive(); return;
   }
 });
@@ -1108,6 +1114,10 @@ document.addEventListener('input', ev => {
     qteInclus[ev.target.dataset.inc] = Math.max(0, +ev.target.value||0);
     rendrePrixLive();
   }
+});
+
+document.addEventListener('change', ev => {
+  if (ev.target.matches('input[data-inc="sabot"]')){ rendreInclus(); rendrePrixLive(); }
 });
 
 ['charge','niveaux','longueur','profondeur','hauteur','travees','racks'].forEach(id =>
