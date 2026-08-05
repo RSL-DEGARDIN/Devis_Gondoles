@@ -709,7 +709,15 @@ function dessiner(){
   let cur = x0;
   for (let i=0;i<=n;i++){ xEch.push(cur); cur += (c.L + 80)*e; }
 
-  for (const x of xEch){
+  // sabots posés sur la façade dessinée, en partant des extrémités
+  const ligneSabot = lignesAuto(c).find(x => x.id === 'sabot');
+  const sabotsFacade = Math.floor((ligneSabot ? ligneSabot.qte : 0) / (c.racks * c.face));
+  const avecSabot = new Set(
+    xEch.map((_,i) => i)
+        .sort((a,b) => Math.min(a, n-a) - Math.min(b, n-b) || a - b)
+        .slice(0, Math.max(0, Math.min(sabotsFacade, n+1))));
+
+  xEch.forEach((x, iEch) => {
     p.push(`<rect x="${x.toFixed(1)}" y="${yHaut.toFixed(1)}" width="${largeurPoteau.toFixed(1)}" height="${dessinH.toFixed(1)}" class="pot"/>`);
     const pas = dessinH / Math.max(4, Math.round(dessinH/46));
     for (let y=yHaut; y<ySol-2; y+=pas){
@@ -717,8 +725,9 @@ function dessiner(){
       p.push(`<line x1="${(x+0.8).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+largeurPoteau-0.8).toFixed(1)}" y2="${y2.toFixed(1)}" class="diag"/>`);
     }
     p.push(`<rect x="${(x-3).toFixed(1)}" y="${ySol.toFixed(1)}" width="${(largeurPoteau+6).toFixed(1)}" height="4" class="platine"/>`);
-    p.push(`<rect x="${(x-4).toFixed(1)}" y="${(ySol-14).toFixed(1)}" width="${(largeurPoteau+8).toFixed(1)}" height="14" class="sabot"/>`);
-  }
+    if (avecSabot.has(iEch))
+      p.push(`<rect x="${(x-4).toFixed(1)}" y="${(ySol-14).toFixed(1)}" width="${(largeurPoteau+8).toFixed(1)}" height="14" class="sabot"/>`);
+  });
 
   const hLisse = Math.max(3.5, c.s*e);
   const pasN = dessinH / (c.niveaux + 1);
@@ -760,7 +769,9 @@ function dessiner(){
     .cotet{fill:#A8AFB6;font-family:'JetBrains Mono',monospace;font-size:11px}
   </style></defs>` + p.join('');
 
-  lg.innerHTML = `${phraseConfig(c)} · lisse ${c.s}`;
+  const totalSabots = ligneSabot ? ligneSabot.qte : 0;
+  lg.innerHTML = `${phraseConfig(c)} · lisse ${c.s}` +
+    (totalSabots ? ` · ${totalSabots} sabot${totalSabots>1?'s':''}` : ' · sans sabot');
 }
 
 /* ------------------------------------------------------------------ */
@@ -1239,7 +1250,7 @@ document.addEventListener('click', ev => {
     const id = bInc.dataset.incpas;
     const input = document.querySelector(`input[data-inc="${id}"]`);
     qteInclus[id] = pas(input, +bInc.dataset.delta);
-    if (id === 'sabot') rendreInclus();
+    if (id === 'sabot'){ rendreInclus(); dessiner(); }
     rendrePrixLive(); return;
   }
 });
@@ -1255,7 +1266,7 @@ document.addEventListener('input', ev => {
 });
 
 document.addEventListener('change', ev => {
-  if (ev.target.matches('input[data-inc="sabot"]')){ rendreInclus(); rendrePrixLive(); }
+  if (ev.target.matches('input[data-inc="sabot"]')){ rendreInclus(); dessiner(); rendrePrixLive(); }
 });
 
 ['charge','niveaux','longueur','profondeur','hauteur','travees','racks'].forEach(id =>
