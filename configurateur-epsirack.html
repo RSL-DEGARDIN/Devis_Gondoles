@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurateur EPSIRACK — RSL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --graphite:#1F2328; --graphite-2:#2C3238;
+  --acier:#8A9199; --acier-clair:#C6CBD1;
+  --papier:#F4F4F1; --blanc:#FFFFFF;
+  --ral2004:#E25303; --ral2004-fonce:#B94103;
+  --trait:#D8D9D4; --texte:#22262B; --texte-doux:#666C73;
+  --ok:#1F7A4D; --alerte:#9A3412;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--papier);color:var(--texte);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.disp{font-family:'Barlow Condensed','Inter',sans-serif;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin:0}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px}
+
+header{background:var(--graphite);color:var(--blanc);padding:16px 24px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+header .marque{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1;letter-spacing:.04em}
+header .marque span{color:var(--ral2004)}
+header .sous{font-size:12px;color:var(--acier);letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+header .tarif-date{margin-left:auto;font-size:11px;color:var(--acier);text-align:right;line-height:1.6}
+
+/* ---------- bandeau prix live ---------- */
+.bandeau{position:sticky;top:0;z-index:30;background:var(--ral2004);color:#fff;
+  padding:11px 24px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.bandeau .etiq{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.12em;font-size:12px;font-weight:600;opacity:.9}
+.bandeau .somme{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.bandeau .detail{font-size:12px;opacity:.92;margin-left:auto;text-align:right;line-height:1.45}
+.bandeau.ko{background:var(--graphite-2)}
+
+.enveloppe{max-width:1320px;margin:0 auto;padding:24px;display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px;align-items:start}
+@media(max-width:960px){.enveloppe{grid-template-columns:1fr}}
+
+.carte{background:var(--blanc);border:1px solid var(--trait);border-radius:4px;margin-bottom:20px}
+.carte > h2{font-size:15px;padding:12px 18px;border-bottom:1px solid var(--trait);
+  display:flex;align-items:baseline;gap:10px;color:var(--graphite)}
+.carte > h2 .etape{font-size:11px;color:var(--ral2004);letter-spacing:.14em;font-weight:600}
+.corps{padding:18px}
+
+label,.libelle{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--texte-doux);font-weight:600;margin-bottom:5px}
+select,input[type=number],input[type=text],input[type=email],input[type=tel]{width:100%;padding:9px 10px;border:1px solid var(--trait);
+  border-radius:3px;background:var(--blanc);font-family:inherit;font-size:14px;color:var(--texte)}
+select:focus,input:focus,button:focus-visible{outline:2px solid var(--ral2004);outline-offset:1px}
+.champs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.champs .large{grid-column:1/-1}
+.aide{font-size:11px;color:var(--texte-doux);margin-top:5px;line-height:1.45}
+.libelle.rouge{color:var(--ral2004);font-size:12px;letter-spacing:.1em}
+
+/* ---------- compteur - valeur + ---------- */
+.compteur{display:flex;align-items:stretch;border:1px solid var(--trait);border-radius:3px;overflow:hidden;background:var(--blanc)}
+.compteur button{width:38px;flex:0 0 38px;border:0;background:#F0F0ED;color:var(--graphite);
+  font-size:19px;font-weight:600;line-height:1;cursor:pointer;font-family:'Inter',sans-serif}
+.compteur button:hover{background:var(--graphite);color:#fff}
+.compteur button:disabled{color:var(--acier-clair);cursor:not-allowed;background:#F7F7F5}
+.compteur input{border:0;border-left:1px solid var(--trait);border-right:1px solid var(--trait);
+  text-align:center;padding:8px 2px;font-variant-numeric:tabular-nums;font-weight:600;-moz-appearance:textfield}
+.compteur input::-webkit-outer-spin-button,.compteur input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.compteur.petit button{width:30px;flex:0 0 30px;font-size:16px}
+.compteur.petit input{padding:6px 2px;font-size:13px;width:44px}
+
+/* ---------- segments ---------- */
+.segments{display:flex;border:1px solid var(--trait);border-radius:3px;overflow:hidden}
+.segments label{flex:1;margin:0;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;
+  color:var(--texte);text-align:center;padding:10px 8px;cursor:pointer;background:var(--blanc);
+  border-right:1px solid var(--trait);transition:background .15s}
+.segments label:last-child{border-right:0}
+.segments input{position:absolute;opacity:0;width:0;height:0}
+.segments label:has(input:checked){background:#FEF4EF;color:var(--texte);font-weight:600;
+  box-shadow:inset 0 0 0 2px var(--ral2004)}
+.segments label:has(input:focus-visible){outline:2px solid var(--ral2004);outline-offset:-2px}
+.segments .petit-texte{display:block;font-size:10.5px;opacity:.72;text-transform:none;letter-spacing:0;font-weight:400}
+
+/* ---------- verdict ---------- */
+.verdict{border:1px solid var(--trait);border-left:4px solid var(--ral2004);background:#FBFBF9;padding:14px 16px;margin-top:18px}
+.verdict.ko{border-left-color:var(--alerte);background:#FDF5F1}
+.verdict .titre{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-weight:700;
+  font-size:13px;letter-spacing:.08em;color:var(--texte-doux);margin-bottom:8px}
+.verdict .gamme{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1;text-transform:uppercase}
+.verdict .gamme em{font-style:normal;color:var(--ral2004)}
+.verdict .section-lisse{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;line-height:1.1;margin-top:2px}
+.faits{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:12px;font-size:12px}
+.faits div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted var(--trait);padding-bottom:3px}
+.faits span:first-child{color:var(--texte-doux)}
+.faits span:last-child{font-weight:600;font-variant-numeric:tabular-nums}
+.marge{color:var(--ok)} .serre{color:var(--alerte)}
+
+.planche{background:var(--graphite);border-radius:4px;padding:6px;position:relative}
+.planche svg{display:block;width:100%;height:auto}
+.legende-planche{position:absolute;top:14px;left:16px;color:var(--acier);
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:600}
+
+/* ---------- options ---------- */
+.opt-ligne{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+  padding:8px 0;border-bottom:1px solid #EFEFEC}
+.opt-ligne:last-child{border-bottom:0}
+.opt-ligne .nom{font-size:13px;font-weight:500}
+.opt-ligne .ref{font-size:10.5px;color:var(--texte-doux);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.opt-ligne.off{opacity:.4}
+.bandeau-edition{background:var(--graphite);color:#fff;padding:9px 14px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;border-radius:3px}
+.bandeau-edition .btn-lien{color:#F0A57A}
+
+button{font-family:inherit;cursor:pointer;border-radius:3px;font-weight:600}
+.btn-principal{width:100%;padding:13px;background:var(--ral2004);color:#fff;border:0;
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:17px}
+.btn-principal:hover{background:var(--ral2004-fonce)}
+.btn-principal:disabled{background:var(--acier);cursor:not-allowed}
+.btn-secondaire{padding:9px 14px;background:var(--blanc);border:1px solid var(--graphite);
+  color:var(--graphite);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.btn-secondaire:hover{background:var(--graphite);color:#fff}
+.btn-lien{background:none;border:0;color:var(--alerte);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:2px 4px}
+.btn-lien:hover{text-decoration:underline}
+.btn-croix{background:none;border:0;color:var(--texte-doux);font-size:15px;line-height:1;padding:2px 5px;border-radius:3px}
+.btn-croix:hover{background:var(--alerte);color:#fff}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.07em;font-size:12px;color:var(--texte-doux);font-weight:600;
+  border-bottom:1px solid var(--graphite);padding:6px 8px}
+td{padding:7px 8px;border-bottom:1px solid #EFEFEC;vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#FAFAF8}
+.vide{padding:26px 18px;text-align:center;color:var(--texte-doux);font-size:13px}
+
+.totaux{border-top:2px solid var(--graphite);margin-top:4px}
+.totaux .l{display:flex;justify-content:space-between;padding:6px 8px;font-size:13px}
+.totaux .l.remise{color:var(--ok);font-weight:600}
+.totaux .l.fort{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;
+  text-transform:uppercase;border-top:1px solid var(--trait);margin-top:4px;padding-top:9px}
+.totaux .l span:last-child{font-variant-numeric:tabular-nums}
+.consult{color:var(--alerte);font-weight:600}
+.barre-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.pastille{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 6px;border-radius:2px;background:var(--graphite);color:#fff}
+.pastille.xl{background:var(--ral2004)}
+.pastille.df{background:var(--acier)}
+.note{font-size:11px;color:var(--texte-doux);margin-top:12px;line-height:1.5}
+.code-etat{font-size:11px;margin-top:5px;font-weight:600}
+.code-etat.ok{color:var(--ok)} .code-etat.ko{color:var(--alerte)}
+.pied{max-width:1320px;margin:0 auto;padding:0 24px 32px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--graphite);
+  color:#fff;padding:11px 20px;border-radius:3px;font-size:13px;opacity:0;pointer-events:none;
+  transition:opacity .25s;z-index:50}
+.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="marque">RSL — EPSI<span>RACK</span></div>
+    <div class="sous">Configurateur rayonnage à palettes — RSL</div>
+  </div>
+  <div class="tarif-date">Tarif au 11/05/2026</div>
+</header>
+
+<div class="bandeau" id="bandeau">
+  <span class="etiq">Rayonnage en cours</span>
+  <span class="somme" id="prixLive">—</span>
+  <span class="detail" id="detailLive"></span>
+</div>
+
+<div class="enveloppe">
+
+  <!-- ============ GAUCHE ============ -->
+  <div>
+    <div class="carte">
+      <h2><span class="etape">Étape 1</span> Le besoin de stockage</h2>
+      <div class="corps">
+        <div class="champs">
+          <div>
+            <label for="charge">Charge par niveau (kg)</label>
+            <div class="compteur">
+              <button type="button" data-pas="charge" data-delta="-100" aria-label="Diminuer la charge">−</button>
+              <input type="number" id="charge" value="1500" min="50" max="12000" step="100">
+              <button type="button" data-pas="charge" data-delta="100" aria-label="Augmenter la charge">+</button>
+            </div>
+            <div class="aide">Charge posée sur une paire de lisses.</div>
+          </div>
+          <div>
+            <label for="niveaux">Niveaux de lisses</label>
+            <div class="compteur">
+              <button type="button" data-pas="niveaux" data-delta="-1" aria-label="Retirer un niveau">−</button>
+              <input type="number" id="niveaux" value="2" min="1" max="6" step="1">
+              <button type="button" data-pas="niveaux" data-delta="1" aria-label="Ajouter un niveau">+</button>
+            </div>
+            <div class="aide">Hors niveau au sol.</div>
+          </div>
+          <div>
+            <label for="longueur">Longueur utile entre poteaux</label>
+            <select id="longueur"></select>
+          </div>
+          <div>
+            <label for="profondeur">Profondeur d'échelle</label>
+            <select id="profondeur"></select>
+          </div>
+          <div>
+            <label for="hauteur">Hauteur d'échelle</label>
+            <select id="hauteur"></select>
+          </div>
+          <div>
+            <label for="travees">Nombre de travées</label>
+            <div class="compteur">
+              <button type="button" data-pas="travees" data-delta="-1" aria-label="Retirer une travée">−</button>
+              <input type="number" id="travees" value="5" min="1" max="40" step="1">
+              <button type="button" data-pas="travees" data-delta="1" aria-label="Ajouter une travée">+</button>
+            </div>
+          </div>
+          <div class="large">
+            <label for="racks">Racks identiques</label>
+            <div class="compteur">
+              <button type="button" data-pas="racks" data-delta="-1" aria-label="Retirer un rack">−</button>
+              <input type="number" id="racks" value="1" min="1" max="99" step="1">
+              <button type="button" data-pas="racks" data-delta="1" aria-label="Ajouter un rack">+</button>
+            </div>
+            <div class="aide">Multiplie l’ensemble de la configuration.</div>
+          </div>
+        </div>
+        <div id="verdict" class="verdict"></div>
+      </div>
+    </div>
+
+    <button class="btn-principal" id="ajouter" style="margin-bottom:20px">Ajouter au devis</button>
+
+    <div class="carte">
+      <h2><span class="etape">Étape 2</span> Implantation et montage</h2>
+      <div class="corps">
+        <div id="banEdition"></div>
+        <div class="champs">
+          <div class="large">
+            <span class="libelle rouge">Implantation</span>
+            <div class="segments" id="segFace">
+              <label><input type="radio" name="face" value="1" checked><span>Simple face
+                <span class="petit-texte">un seul rayonnage</span></span></label>
+              <label><input type="radio" name="face" value="2"><span>Double face
+                <span class="petit-texte">deux rayonnages dos à dos + entretoises</span></span></label>
+            </div>
+          </div>
+          <div class="large">
+            <span class="libelle">Livraison des échelles</span>
+            <div class="segments" id="segMontage">
+              <label><input type="radio" name="montage" value="0" checked><span>À boulonner
+                <span class="petit-texte">le client assemble</span></span></label>
+              <label><input type="radio" name="montage" value="1"><span>Assemblées en usine
+                <span class="petit-texte">boulonnées avant expédition</span></span></label>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px">
+          <span class="libelle rouge">Composition</span>
+          <div id="inclus"></div>
+        </div>
+
+        <div style="margin-top:20px">
+          <span class="libelle rouge">Options</span>
+          <div id="options"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ DROITE ============ -->
+  <div>
+    <div class="carte">
+      <h2>Élévation</h2>
+      <div class="corps" style="padding:10px">
+        <div class="planche">
+          <div class="legende-planche" id="legendePlanche"></div>
+          <svg id="dessin" viewBox="0 0 900 460" role="img" aria-label="Élévation du rayonnage configuré"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="carte">
+      <h2><span class="etape">Étape 3</span> Devis</h2>
+      <div class="corps">
+        <div id="lignes"></div>
+
+        <div class="champs" style="margin-top:18px">
+          <div>
+            <label for="departement">Département de livraison</label>
+            <select id="departement"></select>
+          </div>
+          <div>
+            <label for="codeRemise">Code remise</label>
+            <input type="text" id="codeRemise" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="totaux" id="totaux"></div>
+
+        <div class="barre-actions">
+          <button class="btn-secondaire" id="btnNomenclature">Nomenclature</button>
+          <button class="btn-secondaire" id="btnPdf">PDF</button>
+          <button class="btn-secondaire" id="btnCsv">CSV</button>
+          <button class="btn-secondaire" id="btnCopier">Copier</button>
+          <button class="btn-lien" id="btnVider">Vider le devis</button>
+        </div>
+
+        <div id="nomenclature"></div>
+
+        <div class="note">
+          Charges maximales uniformément réparties par paire de lisses, selon EN 15512:2020.
+          Ancrage au sol et goupilles des lisses obligatoires. Sol béton classe C16/9 minimum.
+          Un calcul des charges totales par travée par le Bureau Technique est nécessaire à chaque commande.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pied">
+  <div class="carte">
+    <h2><span class="etape">Étape 4</span> Envoyer la demande à RSL</h2>
+    <div class="corps">
+      <div class="champs">
+        <div><label for="cSociete">Société</label><input type="text" id="cSociete" autocomplete="organization"></div>
+        <div><label for="cNom">Nom et prénom</label><input type="text" id="cNom" autocomplete="name"></div>
+        <div><label for="cEmail">E-mail</label><input type="email" id="cEmail" autocomplete="email"></div>
+        <div><label for="cTel">Téléphone</label><input type="text" id="cTel" autocomplete="tel"></div>
+        <div><label for="cCp">Code postal et ville de livraison</label><input type="text" id="cCp" autocomplete="postal-code"></div>
+        <div><label for="cDelai">Délai souhaité</label><input type="text" id="cDelai" placeholder=""></div>
+        <div class="large"><label for="cMessage">Précisions</label><input type="text" id="cMessage"></div>
+      </div>
+      <div class="barre-actions">
+        <button class="btn-principal" id="btnEnvoyer" style="width:auto;padding-left:28px;padding-right:28px">Envoyer la demande</button>
+        <button class="btn-secondaire" id="btnCopierDemande">Copier la demande</button>
+      </div>
+      <div class="aide">Le mail s’ouvre prérempli dans votre messagerie, adressé à s.degardin@rsl.eu. Vérifiez-le avant de l’envoyer.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const D = {"echelles":[{"g":"CL","h":3000,"p":1100,"m":0,"r":"AX08030011AABD099","px":136.5197,"kg":26.952},{"g":"CL","h":3000,"p":1100,"m":1,"r":"AX08030011HABD099","px":163.836,"kg":26.952},{"g":"CL","h":3000,"p":750,"m":0,"r":"AX08030075AABD099","px":128.3607,"kg":25.242},{"g":"CL","h":3000,"p":750,"m":1,"r":"AX08030075HABD099","px":154.0472,"kg":25.242},{"g":"CL","h":3000,"p":900,"m":0,"r":"AX08030090AABD099","px":134.2852,"kg":25.982},{"g":"CL","h":3000,"p":900,"m":1,"r":"AX08030090HABD099","px":161.1197,"kg":25.982},{"g":"CL","h":3500,"p":1100,"m":0,"r":"AX08035011AABD099","px":161.5297,"kg":31.05},{"g":"CL","h":3500,"p":1100,"m":1,"r":"AX08035011HABD099","px":193.8172,"kg":31.05},{"g":"CL","h":3500,"p":750,"m":0,"r":"AX08035075AABD099","px":149.2195,"kg":29.11},{"g":"CL","h":3500,"p":750,"m":1,"r":"AX08035075HABD099","px":179.0572,"kg":29.11},{"g":"CL","h":3500,"p":900,"m":0,"r":"AX08035090AABD099","px":155.7487,"kg":29.95},{"g":"CL","h":3500,"p":900,"m":1,"r":"AX08035090HABD099","px":186.8882,"kg":29.95},{"g":"CL","h":4000,"p":1100,"m":0,"r":"AX08040011AABD099","px":172.569,"kg":35.228},{"g":"CL","h":4000,"p":1100,"m":1,"r":"AX08040011HABD099","px":207.0807,"kg":35.228},{"g":"CL","h":4000,"p":750,"m":0,"r":"AX08040075AABD099","px":165.722,"kg":33.008},{"g":"CL","h":4000,"p":750,"m":1,"r":"AX08040075HABD099","px":198.8602,"kg":33.008},{"g":"CL","h":4000,"p":900,"m":0,"r":"AX08040090AABD099","px":169.6785,"kg":33.968},{"g":"CL","h":4000,"p":900,"m":1,"r":"AX08040090HABD099","px":203.606,"kg":33.968},{"g":"CL","h":4500,"p":1100,"m":0,"r":"AX08045011AABD099","px":199.1882,"kg":39.306},{"g":"CL","h":4500,"p":1100,"m":1,"r":"AX08045011HABD099","px":239.0402,"kg":39.306},{"g":"CL","h":4500,"p":750,"m":0,"r":"AX08045075AABD099","px":184.9715,"kg":36.856},{"g":"CL","h":4500,"p":750,"m":1,"r":"AX08045075HABD099","px":221.9432,"kg":36.856},{"g":"CL","h":4500,"p":900,"m":0,"r":"AX08045090AABD099","px":191.1522,"kg":37.916},{"g":"CL","h":4500,"p":900,"m":1,"r":"AX08045090HABD099","px":229.395,"kg":37.916},{"g":"CL","h":5000,"p":1100,"m":0,"r":"AX08050011AABD099","px":208.0237,"kg":43.384},{"g":"CL","h":5000,"p":1100,"m":1,"r":"AX08050011HABD099","px":249.6285,"kg":43.384},{"g":"CL","h":5000,"p":750,"m":0,"r":"AX08050075AABD099","px":199.383,"kg":40.704},{"g":"CL","h":5000,"p":750,"m":1,"r":"AX08050075HABD099","px":239.2555,"kg":40.704},{"g":"CL","h":5000,"p":900,"m":0,"r":"AX08050090AABD099","px":201.2485,"kg":41.864},{"g":"CL","h":5000,"p":900,"m":1,"r":"AX08050090HABD099","px":241.5105,"kg":41.864},{"g":"CL","h":5500,"p":1100,"m":0,"r":"AX08055011AABD099","px":231.4245,"kg":47.462},{"g":"CL","h":5500,"p":1100,"m":1,"r":"AX08055011HABD099","px":277.693,"kg":47.462},{"g":"CL","h":5500,"p":750,"m":0,"r":"AX08055075AABD099","px":220.2725,"kg":44.552},{"g":"CL","h":5500,"p":750,"m":1,"r":"AX08055075HABD099","px":264.3372,"kg":44.552},{"g":"CL","h":5500,"p":900,"m":0,"r":"AX08055090AABD099","px":224.3827,"kg":45.812},{"g":"CL","h":5500,"p":900,"m":1,"r":"AX08055090HABD099","px":269.2265,"kg":45.812},{"g":"CL","h":6000,"p":1100,"m":0,"r":"AX08060011AABD099","px":269.9747,"kg":51.54},{"g":"CL","h":6000,"p":1100,"m":1,"r":"AX08060011HABD099","px":323.941,"kg":51.54},{"g":"CL","h":6000,"p":750,"m":0,"r":"AX08060075AABD099","px":235.586,"kg":48.4},{"g":"CL","h":6000,"p":750,"m":1,"r":"AX08060075HABD099","px":282.7052,"kg":48.4},{"g":"CL","h":6000,"p":900,"m":0,"r":"AX08060090AABD099","px":265.4955,"kg":49.76},{"g":"CL","h":6000,"p":900,"m":1,"r":"AX08060090HABD099","px":318.6315,"kg":49.76},{"g":"XL","h":3000,"p":1100,"m":0,"r":"BX08030011AABD099","px":162.7802,"kg":29.632},{"g":"XL","h":3000,"p":1100,"m":1,"r":"BX08030011HABD099","px":195.324,"kg":29.632},{"g":"XL","h":3000,"p":750,"m":0,"r":"BX08030075AABD099","px":152.9607,"kg":27.922},{"g":"XL","h":3000,"p":750,"m":1,"r":"BX08030075HABD099","px":183.557,"kg":27.922},{"g":"XL","h":3000,"p":900,"m":0,"r":"BX08030090AABD099","px":157.03,"kg":28.662},{"g":"XL","h":3000,"p":900,"m":1,"r":"BX08030090HABD099","px":188.4462,"kg":28.662},{"g":"XL","h":3500,"p":1100,"m":0,"r":"BX08035011AABD099","px":186.3142,"kg":34.17},{"g":"XL","h":3500,"p":1100,"m":1,"r":"BX08035011HABD099","px":223.5627,"kg":34.17},{"g":"XL","h":3500,"p":750,"m":0,"r":"BX08035075AABD099","px":175.1827,"kg":32.23},{"g":"XL","h":3500,"p":750,"m":1,"r":"BX08035075HABD099","px":210.1967,"kg":32.23},{"g":"XL","h":3500,"p":900,"m":0,"r":"BX08035090AABD099","px":179.7747,"kg":33.07},{"g":"XL","h":3500,"p":900,"m":1,"r":"BX08035090HABD099","px":215.7523,"kg":33.07},{"g":"XL","h":4000,"p":1100,"m":0,"r":"BX08040011AABD099","px":208.608,"kg":38.788},{"g":"XL","h":4000,"p":1100,"m":1,"r":"BX08040011HABD099","px":250.3357,"kg":39.726},{"g":"XL","h":4000,"p":750,"m":0,"r":"BX08040075AABD099","px":195.8365,"kg":36.568},{"g":"XL","h":4000,"p":750,"m":1,"r":"BX08040075HABD099","px":235.0017,"kg":36.568},{"g":"XL","h":4000,"p":900,"m":0,"r":"BX08040090AABD099","px":201.1665,"kg":37.528},{"g":"XL","h":4000,"p":900,"m":1,"r":"BX08040090HABD099","px":241.3977,"kg":37.528},{"g":"XL","h":4500,"p":1100,"m":0,"r":"BX08045011AABD099","px":232.142,"kg":43.306},{"g":"XL","h":4500,"p":1100,"m":1,"r":"BX08045011HABD099","px":278.5847,"kg":43.306},{"g":"XL","h":4500,"p":750,"m":0,"r":"BX08045075AABD099","px":218.0585,"kg":40.856},{"g":"XL","h":4500,"p":750,"m":1,"r":"BX08045075HABD099","px":261.6517,"kg":40.856},{"g":"XL","h":4500,"p":900,"m":0,"r":"BX08045090AABD099","px":223.9112,"kg":41.916},{"g":"XL","h":4500,"p":900,"m":1,"r":"BX08045090HABD099","px":268.673,"kg":41.916},{"g":"XL","h":5000,"p":1100,"m":0,"r":"BX08050011AABD099","px":255.6657,"kg":47.844},{"g":"XL","h":5000,"p":1100,"m":1,"r":"BX08050011HABD099","px":306.7927,"kg":47.844},{"g":"XL","h":5000,"p":750,"m":0,"r":"BX08050075AABD099","px":240.2702,"kg":45.164},{"g":"XL","h":5000,"p":750,"m":1,"r":"BX08050075HABD099","px":288.2915,"kg":45.164},{"g":"XL","h":5000,"p":900,"m":0,"r":"BX08050090AABD099","px":246.656,"kg":46.324},{"g":"XL","h":5000,"p":900,"m":1,"r":"BX08050090HABD099","px":295.9995,"kg":46.324},{"g":"XL","h":5500,"p":1100,"m":0,"r":"BX08055011AABD099","px":279.1895,"kg":52.362},{"g":"XL","h":5500,"p":1100,"m":1,"r":"BX08055011HABD099","px":335.0007,"kg":52.362},{"g":"XL","h":5500,"p":750,"m":0,"r":"BX08055075AABD099","px":262.4513,"kg":49.452},{"g":"XL","h":5500,"p":750,"m":1,"r":"BX08055075HABD099","px":314.9415,"kg":49.452},{"g":"XL","h":5500,"p":900,"m":0,"r":"BX08055090AABD099","px":269.4007,"kg":50.712},{"g":"XL","h":5500,"p":900,"m":1,"r":"BX08055090HABD099","px":323.2953,"kg":50.712},{"g":"XL","h":6000,"p":1100,"m":0,"r":"BX08060011AABD099","px":302.6927,"kg":56.88},{"g":"XL","h":6000,"p":1100,"m":1,"r":"BX08060011HABD099","px":363.2497,"kg":56.88},{"g":"XL","h":6000,"p":750,"m":0,"r":"BX08060075AABD099","px":284.663,"kg":53.74},{"g":"XL","h":6000,"p":750,"m":1,"r":"BX08060075HABD099","px":341.571,"kg":53.74},{"g":"XL","h":6000,"p":900,"m":0,"r":"BX08060090AABD099","px":292.1455,"kg":55.1},{"g":"XL","h":6000,"p":900,"m":1,"r":"BX08060090HABD099","px":350.5807,"kg":55.1},{"g":"XL","h":6500,"p":1100,"m":0,"r":"BX08065011AABD099","px":326.237,"kg":61.418},{"g":"XL","h":6500,"p":1100,"m":1,"r":"BX08065011HABD099","px":391.4577,"kg":61.418},{"g":"XL","h":6500,"p":750,"m":0,"r":"BX08065075AABD099","px":306.8747,"kg":58.048},{"g":"XL","h":6500,"p":750,"m":1,"r":"BX08065075HABD099","px":368.262,"kg":58.048},{"g":"XL","h":6500,"p":900,"m":0,"r":"BX08065090AABD099","px":314.9108,"kg":59.508},{"g":"XL","h":6500,"p":900,"m":1,"r":"BX08065090HABD099","px":377.8868,"kg":59.508},{"g":"XL","h":7000,"p":1100,"m":0,"r":"BX08070011AABD099","px":345.0867,"kg":64.898},{"g":"XL","h":7000,"p":1100,"m":1,"r":"BX08070011HABD099","px":414.1,"kg":64.898},{"g":"XL","h":7000,"p":750,"m":0,"r":"BX08070075AABD099","px":325.9705,"kg":64.898},{"g":"XL","h":7000,"p":750,"m":1,"r":"BX08070075HABD099","px":391.1912,"kg":64.898},{"g":"XL","h":7000,"p":900,"m":0,"r":"BX08070090AABD099","px":333.8937,"kg":63.018},{"g":"XL","h":7000,"p":900,"m":1,"r":"BX08070090HABD099","px":400.6725,"kg":63.018},{"g":"XL","h":7500,"p":1100,"m":0,"r":"BX08075011AABD099","px":368.6105,"kg":69.416},{"g":"XL","h":7500,"p":1100,"m":1,"r":"BX08075011HABD099","px":442.3387,"kg":69.416},{"g":"XL","h":7500,"p":750,"m":0,"r":"BX08075075AABD099","px":348.2027,"kg":65.866},{"g":"XL","h":7500,"p":750,"m":1,"r":"BX08075075HABD099","px":417.831,"kg":65.866},{"g":"XL","h":7500,"p":900,"m":0,"r":"BX08075090AABD099","px":356.6385,"kg":67.406},{"g":"XL","h":7500,"p":900,"m":1,"r":"BX08075090HABD099","px":427.9375,"kg":67.406},{"g":"XL","h":8000,"p":1100,"m":0,"r":"BX08080011AABD099","px":392.124,"kg":73.954},{"g":"XL","h":8000,"p":1100,"m":1,"r":"BX08080011HABD099","px":470.557,"kg":73.954},{"g":"XL","h":8000,"p":750,"m":0,"r":"BX08080075AABD099","px":370.4145,"kg":70.174},{"g":"XL","h":8000,"p":750,"m":1,"r":"BX08080075HABD099","px":444.4912,"kg":70.174},{"g":"XL","h":8000,"p":900,"m":0,"r":"BX08080090AABD099","px":379.373,"kg":71.814},{"g":"XL","h":8000,"p":900,"m":1,"r":"BX08080090HABD099","px":455.2332,"kg":71.814}],"lisses":[{"g":"CL","s":70,"L":1825,"r":"AX09001825A2AA010","px":35.67,"kg":8.359,"ch":1796},{"g":"CL","s":90,"L":1825,"r":"AX09001825A3AA010","px":38.1915,"kg":9.209,"ch":2370},{"g":"CL","s":70,"L":2225,"r":"AX09002225A2AA010","px":41.7072,"kg":9.989,"ch":1506},{"g":"CL","s":90,"L":2225,"r":"AX09002225A3AA010","px":44.7822,"kg":11.029,"ch":1983},{"g":"CL","s":70,"L":2700,"r":"AX09002700A2AA010","px":48.8822,"kg":11.919,"ch":1217},{"g":"CL","s":90,"L":2700,"r":"AX09002700A3AA010","px":52.644,"kg":13.189,"ch":1653},{"g":"CL","s":110,"L":2700,"r":"AX09002700A4AB010","px":56.416,"kg":14.459,"ch":3036},{"g":"CL","s":90,"L":3300,"r":"AX09003300A3AA010","px":62.5352,"kg":15.919,"ch":1351},{"g":"CL","s":110,"L":3300,"r":"AX09003300A4AB010","px":67.1887,"kg":17.469,"ch":2085},{"g":"CL","s":130,"L":3300,"r":"AX09003300A5AB010","px":71.8627,"kg":19.019,"ch":2959},{"g":"CL","s":110,"L":3600,"r":"AX09003600A4AB010","px":72.57,"kg":18.979,"ch":1774},{"g":"CL","s":130,"L":3600,"r":"AX09003600A5AB010","px":77.654,"kg":20.669,"ch":2509},{"g":"XL","s":70,"L":1825,"r":"BX09001825A2AA010","px":35.67,"kg":8.359,"ch":1796},{"g":"XL","s":90,"L":1825,"r":"BX09001825A3AA010","px":38.1915,"kg":9.209,"ch":2370},{"g":"XL","s":110,"L":1825,"r":"BX09001825A4AB010","px":40.754,"kg":10.079,"ch":4500},{"g":"XL","s":70,"L":2225,"r":"BX09002225A2AA010","px":41.7072,"kg":9.989,"ch":1506},{"g":"XL","s":90,"L":2225,"r":"BX09002225A3AA010","px":44.7822,"kg":11.029,"ch":1983},{"g":"XL","s":110,"L":2225,"r":"BX09002225A4AB010","px":47.9187,"kg":12.079,"ch":3739},{"g":"XL","s":70,"L":2700,"r":"BX09002700A2AA010","px":48.8822,"kg":11.919,"ch":1217},{"g":"XL","s":90,"L":2700,"r":"BX09002700A3AA010","px":52.644,"kg":13.189,"ch":1653},{"g":"XL","s":110,"L":2700,"r":"BX09002700A4AB010","px":56.416,"kg":14.459,"ch":3036},{"g":"XL","s":130,"L":2700,"r":"BX09002700A5AB010","px":60.2392,"kg":15.729,"ch":3929},{"g":"XL","s":150,"L":2700,"r":"BX09002700A6AB010","px":62.6582,"kg":16.999,"ch":4500},{"g":"XL","s":90,"L":3300,"r":"BX09003300A3AA010","px":62.5352,"kg":15.919,"ch":1351},{"g":"XL","s":110,"L":3300,"r":"BX09003300A4AB010","px":67.1887,"kg":17.469,"ch":2085},{"g":"XL","s":130,"L":3300,"r":"BX09003300A5AB010","px":71.8627,"kg":19.019,"ch":2959},{"g":"XL","s":150,"L":3300,"r":"BX09003300A6AB010","px":76.588,"kg":20.569,"ch":3920},{"g":"XL","s":110,"L":3600,"r":"BX09003600A4AB010","px":72.57,"kg":18.979,"ch":1774},{"g":"XL","s":130,"L":3600,"r":"BX09003600A5AB010","px":77.654,"kg":20.669,"ch":2509},{"g":"XL","s":150,"L":3600,"r":"BX09003600A6AB010","px":82.5228,"kg":22.359,"ch":3449}],"acc":{"CL":{"ancrage":{"r":"AX130012110OA0000","px":9.635,"kg":0.2,"d":"EPSIRACK - Lot de 2 ancrages M-12x110 mm pour sol béton "},"plaque":{"r":"AXZ0000000DFR0200","px":52.0187,"kg":0.238,"d":"EPSIRACK - Plaque de charge"},"goupille":{"r":"AX04000000J000C00","px":0.7995,"kg":0.05,"d":"EPSIRACK - Goupille de sécurité supplémentaire"},"entretoise":{"r":"AX20000200BP00099","px":9.881,"kg":0.386,"d":"EPSIRACK - Entretoise de jumelage galvanisée L 200 mm"},"calage1":{"r":"AX23016011CA00099","px":2.1525,"kg":0.138,"d":"EPSIRACK - Platine de calage galvanisée ép. 1 mm"},"calage3":{"r":"AX23016011CC00099","px":2.4395,"kg":0.414,"d":"EPSIRACK - Platine de calage galvanisée ép. 3 mm"},"protPot":{"r":"AX04000400D000116","px":40.0877,"kg":5.325,"d":"EPSIRACK - Protection poteau H 400 mm RAL1028"},"protLat":{"r":"AX04001100D000016","px":173.471,"kg":19.26,"d":"EPSIRACK - Protection latérale d’échelles prof.1100 mm RAL1028"},"traverse":{"r":"AX10001100CDEC099","px":62.361,"kg":7.46,"d":"EPSIRACK - Paires de traverses support palettes L 1100 mm - galvanisées"},"butee":{"1825":{"r":"AX04001825G000010","px":51.045,"kg":4.448},"2225":{"r":"AX04002225G000010","px":53.505,"kg":5.148},"2700":{"r":"AX04002700G000010","px":59.3372,"kg":5.978},"3300":{"r":"AX04003300G000010","px":65.8972,"kg":7.018},"3600":{"r":"AX04003600G000010","px":71.4835,"kg":7.548}}},"XL":{"ancrage":{"r":"AX130012110OA0000","px":9.635,"kg":0.2,"d":"EPSIRACK - Lot de 2 ancrages M-12x110 mm pour sol béton "},"plaque":{"r":"BXZ0000000DFR0200","px":52.0187,"kg":0.238,"d":"EPSIRACK XL - Plaque de charge"},"goupille":{"r":"AX04000000J000C00","px":0.7995,"kg":0.05,"d":"EPSIRACK - Goupille de sécurité supplémentaire"},"entretoise":{"r":"BX20000200BP00099","px":9.881,"kg":0.386,"d":"EPSIRACK XL - Entretoise de jumelage galvanisée L 200 mm"},"calage1":{"r":"AX23016011CA00099","px":2.1525,"kg":0.138,"d":"EPSIRACK - Platine de calage galvanisée ép. 1 mm"},"calage3":{"r":"AX23016011CC00099","px":2.4395,"kg":0.414,"d":"EPSIRACK - Platine de calage galvanisée ép. 3 mm"},"protPot":{"r":"BX04000400D000116","px":40.0877,"kg":5.325,"d":"EPSIRACK XL- Protection poteau H 400 mm RAL1028"},"protLat":{"r":"BX04001100D000016","px":173.471,"kg":19.26,"d":"EPSIRACK XL - Protection latérale d’échelles prof.1100 mm RAL1028"},"traverse":{"r":"AX10001100CDEC099","px":62.361,"kg":7.46,"d":"EPSIRACK - Paires de traverses support palettes L 1100 mm - galvanisées"},"butee":{"1825":{"r":"AX04001825G000010","px":51.045,"kg":4.448},"2225":{"r":"AX04002225G000010","px":53.505,"kg":5.148},"2700":{"r":"AX04002700G000010","px":59.3372,"kg":5.978},"3300":{"r":"AX04003300G000010","px":65.8972,"kg":7.018},"3600":{"r":"AX04003600G000010","px":71.4835,"kg":7.548}}}},"qt":{"CL":{"1825":{"70":4090,"90":6201,"110":6415,"130":6397,"150":6380},"2225":{"70":4090,"90":6201,"110":6415,"130":6397,"150":6380},"2700":{"70":4090,"90":6201,"110":6415,"130":6397,"150":6380},"3300":{"70":2735,"90":4782,"110":5746,"130":6121,"150":6308},"3600":{"70":2735,"90":4782,"110":5746,"130":6121,"150":6308}},"XL":{"1825":{"70":4099,"90":7574,"110":8366,"130":8366,"150":8366},"2225":{"70":4099,"90":7574,"110":8366,"130":8366,"150":8366},"2700":{"70":4099,"90":7574,"110":8366,"130":8366,"150":8366},"3300":{"70":2764,"90":5219,"110":6308,"130":8183,"150":8183},"3600":{"70":2764,"90":5219,"110":6308,"130":8183,"150":8183}}},"transport":{"1":[63.441144,96.6654,0.202694,0.142106,0.101347,0.069401,0.050674,0.039658],"2":[49.537753,75.512736,0.138673,0.107209,0.064093,0.041952,0.031464,0.022141],"3":[68.894064,104.04612,0.181764,0.121176,0.090331,0.060588,0.050674,0.029743],"4":[98.560152,149.564232,0.283111,0.202694,0.152021,0.111262,0.090331,0.060588],"5":[95.299416,143.141904,0.283111,0.202694,0.152021,0.111262,0.090331,0.060588],"6":[102.658104,156.75768,0.293026,0.212609,0.161935,0.121176,0.101347,0.069401],"7":[78.962688,119.215152,0.212609,0.17185,0.121176,0.080417,0.069401,0.050674],"8":[51.56541,77.971561,0.160814,0.107209,0.064093,0.041952,0.031464,0.031464],"9":[101.831904,152.659728,0.262181,0.202694,0.142106,0.101347,0.080417,0.060588],"10":[55.014757,83.343686,0.150326,0.117697,0.073415,0.041952,0.031464,0.031464],"11":[96.929784,146.633976,0.242352,0.202694,0.142106,0.101347,0.080417,0.060588],"12":[87.13656,130.253184,0.232438,0.19278,0.142106,0.090331,0.080417,0.060588],"13":[85.506192,113.178384,0.232438,0.19278,0.13109,0.090331,0.080417,0.069401],"14":[60.480108,102.664692,0.192278,0.117697,0.073415,0.041952,0.041952,0.031464],"15":[79.513488,116.10864,0.212609,0.161935,0.121176,0.080417,0.069401,0.050674],"16":[72.969984,111.052296,0.202694,0.142106,0.101347,0.069401,0.060588,0.039658],"17":[76.78152,107.361936,0.19278,0.142106,0.101347,0.069401,0.060588,0.039658],"18":[59.078808,95.486688,0.19278,0.121176,0.080417,0.050674,0.039658,0.029743],"19":[75.151152,102.50388,0.19278,0.152021,0.101347,0.069401,0.060588,0.050674],"20":null,"21":[70.524432,94.715568,0.17185,0.121176,0.080417,0.050674,0.039658,0.029743],"22":[66.437496,103.275,0.222523,0.142106,0.090331,0.060588,0.050674,0.039658],"23":[71.064216,109.102464,0.232438,0.142106,0.101347,0.060588,0.050674,0.039658],"24":[69.984648,107.361936,0.19278,0.152021,0.101347,0.069401,0.060588,0.050674],"25":[73.785168,108.915192,0.202694,0.13109,0.090331,0.060588,0.050674,0.039658],"26":[67.792464,92.97504,0.19278,0.17185,0.121176,0.090331,0.069401,0.050674],"27":[63.370102,88.27299,0.171302,0.095556,0.064093,0.041952,0.031464,0.022141],"28":[52.998754,92.363263,0.18179,0.107209,0.073415,0.041952,0.031464,0.022141],"29":[61.270992,103.858848,0.252266,0.17185,0.121176,0.069401,0.060588,0.039658],"30":[76.517136,119.02788,0.242352,0.181764,0.13109,0.090331,0.080417,0.060588],"31":[83.049624,133.613064,0.232438,0.17185,0.13109,0.090331,0.080417,0.060588],"32":[89.306712,127.972872,0.222523,0.181764,0.13109,0.090331,0.080417,0.060588],"33":[75.426552,121.352256,0.222523,0.161935,0.111262,0.080417,0.069401,0.050674],"34":[90.397296,120.977712,0.242352,0.181764,0.13109,0.090331,0.080417,0.060588],"35":[59.078808,103.462272,0.181764,0.121176,0.080417,0.060588,0.039658,0.029743],"36":[61.270992,96.478128,0.181764,0.111262,0.069401,0.050674,0.039658,0.029743],"37":[55.818072,98.416944,0.19278,0.111262,0.080417,0.050674,0.039658,0.029743],"38":[75.151152,122.343696,0.222523,0.152021,0.121176,0.069401,0.060588,0.039658],"39":[69.984648,118.840608,0.212609,0.13109,0.121176,0.060588,0.050674,0.039658],"40":[86.045976,117.661896,0.222523,0.13109,0.13109,0.090331,0.080417,0.060588],"41":[56.368872,104.640984,0.19278,0.111262,0.069401,0.050674,0.039658,0.029743],"42":[76.241736,118.631304,0.212609,0.142106,0.101347,0.069401,0.060588,0.039658],"43":[75.426552,105.015528,0.19278,0.152021,0.111262,0.080417,0.060588,0.039658],"44":[60.995592,100.928592,0.202694,0.142106,0.101347,0.060588,0.050674,0.039658],"45":[59.326441,118.711148,0.203931,0.117697,0.107209,0.041952,0.041952,0.022141],"46":[85.770576,131.663232,0.242352,0.17185,0.121176,0.080417,0.069401,0.050674],"47":[80.868456,122.707224,0.232438,0.142106,0.121176,0.080417,0.069401,0.050674],"48":[96.246792,112.41828,0.232438,0.17185,0.13109,0.090331,0.069401,0.050674],"49":[59.078808,91.796328,0.19278,0.142106,0.090331,0.060588,0.050674,0.029743],"50":[62.07516,107.141616,0.212609,0.121176,0.090331,0.050674,0.050674,0.029743],"51":[55.877094,111.61435,0.18179,0.095556,0.064093,0.041952,0.031464,0.022141],"52":[61.062768,115.063697,0.192278,0.128185,0.073415,0.053605,0.041952,0.031464],"53":[62.62596,110.281176,0.202694,0.121176,0.080417,0.050674,0.039658,0.029743],"54":[59.326441,118.524697,0.192278,0.117697,0.085068,0.053605,0.041952,0.031464],"55":[55.306087,118.955866,0.192278,0.128185,0.085068,0.053605,0.041952,0.031464],"56":[74.886768,124.579944,0.272095,0.161935,0.111262,0.069401,0.060588,0.039658],"57":[57.904751,118.524697,0.18179,0.117697,0.073415,0.053605,0.041952,0.031464],"58":[60.995592,99.926136,0.202694,0.121176,0.080417,0.050674,0.039658,0.029743],"59":[33.118394,75.605962,0.107209,0.053605,0.041952,0.031464,0.022141,0.011653],"60":[48.675416,95.346482,0.138673,0.085068,0.064093,0.041952,0.031464,0.031464],"61":[60.480108,105.275009,0.214419,0.128185,0.085068,0.053605,0.041952,0.031464],"62":[39.166405,77.330635,0.107209,0.064093,0.053605,0.031464,0.022141,0.022141],"63":[71.890416,93.393648,0.212609,0.142106,0.090331,0.060588,0.050674,0.039658],"64":[88.216128,180.33192,0.252266,0.181764,0.13109,0.090331,0.080417,0.060588],"65":[95.8392,180.33192,0.262181,0.181764,0.13109,0.090331,0.080417,0.060588],"66":[99.926136,186.9966,0.272095,0.19278,0.142106,0.101347,0.080417,0.060588],"67":[94.763822,117.161273,0.203931,0.138673,0.095556,0.064093,0.053605,0.031464],"68":[98.516153,117.161273,0.203931,0.138673,0.095556,0.064093,0.053605,0.031464],"69":[63.441144,118.58724,0.222523,0.101347,0.101347,0.069401,0.050674,0.039658],"70":[62.62596,117.970344,0.212609,0.121176,0.090331,0.050674,0.050674,0.029743],"71":[65.071512,107.824608,0.202694,0.121176,0.101347,0.060588,0.050674,0.039658],"72":[61.810776,109.047384,0.19278,0.121176,0.080417,0.050674,0.039658,0.029743],"73":[70.788816,132.192,0.252266,0.161935,0.121176,0.069401,0.060588,0.039658],"74":[72.969984,135.265464,0.252266,0.17185,0.121176,0.069401,0.060588,0.050674],"75":[62.216435,118.384859,0.150326,0.095556,0.064093,0.041952,0.031464,0.022141],"76":[50.120413,99.518328,0.192278,0.107209,0.073415,0.041952,0.041952,0.022141],"77":[62.799095,118.384859,0.150326,0.095556,0.064093,0.041952,0.041952,0.031464],"78":[63.078772,118.384859,0.150326,0.095556,0.064093,0.041952,0.041952,0.031464],"79":[63.441144,118.58724,0.222523,0.142106,0.090331,0.060588,0.050674,0.029743],"80":[45.797076,89.72964,0.138673,0.073415,0.053605,0.031464,0.031464,0.022141],"81":[81.95904,147.305952,0.252266,0.17185,0.142106,0.090331,0.080417,0.060588],"82":[84.404592,147.305952,0.242352,0.17185,0.142106,0.090331,0.080417,0.060588],"83":[96.39,178.822728,0.272095,0.202694,0.142106,0.090331,0.080417,0.069401],"84":[80.053272,133.89948,0.232438,0.19278,0.13109,0.090331,0.080417,0.060588],"85":[69.158448,118.444032,0.262181,0.13109,0.090331,0.069401,0.050674,0.050674],"86":[63.28692,109.399896,0.222523,0.13109,0.090331,0.060588,0.050674,0.039658],"87":[61.270992,113.13432,0.242352,0.142106,0.090331,0.069401,0.050674,0.039658],"88":[62.496112,116.78837,0.214419,0.128185,0.085068,0.053605,0.041952,0.031464],"89":[58.755434,114.061522,0.171302,0.117697,0.073415,0.053605,0.041952,0.031464],"90":[59.365224,113.277528,0.212609,0.121176,0.080417,0.060588,0.039658,0.039658],"91":[62.496112,118.384859,0.150326,0.095556,0.064093,0.041952,0.041952,0.031464],"92":[62.496112,118.384859,0.150326,0.095556,0.064093,0.041952,0.031464,0.022141],"93":[62.496112,118.384859,0.150326,0.095556,0.064093,0.041952,0.031464,0.022141],"94":[62.496112,118.384859,0.150326,0.095556,0.064093,0.041952,0.031464,0.022141],"95":[62.496112,118.384859,0.150326,0.095556,0.064093,0.041952,0.031464,0.022141]}};
+
+/* ------------------------------------------------------------------ */
+const LONGUEURS   = [1825,2225,2700,3300,3600];
+const PROFONDEURS = [750,900,1100];
+const HAUTEURS    = [3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000];
+const SECTIONS    = [70,90,110,130,150];
+const H_MAX_CLASSIC = 6000;
+const DH_MAX = 2000;
+const PALETTES = {1825:2, 2225:2, 2700:3, 3300:3, 3600:4};
+const NOM_GAMME = {CL:'EPSIRACK', XL:'EPSIRACK XL'};
+const POTEAU    = {CL:'T175 — 80x70x1,75 mm', XL:'T200 — 80x70x2 mm'};
+const CODES_REMISE = {'REV20': 0.20};
+
+const eur = n => n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+const eurPdf = n => n.toFixed(2).replace('.',',') + ' EUR';
+const kg  = n => n.toLocaleString('fr-FR',{maximumFractionDigits:1}) + ' kg';
+const ent = n => n.toLocaleString('fr-FR');
+
+const lisse   = (g,s,L)   => D.lisses.find(x => x.g===g && x.s===s && x.L===L);
+const echelle = (g,h,p,m) => D.echelles.find(x => x.g===g && x.h===h && x.p===p && x.m===m);
+
+/* Plus petite section qui tient la charge, Classic avant XL. */
+function choisir(chargeNiveau, L, nbNiveaux, hauteur, profondeur){
+  const parTravee = chargeNiveau * nbNiveaux;
+  for (const g of ['CL','XL']){
+    if (g==='CL' && hauteur > H_MAX_CLASSIC) continue;
+    if (!echelle(g,hauteur,profondeur,0)) continue;
+    for (const s of SECTIONS){
+      const l = lisse(g,s,L);
+      if (!l || l.ch < chargeNiveau) continue;
+      const qt = D.qt[g][L][s];
+      if (qt < parTravee) continue;
+      return {g, s, l, qt, parTravee};
+    }
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Comptages de base                                                  */
+/* ------------------------------------------------------------------ */
+const nbEchelles = c => c.racks * c.face * (c.travees + 1);
+const nbLisses   = c => c.racks * c.face * 2 * c.niveaux * c.travees;
+
+/* Composition de base : quantités calculées, modifiables une par une   */
+function lignesAuto(c){
+  const a = D.acc[c.g];
+  const nEch = nbEchelles(c);
+  const ech = echelle(c.g, c.h, c.p, c.montage);
+  const li  = lisse(c.g, c.s, c.L);
+  const base = [
+    {id:'echelle', nom:`Échelle H.${c.h} P.${c.p} — ${c.montage?'assemblée en usine':'à boulonner'}`,
+     art:ech, qte:nEch, aide:''},
+    {id:'lisse',   nom:`Lisse ${c.s}×50×1,5 L.${c.L}`, art:li, qte:nbLisses(c),
+     aide:''},
+    {id:'ancrage', nom:'Lot de 2 ancrages M12x110', art:a.ancrage, qte:nEch, aide:'1 lot par échelle'},
+    {id:'sabot',   nom:'Sabot de protection de poteau H.400', art:a.protPot, qte:nEch, aide:'1 par échelle'},
+    {id:'plaque',  nom:'Plaque de charge', art:a.plaque, qte:c.racks*c.face, aide: c.face===2?'1 par face et par rack':'1 par rack'},
+  ];
+  if (c.face === 2)
+    base.push({id:'entretoise', nom:'Entretoise de jumelage L.200', art:a.entretoise, qte:nEch,
+               aide:'1 par échelle, implantation dos à dos'});
+  return base.map(x => Object.assign({}, x, {qte: qteInclus[x.id] !== undefined ? qteInclus[x.id] : x.qte}));
+}
+
+/* Options à quantité libre                                            */
+function catalogueOptions(c){
+  const a = D.acc[c.g];
+  return [
+    {id:'butee',     nom:'Butée de palette',                    art:a.butee[c.L],
+     aide:'1 par niveau et par travée'},
+    {id:'protLat',   nom:'Protection latérale d\u2019échelle',  art:a.protLat,
+     aide:'profondeur 1100 uniquement', dispo: c.p===1100},
+    {id:'ancrageSup',nom:'Lot de 2 ancrages supplémentaire',    art:a.ancrage,
+     aide:'butées arrière, 1 seul niveau, livraison Pays-Bas'},
+    {id:'traverse',  nom:'Paire de traverses support palettes',  art:a.traverse,
+     aide:'palettes déformées ou posées en travers'},
+    {id:'sabotSup',  nom:'Sabot de protection supplémentaire',   art:a.protPot,
+     aide:'poteaux exposés côté circulation'},
+    {id:'calage1',   nom:'Platine de calage ép. 1 mm',           art:a.calage1, aide:'rattrapage de niveau'},
+    {id:'calage3',   nom:'Platine de calage ép. 3 mm',           art:a.calage3, aide:'rattrapage de niveau'},
+    {id:'goupille',  nom:'Goupille de sécurité supplémentaire',  art:a.goupille, aide:'les lisses sont livrées avec goupilles'},
+  ];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Nomenclature                                                       */
+/* ------------------------------------------------------------------ */
+function nomenclature(r){
+  const ech = echelle(r.g, r.h, r.p, r.montage);
+  const li  = lisse(r.g, r.s, r.L);
+  const lg = [];
+  const add = (art, qte, des) => {
+    if (!art || qte <= 0) return;
+    const e = lg.find(x => x.ref === art.r);
+    if (e) e.qte += qte;
+    else lg.push({ref:art.r, des, qte, pu:art.px, kg:art.kg});
+  };
+  for (const x of r.auto){
+    const des = x.id==='echelle' ? `Échelle ${NOM_GAMME[r.g]} H.${r.h} P.${r.p} — ${r.montage?'assemblée en usine':'à boulonner'}`
+              : x.id==='lisse'   ? `Lisse ${r.s}x50x1,5 L.${r.L} RAL 2004 — ${li.ch} kg/paire`
+              : x.nom;
+    add(x.art, x.qte, des);
+  }
+  for (const o of r.options) add(o.art, o.qte, o.nom);
+  return lg;
+}
+const totalLignes = lg => lg.reduce((s,l)=>s + l.qte*l.pu, 0);
+const poidsLignes = lg => lg.reduce((s,l)=>s + l.qte*l.kg, 0);
+
+/* ------------------------------------------------------------------ */
+function transport(dep, montant){
+  const t = D.transport[dep];
+  if (!t) return null;
+  if (montant <= 200)   return t[0];
+  if (montant <= 400)   return t[1];
+  if (montant <= 1500)  return montant * t[2];
+  if (montant <= 2600)  return montant * t[3];
+  if (montant <= 5200)  return montant * t[4];
+  if (montant <= 7800)  return montant * t[5];
+  if (montant <= 10000) return montant * t[6];
+  return montant * t[7];
+}
+
+/* ------------------------------------------------------------------ */
+let devis = [], courant = null, qteOptions = {}, qteInclus = {}, editionIndex = null, sigCourante = null;
+const $ = id => document.getElementById(id);
+const nomFace = f => f===2 ? 'Double face' : 'Simple face';
+const phraseConfig = c =>
+  `${c.racks>1?c.racks+' RACKS':'RACK'} ${c.face===2?'double-face':'simple-face'}` +
+  ` de ${c.travees} travée${c.travees>1?'s':''}` +
+  ` avec ${c.niveaux} nivx+sol, soit ${c.niveaux+1} nivx de stockage`;
+const titreRack = r =>
+  `${r.racks} rack${r.racks>1?'s':''} ${r.face===2?'DF':'SF'} H.${r.h} P.${r.p} L.${r.travees}x${r.L}`;
+
+function remplirSelects(){
+  $('longueur').innerHTML = LONGUEURS.map(l =>
+    `<option value="${l}">${l} mm — ${PALETTES[l]} palettes</option>`).join('');
+  $('longueur').value = 2700;
+  $('profondeur').innerHTML = PROFONDEURS.map(p => {
+    const n = p===900 ? ' — palette 800' : p===1100 ? ' — palette 1200' : '';
+    return `<option value="${p}">${p} mm${n}</option>`;
+  }).join('');
+  $('profondeur').value = 1100;
+  $('hauteur').innerHTML = HAUTEURS.map(h =>
+    `<option value="${h}">${h} mm${h>H_MAX_CLASSIC?' — XL uniquement':''}</option>`).join('');
+  $('hauteur').value = 4500;
+  const deps = Object.keys(D.transport).map(Number).sort((a,b)=>a-b);
+  $('departement').innerHTML = `<option value="">— choisir —</option>` +
+    deps.map(d => `<option value="${d}">${String(d).padStart(2,'0')}</option>`).join('') +
+    `<option value="autre">Autre / Corse — sur consultation</option>`;
+  $('departement').value = 54;
+}
+
+const radio = nom => +document.querySelector(`input[name="${nom}"]:checked`).value;
+
+function lireFormulaire(){
+  return {
+    charge:  Math.max(50, +$('charge').value || 0),
+    niveaux: Math.max(1, Math.min(6, +$('niveaux').value || 1)),
+    L:       +$('longueur').value,
+    p:       +$('profondeur').value,
+    h:       +$('hauteur').value,
+    travees: Math.max(1, +$('travees').value || 1),
+    racks:   Math.max(1, +$('racks').value || 1),
+    montage: radio('montage'),
+    face:    radio('face'),
+  };
+}
+
+function calculer(){
+  const f = lireFormulaire();
+  const sig = [f.travees, f.niveaux, f.face, f.racks].join('|');
+  if (sigCourante !== null && sig !== sigCourante) qteInclus = {};
+  sigCourante = sig;
+  const c = choisir(f.charge, f.L, f.niveaux, f.h, f.p);
+  courant = c ? Object.assign({}, f, {g:c.g, s:c.s, l:c.l, qt:c.qt, parTravee:c.parTravee}) : null;
+  return {f, c};
+}
+
+/* ------------------------------------------------------------------ */
+function rendreVerdict(){
+  const {f, c} = calculer();
+  const v = $('verdict');
+
+  if (!c){
+    v.className = 'verdict ko';
+    let cause = `Aucune lisse du catalogue ne tient ${ent(f.charge)} kg par niveau en longueur ${f.L} mm.`;
+    if (f.h > H_MAX_CLASSIC) cause += ' La hauteur demandée impose la version XL.';
+    v.innerHTML = `<div class="titre">Configuration hors catalogue</div>
+      <div class="section-lisse">Nous consulter</div>
+      <div class="aide" style="margin-top:8px">${cause} Réduisez la charge par niveau,
+      raccourcissez la travée, ou passez par le Bureau Technique.</div>`;
+    $('ajouter').disabled = true;
+    rendreInclus(); rendreOptions(); dessiner(); rendrePrixLive();
+    return;
+  }
+
+  const dh = Math.round(f.h / (f.niveaux + 1));
+  const margeLisse  = c.l.ch - f.charge;
+  const margeTravee = c.qt - c.parTravee;
+  const cls = (m, base) => (m / base) < 0.1 ? 'serre' : 'marge';
+  const hotPot = f.travees*f.L + 160 + (f.travees-1)*80;
+
+  v.className = 'verdict';
+  v.innerHTML = `
+    <div class="titre">Solution imposée par la charge</div>
+    <div class="gamme">${c.g==='XL' ? 'Epsirack <em>XL</em>' : 'Epsirack'}</div>
+    <div class="section-lisse">Lisse ${c.s} × 50 × 1,5 mm</div>
+    <div class="faits">
+      <div><span>Charge admissible / paire</span><span>${ent(c.l.ch)} kg</span></div>
+      <div><span>Marge sur le niveau</span><span class="${cls(margeLisse, c.l.ch)}">+ ${ent(margeLisse)} kg</span></div>
+      <div><span>Charge demandée / travée</span><span>${ent(c.parTravee)} kg</span></div>
+      <div><span>Admissible / travée</span><span class="${cls(margeTravee, c.qt)}">${ent(c.qt)} kg</span></div>
+      <div><span>Poteau</span><span>${POTEAU[c.g]}</span></div>
+      <div><span>Espacement moyen ΔH</span><span class="${dh>DH_MAX?'serre':''}">${ent(dh)} mm</span></div>
+      <div><span>Hors-tout poteaux</span><span>${ent(hotPot)} mm</span></div>
+      <div><span>Hors-tout platines</span><span>${ent(hotPot+80)} mm</span></div>
+    </div>
+    ${dh > DH_MAX ? `<div class="aide" style="margin-top:10px;color:var(--alerte)">
+      ΔH dépasse 2000 mm : les capacités du catalogue valent pour ΔH ≤ 2000 mm. À valider par le Bureau Technique.</div>` : ''}
+    <div class="aide" style="margin-top:8px">Lisse ${c.l.r} — ${eur(c.l.px)} l'unité.</div>`;
+  $('ajouter').disabled = false;
+  rendreInclus(); rendreOptions(); dessiner(); rendrePrixLive();
+}
+
+/* ------------------------------------------------------------------ */
+function rendreInclus(){
+  const b = $('inclus');
+  if (!courant){ b.innerHTML = ''; return; }
+  b.innerHTML = lignesAuto(courant).map(x => `<div class="opt-ligne">
+      <div>
+        <div class="nom">${x.nom}</div>
+        <div class="ref">${x.art.r} · ${eur(x.art.px)}${x.aide?' · '+x.aide:''}</div>
+      </div>
+      <div class="compteur petit">
+        <button type="button" data-incpas="${x.id}" data-delta="-1" aria-label="Retirer">−</button>
+        <input type="number" min="0" step="1" value="${x.qte}" data-inc="${x.id}" aria-label="${x.nom}">
+        <button type="button" data-incpas="${x.id}" data-delta="1" aria-label="Ajouter">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function rendreOptions(){
+  const b = $('options');
+  if (!courant){ b.innerHTML = '<div class="aide">Définissez d\u2019abord une configuration valide.</div>'; return; }
+  b.innerHTML = catalogueOptions(courant).map(o => {
+    if (!o.art) return '';
+    const dispo = o.dispo === undefined ? true : o.dispo;
+    const val = dispo ? (qteOptions[o.id] || 0) : 0;
+    return `<div class="opt-ligne ${dispo?'':'off'}">
+      <div>
+        <div class="nom">${o.nom}</div>
+        <div class="ref">${o.art.r} · ${eur(o.art.px)} · ${o.aide||''}</div>
+      </div>
+      <div class="compteur petit">
+        <button type="button" data-optpas="${o.id}" data-delta="-1" ${dispo?'':'disabled'} aria-label="Retirer">−</button>
+        <input type="number" min="0" step="1" value="${val}" data-opt="${o.id}" ${dispo?'':'disabled'} aria-label="${o.nom}">
+        <button type="button" data-optpas="${o.id}" data-delta="1" ${dispo?'':'disabled'} aria-label="Ajouter">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function optionsChoisies(){
+  return catalogueOptions(courant)
+    .filter(o => o.art && (qteOptions[o.id]||0) > 0 && (o.dispo === undefined || o.dispo))
+    .map(o => ({id:o.id, nom:o.nom, art:o.art, qte:qteOptions[o.id]}));
+}
+
+/* ------------------------------------------------------------------ */
+function rayonnageCourant(){
+  if (!courant) return null;
+  const r = Object.assign({}, courant, {auto: lignesAuto(courant), options: optionsChoisies()});
+  r.inclus = {}; r.auto.forEach(x => r.inclus[x.id] = x.qte);
+  r.lignes = nomenclature(r);
+  r.ht = totalLignes(r.lignes);
+  r.poids = poidsLignes(r.lignes);
+  return r;
+}
+
+function rendrePrixLive(){
+  const r = rayonnageCourant();
+  const bandeau = $('bandeau');
+  if (!r){
+    bandeau.classList.add('ko');
+    $('prixLive').textContent = 'Nous consulter';
+    $('detailLive').textContent = 'Configuration hors catalogue';
+    return;
+  }
+  bandeau.classList.remove('ko');
+  $('prixLive').textContent = eur(r.ht) + ' HT';
+  const nbOpt = r.options.reduce((s,o)=>s+o.qte,0);
+  $('detailLive').innerHTML =
+    `${NOM_GAMME[r.g]} — ${phraseConfig(r)}<br>
+     ${nbEchelles(r)} échelles · ${nbLisses(r)} lisses${nbOpt?` · ${nbOpt} option${nbOpt>1?'s':''}`:''} · ${kg(r.poids)}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dessin technique                                                   */
+/* ------------------------------------------------------------------ */
+function dessiner(){
+  const svg = $('dessin'), lg = $('legendePlanche');
+  if (!courant){ svg.innerHTML=''; lg.textContent=''; return; }
+  const c = courant;
+  const n = Math.min(c.travees, 8);
+  const tronque = c.travees > n;
+
+  const W = 900, H = 460, margeG = 62, margeD = 40, margeH = 56, margeB = 66;
+  const utileW = W - margeG - margeD, utileH = H - margeH - margeB;
+  const hotPot = n*c.L + 160 + (n-1)*80;
+  const e = Math.min(utileW/hotPot, utileH/c.h) * 0.98;
+
+  const largeurPoteau = Math.max(4, 80*e);
+  const dessinW = hotPot*e, dessinH = c.h*e;
+  const x0 = margeG + (utileW - dessinW)/2;
+  const ySol = margeH + utileH, yHaut = ySol - dessinH;
+
+  const p = [];
+  const T = (x,y,t,cls,a) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" text-anchor="${a||'middle'}">${t}</text>`;
+
+  const xEch = [];
+  let cur = x0;
+  for (let i=0;i<=n;i++){ xEch.push(cur); cur += (c.L + 80)*e; }
+
+  for (const x of xEch){
+    p.push(`<rect x="${x.toFixed(1)}" y="${yHaut.toFixed(1)}" width="${largeurPoteau.toFixed(1)}" height="${dessinH.toFixed(1)}" class="pot"/>`);
+    const pas = dessinH / Math.max(4, Math.round(dessinH/46));
+    for (let y=yHaut; y<ySol-2; y+=pas){
+      const y2 = Math.min(y+pas, ySol);
+      p.push(`<line x1="${(x+0.8).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+largeurPoteau-0.8).toFixed(1)}" y2="${y2.toFixed(1)}" class="diag"/>`);
+    }
+    p.push(`<rect x="${(x-3).toFixed(1)}" y="${ySol.toFixed(1)}" width="${(largeurPoteau+6).toFixed(1)}" height="4" class="platine"/>`);
+    p.push(`<rect x="${(x-4).toFixed(1)}" y="${(ySol-14).toFixed(1)}" width="${(largeurPoteau+8).toFixed(1)}" height="14" class="sabot"/>`);
+  }
+
+  const hLisse = Math.max(3.5, c.s*e);
+  const pasN = dessinH / (c.niveaux + 1);
+  for (let k=1; k<=c.niveaux; k++){
+    const y = ySol - k*pasN;
+    for (let i=0;i<n;i++){
+      const xa = xEch[i] + largeurPoteau, xb = xEch[i+1];
+      p.push(`<rect x="${xa.toFixed(1)}" y="${(y-hLisse).toFixed(1)}" width="${(xb-xa).toFixed(1)}" height="${hLisse.toFixed(1)}" class="lisse"/>`);
+      if (c.face === 2)
+        p.push(`<rect x="${(xa+3).toFixed(1)}" y="${(y-hLisse-3).toFixed(1)}" width="${(xb-xa).toFixed(1)}" height="${hLisse.toFixed(1)}" class="lisse-arriere"/>`);
+    }
+  }
+
+  p.push(`<line x1="${(x0-24).toFixed(1)}" y1="${(ySol+4).toFixed(1)}" x2="${(x0+dessinW+24).toFixed(1)}" y2="${(ySol+4).toFixed(1)}" class="sol"/>`);
+
+  const yc = ySol + 30;
+  p.push(`<line x1="${x0.toFixed(1)}" y1="${yc}" x2="${(x0+dessinW).toFixed(1)}" y2="${yc}" class="cote"/>`);
+  p.push(`<line x1="${x0.toFixed(1)}" y1="${yc-5}" x2="${x0.toFixed(1)}" y2="${yc+5}" class="cote"/>`);
+  p.push(`<line x1="${(x0+dessinW).toFixed(1)}" y1="${yc-5}" x2="${(x0+dessinW).toFixed(1)}" y2="${yc+5}" class="cote"/>`);
+  const hotReel = c.travees*c.L + 160 + (c.travees-1)*80;
+  p.push(T(x0+dessinW/2, yc+16, `hors-tout poteaux ${ent(hotReel)} mm${tronque?`  (${c.travees} travées)`:''}`, 'cotet'));
+
+  const xc = x0 - 28;
+  p.push(`<line x1="${xc}" y1="${yHaut.toFixed(1)}" x2="${xc}" y2="${ySol.toFixed(1)}" class="cote"/>`);
+  p.push(`<line x1="${xc-5}" y1="${yHaut.toFixed(1)}" x2="${xc+5}" y2="${yHaut.toFixed(1)}" class="cote"/>`);
+  p.push(`<line x1="${xc-5}" y1="${ySol.toFixed(1)}" x2="${xc+5}" y2="${ySol.toFixed(1)}" class="cote"/>`);
+  p.push(`<text x="${xc-8}" y="${(yHaut+dessinH/2).toFixed(1)}" class="cotet" text-anchor="middle" transform="rotate(-90 ${xc-8} ${(yHaut+dessinH/2).toFixed(1)})">H ${ent(c.h)} mm</text>`);
+  p.push(T((xEch[0]+xEch[1])/2, yHaut-12, `L. utile ${ent(c.L)} mm`, 'cotet'));
+
+  svg.innerHTML = `<defs><style>
+    .pot{fill:#7C848C;stroke:#AEB5BC;stroke-width:.7}
+    .diag{stroke:#5C646C;stroke-width:.9}
+    .platine{fill:#AEB5BC}
+    .sabot{fill:#F2C230;opacity:.9}
+    .lisse{fill:#E25303;stroke:#8F3502;stroke-width:.6}
+    .lisse-arriere{fill:#8F3502;opacity:.55}
+    .sol{stroke:#5C646C;stroke-width:1.4}
+    .cote{stroke:#8A9199;stroke-width:.9}
+    .cotet{fill:#A8AFB6;font-family:'JetBrains Mono',monospace;font-size:11px}
+  </style></defs>` + p.join('');
+
+  lg.innerHTML = `${phraseConfig(c)} · lisse ${c.s}`;
+}
+
+/* ------------------------------------------------------------------ */
+function ajouter(){
+  const r = rayonnageCourant();
+  if (!r) return;
+  if (editionIndex !== null){
+    devis[editionIndex] = r;
+    quitterEdition();
+    toast('Rayonnage mis à jour');
+  } else {
+    devis.push(r);
+    toast('Rayonnage ajouté au devis');
+  }
+  qteOptions = {}; qteInclus = {};
+  rendreInclus(); rendreOptions(); rendrePrixLive(); rendreDevis();
+}
+
+function modifier(i){
+  const r = devis[i];
+  editionIndex = i;
+  $('charge').value = r.charge;
+  $('niveaux').value = r.niveaux;
+  $('longueur').value = r.L;
+  $('profondeur').value = r.p;
+  $('hauteur').value = r.h;
+  $('travees').value = r.travees;
+  $('racks').value = r.racks;
+  document.querySelector(`input[name="montage"][value="${r.montage}"]`).checked = true;
+  document.querySelector(`input[name="face"][value="${r.face}"]`).checked = true;
+  sigCourante = [r.travees, r.niveaux, r.face, r.racks].join('|');
+  qteInclus = Object.assign({}, r.inclus);
+  qteOptions = {}; r.options.forEach(o => qteOptions[o.id] = o.qte);
+  rendreVerdict();
+  rendreEdition();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function quitterEdition(){
+  editionIndex = null;
+  qteOptions = {}; qteInclus = {}; sigCourante = null;
+  rendreEdition(); rendreVerdict();
+}
+
+function rendreEdition(){
+  const b = $('banEdition');
+  if (editionIndex === null){
+    b.innerHTML = '';
+    $('ajouter').textContent = 'Ajouter au devis';
+    return;
+  }
+  b.innerHTML = `<div class="bandeau-edition">
+      <span>Modification du rayonnage n° ${editionIndex+1}</span>
+      <button class="btn-lien" id="btnAnnulerEdition" style="margin-left:auto">Annuler</button>
+    </div>`;
+  $('btnAnnulerEdition').addEventListener('click', quitterEdition);
+  $('ajouter').textContent = 'Enregistrer les modifications';
+}
+
+function rendreDevis(){
+  const b = $('lignes');
+  if (!devis.length){
+    b.innerHTML = '<div class="vide">Aucun rayonnage. Configurez une travée puis ajoutez-la au devis.</div>';
+    rendreTotaux(); $('nomenclature').innerHTML=''; $('nomenclature').dataset.on='0';
+    return;
+  }
+  b.innerHTML = `<table><thead><tr>
+      <th>Rayonnage</th><th class="num">Poids</th><th class="num">Total HT</th><th></th>
+    </tr></thead><tbody>
+    ${devis.map((r,i)=>`<tr>
+      <td>
+        ${r.g==='XL'?'<span class="pastille xl">XL</span> ':''}${titreRack(r)}<br>
+        <span style="color:var(--texte-doux);font-size:11px">
+          ${r.niveaux} niveau${r.niveaux>1?'x':''} de lisses ${r.s}×50 · ${ent(r.charge)} kg/niveau ·
+          échelles ${r.montage?'assemblées':'à boulonner'}${r.options.length?` · ${r.options.length} option${r.options.length>1?'s':''}`:''}
+        </span>
+      </td>
+      <td class="num">${kg(r.poids)}</td>
+      <td class="num">${eur(r.ht)}</td>
+      <td class="num" style="white-space:nowrap">
+        <button class="btn-lien" data-mod="${i}" style="color:var(--graphite)">Modifier</button>
+        <button class="btn-croix" data-sup="${i}" title="Supprimer" aria-label="Supprimer">✕</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+  b.querySelectorAll('button[data-sup]').forEach(x =>
+    x.addEventListener('click', ()=>{
+      const i = +x.dataset.sup;
+      devis.splice(i,1);
+      if (editionIndex === i) quitterEdition();
+      else if (editionIndex !== null && editionIndex > i) editionIndex--;
+      rendreEdition(); rendreDevis();
+    }));
+  b.querySelectorAll('button[data-mod]').forEach(x =>
+    x.addEventListener('click', ()=> modifier(+x.dataset.mod)));
+  rendreTotaux();
+}
+
+/* ------------------------------------------------------------------ */
+function remise(){
+  const code = ($('codeRemise').value || '').trim().toUpperCase();
+  const taux = CODES_REMISE[code];
+  return taux ? {code, taux} : {code:'', taux:0};
+}
+
+function agreger(){
+  const m = new Map();
+  for (const r of devis) for (const l of r.lignes){
+    const e = m.get(l.ref);
+    if (e) e.qte += l.qte; else m.set(l.ref, Object.assign({}, l));
+  }
+  return [...m.values()].sort((a,b)=> a.ref.localeCompare(b.ref));
+}
+
+function chiffres(){
+  const tarif = devis.reduce((s,r)=>s+r.ht,0);
+  const poids = devis.reduce((s,r)=>s+r.poids,0);
+  const rem = remise();
+  const montantRemise = tarif * rem.taux;
+  const marchandise = tarif - montantRemise;
+  const dep = $('departement').value;
+  // le transport se calcule sur le montant tarif, avant remise
+  const port = (dep && dep!=='autre') ? transport(dep, tarif) : null;
+  const consult = !dep || dep==='autre' || port===null;
+  const ht = marchandise + (port||0);
+  return {tarif, poids, rem, montantRemise, marchandise, port, consult, ht, tva:ht*0.2, ttc:ht*1.2};
+}
+
+function rendreTotaux(){
+  const c = chiffres();
+  $('totaux').innerHTML = `
+    <div class="l"><span>Marchandise au tarif HT</span><span>${eur(c.tarif)}</span></div>
+    ${c.rem.taux ? `<div class="l remise"><span>Remise ${c.rem.code} — ${Math.round(c.rem.taux*100)} %</span><span>− ${eur(c.montantRemise)}</span></div>
+    <div class="l"><span>Marchandise nette HT</span><span>${eur(c.marchandise)}</span></div>` : ''}
+    <div class="l"><span>Poids total</span><span>${kg(c.poids)}</span></div>
+    <div class="l"><span>Transport HT</span><span class="${c.consult?'consult':''}">${c.consult?'Sur consultation':eur(c.port)}</span></div>
+    <div class="l"><span>Total HT rendu</span><span>${eur(c.ht)}</span></div>
+    <div class="l"><span>TVA 20 %</span><span>${eur(c.tva)}</span></div>
+    <div class="l fort"><span>Total TTC</span><span>${eur(c.ttc)}</span></div>`;
+}
+
+/* ------------------------------------------------------------------ */
+function afficherNomenclature(){
+  const z = $('nomenclature');
+  if (!devis.length){ z.innerHTML=''; return; }
+  if (z.dataset.on === '1'){ z.innerHTML=''; z.dataset.on='0'; return; }
+  z.dataset.on = '1';
+  z.innerHTML = `<h2 style="margin:22px 0 8px;font-size:14px">Nomenclature consolidée</h2>
+    <table><thead><tr><th>Référence</th><th>Désignation</th><th class="num">Qté</th><th class="num">PU tarif</th><th class="num">Total</th></tr></thead>
+    <tbody>${agreger().map(l=>`<tr>
+      <td class="mono">${l.ref}</td><td>${l.des}</td>
+      <td class="num">${l.qte}</td><td class="num">${eur(l.pu)}</td><td class="num">${eur(l.qte*l.pu)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function lignesCsv(){
+  const entete = ['Reference','Designation','Quantite','Prix unitaire HT','Total HT','Poids unitaire kg'];
+  const corps = agreger().map(l => [l.ref, l.des.replace(/;/g,','), l.qte,
+    l.pu.toFixed(2).replace('.',','), (l.qte*l.pu).toFixed(2).replace('.',','), l.kg.toFixed(3).replace('.',',')]);
+  return [entete, ...corps].map(r=>r.join(';')).join('\r\n');
+}
+
+function telechargerCsv(){
+  if (!devis.length) return toast('Le devis est vide');
+  const blob = new Blob(['\ufeff'+lignesCsv()], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nomenclature-epsirack-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function copier(){
+  if (!devis.length) return toast('Le devis est vide');
+  const c = chiffres();
+  let t = 'DEVIS EPSIRACK — RSL\n\n';
+  devis.forEach((r,i)=>{
+    t += `${i+1}. ${titreRack(r)} — ${NOM_GAMME[r.g]}\n`;
+    t += `   ${r.niveaux} niveau(x) de lisses ${r.s}x50x1,5, ${r.charge} kg/niveau\n`;
+    t += `   ${nbEchelles(r)} échelles ${r.montage?'assemblées en usine':'à boulonner'} — ${eur(r.ht)}\n`;
+  });
+  t += '\nNOMENCLATURE\n';
+  agreger().forEach(l => { t += `${l.ref}  x${l.qte}  ${l.des}  ${eur(l.qte*l.pu)}\n`; });
+  t += `\nMarchandise au tarif HT : ${eur(c.tarif)}\n`;
+  if (c.rem.taux) t += `Remise ${c.rem.code} ${Math.round(c.rem.taux*100)} % : -${eur(c.montantRemise)}\n`;
+  t += `Transport HT : ${c.consult?'sur consultation':eur(c.port)}\n`;
+  t += `Total HT rendu : ${eur(c.ht)}\nTotal TTC : ${eur(c.ttc)}\n`;
+  navigator.clipboard.writeText(t).then(()=>toast('Devis copié'), ()=>toast('Copie impossible'));
+}
+
+function construirePdf(){
+  if (!devis.length) return toast('Le devis est vide');
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const c = chiffres();
+
+  doc.setFillColor(31,35,40); doc.rect(0,0,210,22,'F');
+  doc.setFillColor(226,83,3); doc.rect(0,22,210,1.2,'F');
+  doc.setTextColor(255); doc.setFontSize(17); doc.setFont('helvetica','bold');
+  doc.text('DEVIS EPSIRACK', 14, 14);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('RSL — Rayonnages Services Lorraine', 196, 11, {align:'right'});
+  doc.text('Tarif au 11/05/2026', 196, 16.5, {align:'right'});
+
+  doc.setTextColor(34,38,43); doc.setFontSize(10);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 14, 32);
+  const dep = $('departement').value;
+  doc.text(`Département de livraison : ${dep && dep!=='autre' ? String(dep).padStart(2,'0') : 'à préciser'}`, 14, 37.5);
+
+  doc.autoTable({
+    startY: 44,
+    head: [['Rayonnage','Gamme','Niv.','Lisse','Échelles','Total HT']],
+    body: devis.map(r => [
+      titreRack(r), NOM_GAMME[r.g], String(r.niveaux), `${r.s}x50x1,5`,
+      `${nbEchelles(r)} ${r.montage?'assemblées':'à boulonner'}`, eurPdf(r.ht),
+    ]),
+    theme:'grid', styles:{fontSize:8, cellPadding:2},
+    headStyles:{fillColor:[31,35,40], textColor:255, fontStyle:'bold'},
+    columnStyles:{5:{halign:'right'}},
+  });
+
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 8,
+    head: [['Référence','Désignation','Qté','PU HT','Total HT']],
+    body: agreger().map(l => [l.ref, l.des, String(l.qte), eurPdf(l.pu), eurPdf(l.qte*l.pu)]),
+    theme:'striped', styles:{fontSize:7.6, cellPadding:1.7},
+    headStyles:{fillColor:[138,145,153], textColor:255},
+    columnStyles:{0:{cellWidth:34, font:'courier'}, 2:{halign:'right', cellWidth:12},
+                  3:{halign:'right', cellWidth:22}, 4:{halign:'right', cellWidth:24}},
+  });
+
+  let y = doc.lastAutoTable.finalY + 8;
+  const l = (t,v,gras) => {
+    doc.setFont('helvetica', gras?'bold':'normal'); doc.setFontSize(gras?11:9.5);
+    doc.text(t, 130, y, {align:'right'}); doc.text(v, 196, y, {align:'right'}); y += gras?7:5.5;
+  };
+  l('Marchandise au tarif HT', eurPdf(c.tarif));
+  if (c.rem.taux) { l(`Remise ${c.rem.code} (${Math.round(c.rem.taux*100)} %)`, '- ' + eurPdf(c.montantRemise));
+                    l('Marchandise nette HT', eurPdf(c.marchandise)); }
+  l('Poids total', c.poids.toFixed(1).replace('.',',') + ' kg');
+  l('Transport HT', c.consult ? 'sur consultation' : eurPdf(c.port));
+  l('Total HT rendu', eurPdf(c.ht));
+  l('TVA 20 %', eurPdf(c.tva));
+  l('TOTAL TTC', eurPdf(c.ttc), true);
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.4); doc.setTextColor(110);
+  doc.text([
+    'Charges maximales uniformément réparties par paire de lisses, selon EN 15512:2020.',
+    'Ancrage au sol et goupilles des lisses obligatoires. Sol béton classe C16/9 minimum.',
+    'Un calcul des charges totales par travée par le Bureau Technique est nécessaire à chaque commande.',
+  ], 14, 282);
+
+  doc.save(`devis-epsirack-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Demande client                                                     */
+/* ------------------------------------------------------------------ */
+const DESTINATAIRE = 's.degardin@rsl.eu';
+
+function texteDemande(){
+  const c = chiffres();
+  const v = id => ($(id).value || '').trim();
+  const L = [];
+  L.push('DEMANDE DE DEVIS EPSIRACK');
+  L.push('');
+  L.push('CLIENT');
+  L.push(`Société : ${v('cSociete') || '-'}`);
+  L.push(`Contact : ${v('cNom') || '-'}`);
+  L.push(`E-mail : ${v('cEmail') || '-'}`);
+  L.push(`Téléphone : ${v('cTel') || '-'}`);
+  L.push(`Livraison : ${v('cCp') || '-'}`);
+  if (v('cDelai')) L.push(`Délai souhaité : ${v('cDelai')}`);
+  if (v('cMessage')) L.push(`Précisions : ${v('cMessage')}`);
+  L.push('');
+  L.push('CONFIGURATION');
+  devis.forEach((r,i) => {
+    L.push(`${i+1}. ${titreRack(r)} — ${NOM_GAMME[r.g]}`);
+    L.push(`   ${r.niveaux} niveau(x) de lisses ${r.s}x50x1,5 — ${ent(r.charge)} kg/niveau — échelles ${r.montage?'assemblées en usine':'à boulonner'}`);
+    if (r.options.length) L.push(`   Options : ${r.options.map(o=>`${o.nom} x${o.qte}`).join(', ')}`);
+    L.push(`   ${eur(r.ht)}`);
+  });
+  L.push('');
+  L.push('CHIFFRAGE');
+  L.push(`Marchandise au tarif HT : ${eur(c.tarif)}`);
+  if (c.rem.taux) L.push(`Remise ${c.rem.code} ${Math.round(c.rem.taux*100)} % : -${eur(c.montantRemise)}`);
+  L.push(`Poids total : ${kg(c.poids)}`);
+  L.push(`Transport HT : ${c.consult ? 'sur consultation' : eur(c.port)}`);
+  L.push(`Total HT rendu : ${eur(c.ht)}`);
+  L.push(`Total TTC : ${eur(c.ttc)}`);
+  return L.join('\n');
+}
+
+function verifierDemande(){
+  if (!devis.length){ toast('Ajoutez au moins un rack au devis'); return false; }
+  const mail = ($('cEmail').value || '').trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){ toast('Renseignez un e-mail valide'); $('cEmail').focus(); return false; }
+  return true;
+}
+
+function envoyerDemande(){
+  if (!verifierDemande()) return;
+  const soc = ($('cSociete').value || '').trim();
+  const sujet = `Demande de devis EPSIRACK${soc ? ' — ' + soc : ''}`;
+  const corps = texteDemande();
+  const lien = `mailto:${DESTINATAIRE}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+  if (lien.length > 1900){
+    navigator.clipboard.writeText(corps).then(()=>{
+      toast('Demande trop longue pour la messagerie — copiée, collez-la dans votre mail');
+      window.location.href = `mailto:${DESTINATAIRE}?subject=${encodeURIComponent(sujet)}`;
+    }, ()=> window.location.href = lien);
+    return;
+  }
+  window.location.href = lien;
+}
+
+/* ------------------------------------------------------------------ */
+let minuteur;
+function toast(t){
+  const z = $('toast'); z.textContent = t; z.classList.add('on');
+  clearTimeout(minuteur); minuteur = setTimeout(()=>z.classList.remove('on'), 2200);
+}
+
+function pas(input, delta){
+  const min = input.min !== '' ? +input.min : -Infinity;
+  const max = input.max !== '' ? +input.max : Infinity;
+  const v = Math.min(max, Math.max(min, (+input.value||0) + delta));
+  input.value = v;
+  return v;
+}
+
+remplirSelects();
+
+document.addEventListener('click', ev => {
+  const bChamp = ev.target.closest('button[data-pas]');
+  if (bChamp){ pas($(bChamp.dataset.pas), +bChamp.dataset.delta); rendreVerdict(); return; }
+  const bOpt = ev.target.closest('button[data-optpas]');
+  if (bOpt){
+    const id = bOpt.dataset.optpas;
+    const input = document.querySelector(`input[data-opt="${id}"]`);
+    qteOptions[id] = pas(input, +bOpt.dataset.delta);
+    rendrePrixLive(); return;
+  }
+  const bInc = ev.target.closest('button[data-incpas]');
+  if (bInc){
+    const id = bInc.dataset.incpas;
+    const input = document.querySelector(`input[data-inc="${id}"]`);
+    qteInclus[id] = pas(input, +bInc.dataset.delta);
+    rendrePrixLive(); return;
+  }
+});
+
+document.addEventListener('input', ev => {
+  if (ev.target.matches('input[data-opt]')){
+    qteOptions[ev.target.dataset.opt] = Math.max(0, +ev.target.value||0);
+    rendrePrixLive();
+  } else if (ev.target.matches('input[data-inc]')){
+    qteInclus[ev.target.dataset.inc] = Math.max(0, +ev.target.value||0);
+    rendrePrixLive();
+  }
+});
+
+['charge','niveaux','longueur','profondeur','hauteur','travees','racks'].forEach(id =>
+  $(id).addEventListener('input', rendreVerdict));
+document.querySelectorAll('input[name="montage"],input[name="face"]').forEach(r =>
+  r.addEventListener('change', rendreVerdict));
+$('departement').addEventListener('change', rendreTotaux);
+$('codeRemise').addEventListener('input', rendreTotaux);
+$('ajouter').addEventListener('click', ajouter);
+$('btnNomenclature').addEventListener('click', afficherNomenclature);
+$('btnPdf').addEventListener('click', construirePdf);
+$('btnCsv').addEventListener('click', telechargerCsv);
+$('btnCopier').addEventListener('click', copier);
+$('btnEnvoyer').addEventListener('click', envoyerDemande);
+$('btnCopierDemande').addEventListener('click', ()=>{
+  if (!devis.length) return toast('Le devis est vide');
+  navigator.clipboard.writeText(texteDemande()).then(()=>toast('Demande copiée'), ()=>toast('Copie impossible'));
+});
+$('btnVider').addEventListener('click', ()=>{
+  if (devis.length && confirm('Vider le devis ?')){ devis=[]; quitterEdition(); rendreDevis(); }
+});
+
+rendreEdition();
+rendreVerdict();
+rendreDevis();
+</script>
+</body>
+</html>
