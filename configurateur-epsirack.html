@@ -112,6 +112,21 @@ select:focus,input:focus,button:focus-visible{outline:2px solid var(--ral2004);o
 
 .planche{background:var(--graphite);border-radius:4px;padding:6px;position:relative}
 .planche svg{display:block;width:100%;height:auto}
+.btn-zoom{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.12);border:1px solid var(--acier);
+  color:#fff;width:32px;height:32px;border-radius:4px;font-size:15px;line-height:1;display:flex;
+  align-items:center;justify-content:center;cursor:pointer}
+.btn-zoom:hover{background:var(--ral2004);border-color:var(--ral2004)}
+.modale{position:fixed;inset:0;background:rgba(20,22,25,.82);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:24px}
+.modale.on{display:flex}
+.modale-inner{background:var(--graphite);border-radius:6px;padding:10px;width:min(1200px,96vw);
+  max-height:94vh;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modale-inner svg{display:block;width:100%;height:auto;max-height:86vh}
+.modale-fermer{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.12);border:1px solid var(--acier);
+  color:#fff;width:34px;height:34px;border-radius:4px;font-size:18px;line-height:1;cursor:pointer;z-index:2}
+.modale-fermer:hover{background:var(--alerte);border-color:var(--alerte)}
+.modale-titre{position:absolute;top:16px;left:18px;color:var(--acier);
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:12px;font-weight:600}
 .legende-planche{position:absolute;top:14px;left:16px;color:var(--acier);
   font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:600}
 
@@ -304,6 +319,7 @@ tbody tr:hover{background:#FAFAF8}
       <div class="corps" style="padding:10px">
         <div class="planche">
           <div class="legende-planche" id="legendePlanche"></div>
+          <button type="button" class="btn-zoom" id="btnZoom" title="Agrandir le plan" aria-label="Agrandir le plan">⤢</button>
           <svg id="dessin" viewBox="0 0 900 460" role="img" aria-label="Élévation du rayonnage configuré"></svg>
         </div>
       </div>
@@ -321,7 +337,13 @@ tbody tr:hover{background:#FAFAF8}
           </div>
           <div>
             <label for="codeRemise">Code remise</label>
-            <input type="text" id="codeRemise" autocomplete="off" spellcheck="false">
+            <div style="display:flex;gap:8px">
+              <input type="text" id="codeRemise" autocomplete="off" spellcheck="false"
+                     placeholder="CODE REMISE" style="flex:1">
+              <button type="button" class="btn-secondaire" id="btnRemise"
+                      style="white-space:nowrap;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:500">Appliquer</button>
+            </div>
+            <div class="aide" id="remiseEtat"></div>
           </div>
         </div>
 
@@ -375,6 +397,14 @@ tbody tr:hover{background:#FAFAF8}
   </div>
 </div>
 
+<div class="modale" id="modaleZoom" role="dialog" aria-modal="true" aria-label="Plan agrandi">
+  <div class="modale-inner">
+    <div class="modale-titre" id="legendeZoom"></div>
+    <button type="button" class="modale-fermer" id="btnFermerZoom" aria-label="Fermer">✕</button>
+    <svg id="dessinZoom" viewBox="0 0 900 460" role="img" aria-label="Élévation agrandie"></svg>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -390,7 +420,7 @@ const DH_MAX = 2000;
 const PALETTES = {1825:2, 2225:2, 2700:3, 3300:3, 3600:4};
 const NOM_GAMME = {CL:'EPSIRACK', XL:'EPSIRACK XL'};
 const POTEAU    = {CL:'T175 — 80x70x1,75 mm', XL:'T200 — 80x70x2 mm'};
-const CODES_REMISE = {'REV20': 0.20};
+const WEBHOOK_REMISE = 'https://hook.eu2.make.com/mnpm5jf706d8n3vdxgpwb7rugpk0f7qp';
 
 const eur = n => n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
 const eurPdf = n => n.toFixed(2).replace('.',',') + ' EUR';
@@ -757,7 +787,8 @@ function dessiner(){
   p.push(`<text x="${xc-8}" y="${(yHaut+dessinH/2).toFixed(1)}" class="cotet" text-anchor="middle" transform="rotate(-90 ${xc-8} ${(yHaut+dessinH/2).toFixed(1)})">H ${ent(c.h)} mm</text>`);
   p.push(T((xEch[0]+xEch[1])/2, yHaut-12, `L. utile ${ent(c.L)} mm`, 'cotet'));
 
-  svg.innerHTML = `<defs><style>
+  const svgZoom = $('dessinZoom');
+  const bloc = `<defs><style>
     .pot{fill:#7C848C;stroke:#AEB5BC;stroke-width:.7}
     .diag{stroke:#5C646C;stroke-width:.9}
     .platine{fill:#AEB5BC}
@@ -768,6 +799,8 @@ function dessiner(){
     .cote{stroke:#8A9199;stroke-width:.9}
     .cotet{fill:#A8AFB6;font-family:'JetBrains Mono',monospace;font-size:11px}
   </style></defs>` + p.join('');
+  svg.innerHTML = bloc;
+  if ($('modaleZoom').classList.contains('on')) svgZoom.innerHTML = bloc;
 
   const totalSabots = ligneSabot ? ligneSabot.qte : 0;
   lg.innerHTML = `${phraseConfig(c)} · lisse ${c.s}` +
@@ -870,10 +903,45 @@ function rendreDevis(){
 }
 
 /* ------------------------------------------------------------------ */
-function remise(){
+/* Remise validée par le webhook : {code, taux} conservé jusqu'à changement du champ. */
+let remiseValidee = {code:'', taux:0};
+
+function remise(){ return remiseValidee; }
+
+function appliquerRemise(){
   const code = ($('codeRemise').value || '').trim().toUpperCase();
-  const taux = CODES_REMISE[code];
-  return taux ? {code, taux} : {code:'', taux:0};
+  const etat = $('remiseEtat');
+  if (!code){
+    remiseValidee = {code:'', taux:0};
+    etat.textContent = ''; etat.className = 'aide';
+    rendreTotaux(); return;
+  }
+  const bouton = $('btnRemise');
+  bouton.disabled = true; bouton.textContent = '…';
+  etat.textContent = 'Vérification du code…'; etat.className = 'aide';
+  fetch(WEBHOOK_REMISE, {method:'POST', headers:{'Content-Type':'application/json'},
+                         body: JSON.stringify({code})})
+    .then(r => r.json())
+    .then(data => {
+      let taux = typeof data === 'number' ? data : (data && (data.taux ?? data.remise ?? 0));
+      taux = +taux || 0;
+      if (taux > 1) taux = taux / 100;              // 20 -> 0,20
+      if (taux > 0 && taux < 1){
+        remiseValidee = {code, taux};
+        etat.innerHTML = `<span style="color:var(--ok);font-weight:600">Code ${code} appliqué — ${Math.round(taux*100)} % de remise</span>`;
+      } else {
+        remiseValidee = {code:'', taux:0};
+        etat.innerHTML = `<span style="color:var(--alerte);font-weight:600">Code invalide</span>`;
+      }
+    })
+    .catch(()=>{
+      remiseValidee = {code:'', taux:0};
+      etat.innerHTML = `<span style="color:var(--alerte);font-weight:600">Vérification impossible — réessayez</span>`;
+    })
+    .finally(()=>{
+      bouton.disabled = false; bouton.textContent = 'Appliquer';
+      rendreTotaux();
+    });
 }
 
 function agreger(){
@@ -1233,6 +1301,14 @@ function pas(input, delta){
   return v;
 }
 
+function ouvrirZoom(){
+  if (!courant) return;
+  $('dessinZoom').innerHTML = $('dessin').innerHTML;
+  $('legendeZoom').innerHTML = $('legendePlanche').innerHTML;
+  $('modaleZoom').classList.add('on');
+}
+function fermerZoom(){ $('modaleZoom').classList.remove('on'); }
+
 remplirSelects();
 
 document.addEventListener('click', ev => {
@@ -1274,7 +1350,18 @@ document.addEventListener('change', ev => {
 document.querySelectorAll('input[name="montage"],input[name="face"]').forEach(r =>
   r.addEventListener('change', rendreVerdict));
 $('departement').addEventListener('change', rendreTotaux);
-$('codeRemise').addEventListener('input', rendreTotaux);
+$('codeRemise').addEventListener('input', ()=>{
+  if (remiseValidee.code && ($('codeRemise').value||'').trim().toUpperCase() !== remiseValidee.code){
+    remiseValidee = {code:'', taux:0}; $('remiseEtat').textContent = ''; rendreTotaux();
+  }
+});
+$('codeRemise').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); appliquerRemise(); } });
+$('btnRemise').addEventListener('click', appliquerRemise);
+$('btnZoom').addEventListener('click', ouvrirZoom);
+$('btnFermerZoom').addEventListener('click', fermerZoom);
+$('modaleZoom').addEventListener('click', e => { if (e.target === $('modaleZoom')) fermerZoom(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fermerZoom(); });
+document.querySelectorAll('a.logo, a.retour').forEach(a => a.addEventListener('click', fermerZoom));
 $('ajouter').addEventListener('click', ajouter);
 $('btnPdf').addEventListener('click', construirePdf);
 $('btnCsv').addEventListener('click', telechargerCsv);
