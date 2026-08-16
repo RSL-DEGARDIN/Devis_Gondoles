@@ -115,7 +115,14 @@ select:focus,input:focus,button:focus-visible{outline:2px solid var(--ral2004);o
 .btn-zoom{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.12);border:1px solid var(--acier);
   color:#fff;width:32px;height:32px;border-radius:4px;font-size:15px;line-height:1;display:flex;
   align-items:center;justify-content:center;cursor:pointer}
-.btn-zoom:hover{background:var(--ral2004);border-color:var(--ral2004)}
+.btn-zoom{opacity:0;transition:opacity .18s}
+.planche:hover .btn-zoom,.btn-zoom:focus-visible{opacity:1}
+.btn-zoom:hover{background:var(--ral2004);border-color:var(--ral2004);opacity:1}
+.planche{cursor:zoom-in}
+.indice-zoom{position:absolute;bottom:12px;right:14px;color:#fff;background:rgba(20,22,25,.6);
+  border:1px solid var(--acier);border-radius:3px;padding:3px 9px;font-size:11px;font-weight:600;
+  letter-spacing:.04em;opacity:0;transition:opacity .18s;pointer-events:none}
+.planche:hover .indice-zoom{opacity:1}
 .modale{position:fixed;inset:0;background:rgba(20,22,25,.82);z-index:60;display:none;
   align-items:center;justify-content:center;padding:24px}
 .modale.on{display:flex}
@@ -146,6 +153,12 @@ button{font-family:inherit;cursor:pointer;border-radius:3px;font-weight:600}
   font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.09em;font-size:17px}
 .btn-principal:hover{background:var(--ral2004-fonce)}
 .btn-principal:disabled{background:var(--acier);cursor:not-allowed}
+.cell-ajout{display:flex;align-items:flex-start;padding-top:21px}
+.btn-3d{position:relative;border-radius:5px;box-shadow:0 4px 0 var(--ral2004-fonce),0 6px 10px rgba(185,65,3,.35);
+  transition:transform .06s ease,box-shadow .06s ease}
+.btn-3d:hover:not(:disabled){background:var(--ral2004)}
+.btn-3d:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ral2004-fonce),0 2px 5px rgba(185,65,3,.3)}
+.btn-3d:disabled{box-shadow:0 4px 0 #6f757b,0 6px 10px rgba(0,0,0,.15)}
 .btn-secondaire{padding:9px 14px;background:var(--blanc);border:1px solid var(--graphite);
   color:var(--graphite);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 .btn-secondaire:hover{background:var(--graphite);color:#fff}
@@ -199,7 +212,7 @@ tbody tr:hover{background:#FAFAF8}
     <div class="sous">Configurateur rayonnage à palettes</div>
   </div>
   <div class="coin">
-    <a class="retour" href="https://rsl.eu/" target="_blank" rel="noopener">Retour au site RSL</a>
+    <a class="retour" href="https://rsl.eu/choisissez-que-produit-a-chiffrer/" target="_blank" rel="noopener">Retour au site RSL</a>
     <div class="tarif-date">Tarif au 11/05/2026</div>
   </div>
 </header>
@@ -256,7 +269,7 @@ tbody tr:hover{background:#FAFAF8}
               <button type="button" data-pas="travees" data-delta="1" aria-label="Ajouter une travée">+</button>
             </div>
           </div>
-          <div class="large">
+          <div>
             <label for="racks">Racks identiques</label>
             <div class="compteur">
               <button type="button" data-pas="racks" data-delta="-1" aria-label="Retirer un rack">−</button>
@@ -265,18 +278,9 @@ tbody tr:hover{background:#FAFAF8}
             </div>
             <div class="aide">Multiplie l’ensemble de la configuration.</div>
           </div>
-        </div>
-        <div id="verdict" class="verdict"></div>
-      </div>
-    </div>
-
-    <button class="btn-principal" id="ajouter" style="margin-bottom:20px">Ajouter au devis</button>
-
-    <div class="carte">
-      <h2><span class="etape">Étape 2</span> Implantation et montage</h2>
-      <div class="corps">
-        <div id="banEdition"></div>
-        <div class="champs">
+          <div class="cell-ajout">
+            <button class="btn-principal btn-3d" id="ajouter">Ajouter au devis</button>
+          </div>
           <div class="large">
             <span class="libelle rouge">Implantation</span>
             <div class="segments" id="segFace">
@@ -287,7 +291,7 @@ tbody tr:hover{background:#FAFAF8}
             </div>
           </div>
           <div class="large">
-            <span class="libelle">Livraison des échelles</span>
+            <span class="libelle rouge">Livraison des échelles</span>
             <div class="segments" id="segMontage">
               <label><input type="radio" name="montage" value="0" checked><span>À boulonner
                 <span class="petit-texte">le client assemble</span></span></label>
@@ -296,6 +300,9 @@ tbody tr:hover{background:#FAFAF8}
             </div>
           </div>
         </div>
+
+        <div id="banEdition"></div>
+        <div id="verdict" class="verdict"></div>
 
         <div style="margin-top:20px">
           <span class="libelle rouge">Composition</span>
@@ -306,10 +313,8 @@ tbody tr:hover{background:#FAFAF8}
           <span class="libelle rouge">Options</span>
           <div id="options"></div>
         </div>
-
       </div>
     </div>
-
   </div>
 
   <!-- ============ DROITE ============ -->
@@ -321,6 +326,7 @@ tbody tr:hover{background:#FAFAF8}
           <div class="legende-planche" id="legendePlanche"></div>
           <button type="button" class="btn-zoom" id="btnZoom" title="Agrandir le plan" aria-label="Agrandir le plan">⤢</button>
           <svg id="dessin" viewBox="0 0 900 460" role="img" aria-label="Élévation du rayonnage configuré"></svg>
+          <span class="indice-zoom">⤢ Cliquer pour agrandir</span>
         </div>
       </div>
     </div>
@@ -368,12 +374,9 @@ tbody tr:hover{background:#FAFAF8}
       <h2>Récapitulatif</h2>
       <div class="corps"><div id="nomenclature"></div></div>
     </div>
-  </div>
-</div>
 
-<div class="pied">
-  <div class="carte">
-    <h2><span class="etape">Étape 4</span> Envoyer la demande à RSL</h2>
+    <div class="carte">
+      <h2><span class="etape">Étape 4</span> Envoyer la demande à RSL</h2>
     <div class="corps">
       <div class="champs">
         <div><label for="cSociete">Société</label><input type="text" id="cSociete" autocomplete="organization"></div>
@@ -385,7 +388,7 @@ tbody tr:hover{background:#FAFAF8}
         <div class="large"><label for="cMessage">Précisions</label><input type="text" id="cMessage"></div>
       </div>
       <div class="barre-actions">
-        <button class="btn-principal" id="btnEnvoyer" style="width:auto;padding-left:28px;padding-right:28px">Envoyer la demande</button>
+        <button class="btn-principal btn-3d" id="btnEnvoyer" style="width:auto;padding-left:28px;padding-right:28px">Envoyer la demande</button>
         <button class="btn-secondaire" id="btnCopierDemande">Copier la demande</button>
         <button class="btn-secondaire" id="btnGmail">Ouvrir dans Gmail</button>
         <button class="btn-secondaire" id="btnOutlook">Ouvrir dans Outlook web</button>
@@ -393,6 +396,7 @@ tbody tr:hover{background:#FAFAF8}
       </div>
       <div class="aide" id="refDemande" style="font-size:13px;color:var(--ok);margin-top:2px"></div>
       <div class="aide">La demande est adressée à s.degardin@rsl.eu. Le bouton principal la copie dans le presse-papier — les trois autres ouvrent un brouillon prérempli dans la messagerie de votre choix.</div>
+    </div>
     </div>
   </div>
 </div>
@@ -1357,7 +1361,8 @@ $('codeRemise').addEventListener('input', ()=>{
 });
 $('codeRemise').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); appliquerRemise(); } });
 $('btnRemise').addEventListener('click', appliquerRemise);
-$('btnZoom').addEventListener('click', ouvrirZoom);
+$('btnZoom').addEventListener('click', e => { e.stopPropagation(); ouvrirZoom(); });
+document.querySelector('.planche').addEventListener('click', ouvrirZoom);
 $('btnFermerZoom').addEventListener('click', fermerZoom);
 $('modaleZoom').addEventListener('click', e => { if (e.target === $('modaleZoom')) fermerZoom(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fermerZoom(); });
