@@ -61,6 +61,8 @@ select,input[type=number]{
 }
 select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2.nv-qt{grid-template-columns:0.62fr 1fr;align-items:end}
+.row2.nv-qt label{white-space:nowrap;letter-spacing:.02em}
 .optgrp{display:flex;flex-direction:column;gap:4px;margin-top:3px}
 .travees{display:flex;flex-direction:column;gap:6px;margin-top:3px;margin-bottom:4px}
 .tvl{display:flex;align-items:center;gap:10px}
@@ -70,7 +72,7 @@ select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);ou
 .tvl .cnt{font-size:11.5px;color:#8b98a6;flex:1}
 .opt{
   display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--trait);
-  border-radius:3px;cursor:pointer;background:#fbfcfd;font-size:12.5px;user-select:none
+  border-radius:3px;cursor:pointer;background:#fbfcfd;font-size:12.5px;user-select:none;white-space:nowrap
 }
 .opt:hover{border-color:var(--acier-clair)}
 .opt.on{border-color:var(--signal);background:#f2f8fc;color:#0c4d74;font-weight:600}
@@ -87,7 +89,7 @@ button{
 .btn-main:hover{background:#0c5d8f}
 .btn-ghost{background:#fff;border-color:var(--trait);color:var(--acier);padding:7px 12px;font-size:12.5px}
 .btn-ghost:hover{border-color:var(--acier-clair)}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--trait);border:1px solid var(--trait);margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--trait);border:1px solid var(--trait);margin-bottom:14px}
 .stat{background:#fff;padding:9px 10px}
 .stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}
 .stat span{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#7a8794}
@@ -201,7 +203,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
   <img class="logo" src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL — Rayonnages Services Lorraine">
   <h1>Configurateur rayonnages</h1>
   <span class="meta">EPSILINE galvanisé — chiffrage au détail — tarif 11/05/2026</span>
-  <a class="retour" href="https://rsl.eu/">← Retour au site</a>
+  <a class="retour" href="https://rsl.eu/choisissez-que-produit-a-chiffrer/">← Retour au site</a>
 </header>
 
 <div class="wrap">
@@ -217,11 +219,23 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
     <label for="ht">Hauteur de poteau</label>
     <select id="ht"></select>
 
-    <label for="nv">Niveaux</label>
-    <div class="stepper">
-      <button type="button" data-step="nv" data-d="-1">−</button>
-      <input type="number" id="nv" min="2" step="1">
-      <button type="button" data-step="nv" data-d="1">+</button>
+    <div class="row2 nv-qt">
+      <div>
+        <label for="nv">Niveaux</label>
+        <div class="stepper">
+          <button type="button" data-step="nv" data-d="-1">−</button>
+          <input type="number" id="nv" min="2" step="1">
+          <button type="button" data-step="nv" data-d="1">+</button>
+        </div>
+      </div>
+      <div>
+        <label for="qt">Rayonnages identiques</label>
+        <div class="stepper">
+          <button type="button" data-step="qt" data-d="-1">−</button>
+          <input type="number" id="qt" min="1" step="1" value="1">
+          <button type="button" data-step="qt" data-d="1">+</button>
+        </div>
+      </div>
     </div>
 
     <label>Travées par longueur</label>
@@ -241,17 +255,10 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
         <div class="optgrp" id="pd">
           <div class="opt on" data-v="pied"><span class="mark"></span>Pied plastique</div>
           <div class="opt" data-v="platine"><span class="mark"></span>Platine métal galva</div>
-          <div class="opt" data-v="calage"><span class="mark"></span>Platine de calage</div>
+          <div class="opt" data-v="calage" data-cumul="1"><span class="mark"></span>+ 1 cale/pied</div>
           <div class="opt" data-v="aucun"><span class="mark"></span>Aucun</div>
         </div>
       </div>
-    </div>
-
-    <label for="qt">Rayonnages identiques</label>
-    <div class="stepper">
-      <button type="button" data-step="qt" data-d="-1">−</button>
-      <input type="number" id="qt" min="1" step="1" value="1">
-      <button type="button" data-step="qt" data-d="1">+</button>
     </div>
 
     <div class="editbar" id="editbar">
@@ -267,7 +274,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
       <h2>Aperçu <span id="apTag" class="tag"></span></h2>
       <div id="stats" class="stats"></div>
       <div class="apwrap" id="apwrap" title="Agrandir">
-        <svg id="dessin" viewBox="0 0 700 420" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
+        <svg id="dessin" viewBox="0 -28 700 448" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
         <button class="zoombtn" id="zoom" title="Agrandir l'aperçu" aria-label="Agrandir">⤢</button>
       </div>
       <div id="alertes"></div>
@@ -309,7 +316,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
       <span class="ttl" id="modalTtl">Aperçu du rayonnage</span>
       <button class="modal-close" id="modalClose" aria-label="Fermer">×</button>
     </div>
-    <svg id="dessinBig" viewBox="0 0 700 420" role="img" aria-label="Vue agrandie du rayonnage"></svg>
+    <svg id="dessinBig" viewBox="0 -28 700 448" role="img" aria-label="Vue agrandie du rayonnage"></svg>
   </div>
 </div>
 
@@ -454,6 +461,18 @@ let devis = [];
 const getOpt = id => $(id).querySelector('.opt.on').dataset.v;
 const setOpt = (id,v) => $(id).querySelectorAll('.opt').forEach(o=>
   o.classList.toggle('on', o.dataset.v===v));
+// appui au sol : appui principal (radio parmi pied/platine/aucun) + cales (toggle cumulable)
+const getAppui = () => {
+  const on = [...$('pd').querySelectorAll('.opt.on')].map(o=>o.dataset.v);
+  return on.find(v=>v!=='calage') || 'aucun';
+};
+const getCalage = () => $('pd').querySelector('.opt[data-v="calage"]').classList.contains('on');
+const setAppui = (pd, calage) => {
+  $('pd').querySelectorAll('.opt').forEach(o=>{
+    if(o.dataset.v==='calage') o.classList.toggle('on', !!calage && pd!=='aucun');
+    else o.classList.toggle('on', o.dataset.v===pd);
+  });
+};
 let editIndex = -1;   // -1 = ajout ; sinon index du rayonnage en cours d'édition
 let departement = ''; // département de livraison (donnée globale du devis)
 
@@ -484,7 +503,7 @@ function lire(){
   const q = Math.max(+$('qt').value||1,1);
   const lg = longsFromCompteur();
   const t = lg.length;
-  return {P,H,n,t,q,longs:lg,rec:getOpt('rec'),pd:getOpt('pd'),max};
+  return {P,H,n,t,q,longs:lg,rec:getOpt('rec'),pd:getAppui(),calage:getCalage(),max};
 }
 
 /* ==========================================================
@@ -518,6 +537,11 @@ function nomenclature(c){
     const a = ACCESSOIRE[c.pd];
     lignes.push({lib:a.lib, ref:a.ref, qte:nbPoteaux, pu:a.pu});
   }
+  // cales de niveau : cumulables, une par poteau (sauf appui = aucun)
+  if(c.calage && c.pd!=='aucun'){
+    const cal = ACCESSOIRE.calage;
+    lignes.push({lib:cal.lib, ref:cal.ref, qte:nbPoteaux, pu:cal.pu});
+  }
   lignes.forEach(l => l.total = l.qte * l.pu);
   return lignes;
 }
@@ -534,8 +558,9 @@ function fmtLongs(longs){
 
 function libelle(c){
   const rec = {aucun:'tablettes nues', iso:'dessus isobois', tole:'dessus tôle galva'}[c.rec];
-  const pd = {pied:'pieds plastique', platine:'platines métal', calage:'platines de calage', aucun:'sans appui'}[c.pd];
-  return `Rayonnage H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}`;
+  const pd = {pied:'pieds plastique', platine:'platines métal', calage:'cales de niveau', aucun:'sans appui'}[c.pd];
+  const cal = (c.calage && c.pd!=='aucun') ? ' + 1 cale/pied' : '';
+  return `Rayonnage H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}${cal}`;
 }
 
 /* ==========================================================
@@ -621,8 +646,8 @@ function svgMarkup(c){
   const iPo = PROFS.indexOf(c.P);
   const yTop = niveaux[c.n-1];
   for(let k=0;k<c.t;k++){
-    const cx = X((bornes[k]+bornes[k+1])/2, 0);
-    const cy = Y(yTop, 0) - 30;                       // au-dessus de la tablette haute
+    const cx = X((bornes[k]+bornes[k+1])/2, prof/2);   // centré sur le milieu de la tablette (suit la fuyante)
+    const cy = Y(yTop, prof/2) - 30;                     // au-dessus de la tablette haute (espace blanc)
     const kg = CHARGE[c.longs[k]][iPo];
     const txt = `${kg} kg`;
     const w = 40 + txt.length*6.4;
@@ -659,11 +684,21 @@ function svgMarkup(c){
   // profondeur, en bas le long de la fuyante
   o.push(cote(X(larg,0)+8, Y(0,0)+6, X(larg,prof)+8, Y(0,prof)+6, `${prof} mm`, 30, 12));
 
+  // viewBox dynamique : borne haute = badge de charge, borne basse = cotes du bas
+  const yHautBadge = Y(niveaux[c.n-1], prof/2) - 30 - 11 - 4;   // haut du badge + marge
+  const yBasCotes  = Y(0,0) + 58;                                // sous le texte "hors tout"
+  const vTop = Math.floor(yHautBadge);
+  const vH   = Math.ceil(yBasCotes - yHautBadge);
+  svgMarkup.lastViewBox = `0 ${vTop} 700 ${vH}`;
+
   return o.join('');
 }
 
 function dessiner(c){
-  $('dessin').innerHTML = svgMarkup(c);
+  const svg = svgMarkup(c);
+  const el = $('dessin');
+  el.innerHTML = svg;
+  if(svgMarkup.lastViewBox) el.setAttribute('viewBox', svgMarkup.lastViewBox);
 }
 
 /* ==========================================================
@@ -719,7 +754,8 @@ function rendre(){
   $('stats').innerHTML = `
     <div class="stat"><b>${largeurTot} mm</b><span>Longueur totale</span></div>
     <div class="stat"><b>${e?e.utile:'—'} mm</b><span>Écartement utile</span></div>
-    <div class="stat"><b>${eur(tot)}</b><span>Prix 1 rayonnage HT</span></div>`;
+    <div class="stat"><b>${eur(tot)}</b><span>Prix 1 rayonnage HT</span></div>
+    <div class="stat"><b>${eur(tot*c.q)}</b><span>Prix config. HT${c.q>1?` (×${c.q})`:''}</span></div>`;
 
   const al = [];
   if(e && e.utile > ECART_MAX)
@@ -918,7 +954,7 @@ function chargerPourEdition(i){
   $('nv').value = c.n; $('qt').value = c.q;
   nbTravees = {1000:0,1250:0,1500:0};
   c.longs.forEach(L => nbTravees[L] = (nbTravees[L]||0) + 1);
-  setOpt('rec', c.rec); setOpt('pd', c.pd);
+  setOpt('rec', c.rec); setAppui(c.pd, c.calage);
   editIndex = i;
   $('editbar').classList.add('on');
   $('add').textContent = 'Mettre à jour le rayonnage';
@@ -996,9 +1032,9 @@ $('csv').onclick = ()=>{
 // convertit un SVG (chaîne <svg…>) en PNG dataURL via canvas
 function svgToPng(svgInner, scale=2){
   return new Promise((resolve,reject)=>{
-    const vw = 700, vh = 420;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}">`
-              + `<rect width="${vw}" height="${vh}" fill="#ffffff"/>` + svgInner + `</svg>`;
+    const vw = 700, vh = 448, vy = -28;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${vy} ${vw} ${vh}" width="${vw}" height="${vh}">`
+              + `<rect x="0" y="${vy}" width="${vw}" height="${vh}" fill="#ffffff"/>` + svgInner + `</svg>`;
     const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const img = new Image();
@@ -1228,7 +1264,8 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
 
   const payload = {
     reference: reference,
-    date: new Date().toISOString(),
+    date: `${aa.length===2?'20'+aa:aa}-${mm}-${jj}`,   // AAAA-MM-JJ (champ Airtable date sans heure)
+    date_iso: new Date().toISOString(),                // horodatage complet si besoin
     departement: dep,
     client: {
       email: coord?.email || '',
@@ -1291,11 +1328,24 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   $(id).addEventListener('change', rendre);
 });
 
-// groupes d'options : clic pour cocher
-['rec','pd'].forEach(id=>{
-  $(id).querySelectorAll('.opt').forEach(o=>{
-    o.onclick = ()=>{ setOpt(id, o.dataset.v); rendre(); };
-  });
+// recouvrement : radio simple
+$('rec').querySelectorAll('.opt').forEach(o=>{
+  o.onclick = ()=>{ setOpt('rec', o.dataset.v); rendre(); };
+});
+// appui au sol : radio (pied/platine/aucun) + cale cumulable (toggle)
+$('pd').querySelectorAll('.opt').forEach(o=>{
+  o.onclick = ()=>{
+    const v = o.dataset.v;
+    if(v==='calage'){
+      // toggle des cales, sans effet si appui = aucun
+      if(getAppui()==='aucun') return;
+      setAppui(getAppui(), !getCalage());
+    } else {
+      // change l'appui principal ; 'aucun' annule les cales
+      setAppui(v, v==='aucun' ? false : getCalage());
+    }
+    rendre();
+  };
 });
 
 // ---- zoom en popup de l'aperçu
