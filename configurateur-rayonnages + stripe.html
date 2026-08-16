@@ -3,1400 +3,640 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Configurateur rayonnages EPSILINE — RSL</title>
+<title>Comparateur de tarifs transport — RSL</title>
 <style>
 :root{
-  --acier:#3d4753;        /* structure galva foncée */
-  --acier-clair:#8b98a6;
-  --fond:#eef1f4;
-  --papier:#ffffff;
-  --trait:#c9d2db;
-  --bois:#c89a5b;
-  --encre:#1b222b;
-  --signal:#0f6ea8;       /* bleu plan technique */
-  --alerte:#b4441f;
-  --ok:#1f7a4d;
+  --ink:#14201c; --ink2:#41524b; --line:#d6ddd6; --line2:#e8ede8;
+  --paper:#f7f5ef; --card:#ffffff; --accent:#0f5a3c; --accent2:#c25a2b;
+  --win:#c0272d; --winbg:#fbeaea; --muted:#7c8a83;
+  --clot:#1d3f6e; --schenker:#8a1f1f;
 }
 *{box-sizing:border-box}
-body{
-  margin:0;background:var(--fond);color:var(--encre);
-  font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45;
-}
-header{
-  background:var(--acier);color:#fff;padding:14px 20px;
-  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-}
-header .logo{height:34px;width:auto;display:block;background:#fff;padding:3px 6px;border-radius:3px}
-header h1{font-size:17px;margin:0;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
-header .meta{font-size:11.5px;color:#b8c3ce;letter-spacing:.04em}
-header .retour{
-  margin-left:auto;color:#fff;text-decoration:none;font-size:12px;letter-spacing:.04em;
-  border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:6px 12px;
-  white-space:nowrap;transition:background .15s,border-color .15s;
-}
-header .retour:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.6)}
-.bandeau-paiement{
-  position:relative;padding:14px 44px 14px 20px;font-size:14px;font-weight:500;
-  text-align:center;letter-spacing:.02em;
-}
-.bandeau-paiement.ok{background:#eaf6ef;color:#166534;border-bottom:2px solid #86c9a4}
-.bandeau-paiement.annule{background:#fdecec;color:#9b2c2c;border-bottom:2px solid #e5a3a3}
-.bandeau-close{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:inherit;opacity:.6;
-}
-.bandeau-close:hover{opacity:1}
-.wrap{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
-.grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
-.card{background:var(--papier);border:1px solid var(--trait);border-radius:4px;padding:16px}
-.card h2{
-  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--acier-clair);
-  margin:0 0 12px;font-weight:700;border-bottom:1px solid var(--trait);padding-bottom:7px
-}
-label{display:block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#5d6b7a;margin:10px 0 3px;font-weight:600}
-select,input[type=number]{
-  width:100%;padding:8px 9px;border:1px solid var(--trait);border-radius:3px;
-  background:#fbfcfd;font:inherit;color:var(--encre)
-}
-select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row2.nv-qt{grid-template-columns:0.62fr 1fr;align-items:end}
-.row2.nv-qt label{white-space:nowrap;letter-spacing:.02em}
-.optgrp{display:flex;flex-direction:column;gap:4px;margin-top:3px}
-.travees{display:flex;flex-direction:column;gap:6px;margin-top:3px;margin-bottom:4px}
-.tvl{display:flex;align-items:center;gap:10px}
-.tvl .lab{font-size:13px;color:var(--encre);flex:0 0 72px;font-weight:600;font-variant-numeric:tabular-nums}
-.tvl .stepper{flex:0 0 118px}
-.tvl .stepper input{font-weight:600}
-.tvl .cnt{font-size:11.5px;color:#8b98a6;flex:1}
-.opt{
-  display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--trait);
-  border-radius:3px;cursor:pointer;background:#fbfcfd;font-size:12.5px;user-select:none;white-space:nowrap
-}
-.opt:hover{border-color:var(--acier-clair)}
-.opt.on{border-color:var(--signal);background:#f2f8fc;color:#0c4d74;font-weight:600}
-.opt .mark{
-  width:15px;height:15px;border-radius:50%;border:2px solid var(--trait);flex:0 0 auto;
-  display:flex;align-items:center;justify-content:center
-}
-.opt.on .mark{border-color:var(--signal)}
-.opt.on .mark::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--signal)}
-button{
-  font:inherit;font-weight:600;cursor:pointer;border-radius:3px;border:1px solid transparent;padding:10px 14px
-}
-.btn-main{background:var(--signal);color:#fff;width:100%;margin-top:16px;letter-spacing:.03em}
-.btn-main:hover{background:#0c5d8f}
-.btn-ghost{background:#fff;border-color:var(--trait);color:var(--acier);padding:7px 12px;font-size:12.5px}
-.btn-ghost:hover{border-color:var(--acier-clair)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--trait);border:1px solid var(--trait);margin-bottom:14px}
-.stat{background:#fff;padding:9px 10px}
-.stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}
-.stat span{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#7a8794}
-.note{font-size:12px;padding:8px 10px;border-left:3px solid;margin-top:10px;background:#f7f9fb}
-.note.warn{border-color:var(--alerte);color:#7c2f14;background:#fdf3ef}
-.note.info{border-color:var(--signal);color:#134a6b}
-svg{width:100%;height:auto;display:block;background:linear-gradient(#fbfcfd,#eef1f4)}
-.apwrap{position:relative;cursor:zoom-in;border-radius:3px;overflow:hidden}
-.zoombtn{
-  position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:4px;
-  background:rgba(255,255,255,.92);border:1px solid var(--trait);color:var(--acier);
-  font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 1px 3px rgba(0,0,0,.12)
-}
-.zoombtn:hover{background:#fff;border-color:var(--signal);color:var(--signal)}
-.modal{
-  position:fixed;inset:0;background:rgba(27,34,43,.82);display:none;z-index:100;
-  align-items:center;justify-content:center;padding:24px
-}
-.modal.on{display:flex}
-.modal-box{background:#fff;border-radius:6px;padding:14px;max-width:1100px;width:100%;max-height:92vh;position:relative}
-.modal-box svg{width:100%;height:auto;max-height:82vh}
-.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.modal-head .ttl{font-size:13px;font-weight:600;color:var(--encre)}
-.modal-close{background:none;border:none;font-size:26px;line-height:1;color:#7a8794;cursor:pointer;padding:0 4px}
-.modal-close:hover{color:var(--alerte)}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{
-  text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#7a8794;
-  border-bottom:1px solid var(--trait);padding:6px 6px
-}
-td{padding:6px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ref{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:#4b5866}
-tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;padding-top:9px}
-.devis-item{border:1px solid var(--trait);border-radius:3px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
-.devis-item .d{flex:1}
-.devis-item .t{font-weight:600}
-.devis-item .s{font-size:12px;color:#6b7885}
-.devis-item .p{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
-.stepper{display:flex;align-items:stretch;border:1px solid var(--trait);border-radius:3px;overflow:hidden}
-.stepper button{
-  background:#f2f5f8;border:none;width:34px;font-size:17px;color:var(--acier);
-  padding:0;flex:0 0 auto;line-height:1
-}
-.stepper button:hover{background:#e6ebf0}
-.stepper button:active{background:#dbe2e9}
-.stepper input{
-  border:none;border-left:1px solid var(--trait);border-right:1px solid var(--trait);
-  border-radius:0;text-align:center;width:100%;-moz-appearance:textfield
-}
-.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.mod{background:none;border:1px solid var(--trait);color:var(--signal);font-size:11.5px;padding:3px 9px;border-radius:3px;cursor:pointer;font-weight:600;white-space:nowrap}
-.mod:hover{border-color:var(--signal);background:#f2f8fc}
-.mod.actif{background:var(--signal);color:#fff;border-color:var(--signal)}
-.editbar{font-size:12px;color:var(--signal);background:#eef4f8;border-radius:3px;padding:7px 10px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
-.editbar.on{display:flex}
-.editbar button{background:none;border:none;color:#134a6b;text-decoration:underline;cursor:pointer;font-size:12px;padding:0}
-.x{background:none;border:none;color:#a4b0bc;font-size:17px;padding:0 4px;cursor:pointer;line-height:1}
-.x:hover{color:var(--alerte)}
-.vide{color:#8b98a6;font-size:13px;padding:14px 0}
-.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--acier);margin-top:10px;padding-top:10px}
-.total b{font-size:21px;font-variant-numeric:tabular-nums}
-.recap{border-top:2px solid var(--acier);margin-top:10px;padding-top:10px}
-.recap-l{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-variant-numeric:tabular-nums}
-.recap-l span:first-child{color:#5d6b7a}
-.recap-l.grand{border-top:1px solid var(--trait);margin-top:6px;padding-top:8px;font-weight:700}
-.recap-l.sub-ht{border-top:1px solid var(--trait);margin-top:5px;padding-top:7px;font-weight:600}
-.payzone{margin-top:12px}
-.btn-pay{
-  width:100%;padding:13px;border:none;border-radius:4px;background:#635bff;color:#fff;
-  font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em
-}
-.btn-pay:hover:not(:disabled){background:#5249e0}
-.btn-pay:disabled{background:#c9d2db;cursor:not-allowed}
-.paynote{font-size:11.5px;color:#8b98a6;text-align:center;margin-top:6px}
-.recap-l.grand b{font-size:20px}
-.recap-l .sub{font-size:11px;color:#8b98a6;margin-left:6px}
-.recap-l .txp{display:flex;align-items:center;gap:8px;flex:1;margin-right:14px}
-.recap-l .txp>span:first-child{white-space:nowrap}
-.recap-l .txp select{margin:0 auto;width:130px;flex:0 0 auto}
-.recap-l .txp .sub{margin-left:0}
-.recap .warn{font-size:12px;color:#7c2f14}
-.recap-l.remise span:first-child{color:#1a7a4c}
-.recap-l.remise span:last-child{color:#1a7a4c;font-weight:600}
-.coderemise{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
-.coderemise input{padding:6px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px;width:130px;text-transform:uppercase}
-.coderemise button{padding:6px 12px;border:1px solid var(--acier);background:#fff;color:var(--acier);border-radius:3px;font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s,color .15s}
-.coderemise button:hover{background:var(--acier);color:#fff}
-.coderemise.ok{background:#eaf6ef;border:1px solid #b7e0c8;border-radius:3px;padding:8px 11px;justify-content:space-between;color:#1a7a4c;font-size:13px}
-.coderemise.ok b{letter-spacing:.04em}
-.coderemise.ok button{border-color:#b7e0c8;color:#1a7a4c;padding:3px 9px;font-size:11.5px}
-.coderemise.ok button:hover{background:#1a7a4c;color:#fff;border-color:#1a7a4c}
-.code-msg{font-size:12px;color:#8b98a6;flex:1 0 100%}
-.code-msg.err{color:#c0392b}
-.coord{margin-top:12px;padding-top:11px;border-top:1px solid var(--trait)}
-.coord-t{font-size:11.5px;letter-spacing:.04em;color:#5d6b7a;margin-bottom:7px;font-weight:600}
-.coord-t .req{color:#c0392b;font-weight:400;text-transform:none;letter-spacing:0}
-.coord-f{display:flex;gap:7px;flex-wrap:wrap}
-.coord-f input{flex:1 1 140px;padding:7px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px}
-.coord-f input:focus{outline:none;border-color:var(--acier);background:#fff}
-.recap select{padding:3px 6px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:12.5px;color:var(--encre)}
-.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#eef4f8;color:var(--signal);padding:2px 7px;border-radius:2px;font-weight:600}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 80px;}
+.masthead{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:6px;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+.masthead h1{font-size:27px;margin:0;letter-spacing:-.01em;font-weight:600;}
+.masthead .sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;
+  color:var(--ink2);text-transform:uppercase;letter-spacing:.14em;}
+.tagline{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted);
+  letter-spacing:.12em;text-transform:uppercase;margin:8px 0 26px;}
+
+.grid{display:grid;grid-template-columns:340px 1fr;gap:26px;align-items:start;}
+@media(max-width:820px){.grid{grid-template-columns:1fr;}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:3px;}
+.panel .hd{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink2);padding:11px 16px;border-bottom:1px solid var(--line2);
+  background:#fbfaf6;}
+.form{padding:16px;}
+.field{margin-bottom:15px;}
+.field:last-child{margin-bottom:4px;}
+label{display:block;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin-bottom:6px;}
+input[type=text],input[type=number]{width:100%;padding:10px 11px;font-size:16px;
+  font-family:inherit;border:1px solid var(--line);border-radius:2px;background:#fff;color:var(--ink);}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent);}
+.hint{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4;}
+.commune{font-size:13px;color:var(--accent);margin-top:6px;min-height:16px;font-style:italic;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden;}
+.seg button{flex:1;padding:10px 8px;background:#fff;border:0;font-family:ui-monospace,Menlo,monospace;
+  font-size:11px;letter-spacing:.08em;color:var(--ink2);cursor:pointer;text-transform:uppercase;}
+.seg button+button{border-left:1px solid var(--line);}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff;}
+.tgo-wrap{display:flex;align-items:center;gap:8px;}
+.tgo-wrap input{max-width:110px;}
+.tgo-wrap .pct{font-family:ui-monospace,Menlo,monospace;font-size:15px;color:var(--ink2);}
+.stepper{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:2px;overflow:hidden;}
+.stepper input{border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);
+  border-radius:0;text-align:center;padding:10px 4px;width:auto;flex:1;min-width:0;}
+.stepper button{width:36px;flex:0 0 36px;background:#fbfaf6;border:0;font-size:17px;line-height:1;
+  color:var(--ink2);cursor:pointer;font-family:ui-monospace,Menlo,monospace;}
+.stepper button:hover{background:var(--line2);}
+.stepper button:active{background:var(--line);}
+input[readonly]{background:#f3f2ec;color:var(--ink2);cursor:default;}
+.checklabel{display:flex;align-items:center;gap:8px;font-family:inherit;font-size:14px;font-weight:400;
+  text-transform:none;letter-spacing:normal;color:var(--ink);cursor:pointer;margin-bottom:0;}
+.checklabel input{width:auto;accent-color:var(--accent);cursor:pointer;}
+.hint a{color:var(--accent);}
+.numspin{position:relative;}
+.numspin input{padding-right:26px;}
+.numspin-btns{position:absolute;top:1px;right:1px;bottom:1px;width:22px;display:flex;flex-direction:column;}
+.numspin-btns button{flex:1;border:0;background:#fbfaf6;color:var(--ink2);font-size:7px;line-height:1;
+  cursor:pointer;padding:0;font-family:ui-monospace,Menlo,monospace;}
+.numspin-btns button:first-child{border-bottom:1px solid var(--line);border-radius:0 1px 0 0;}
+.numspin-btns button:last-child{border-radius:0 0 1px 0;}
+.numspin-btns button:hover{background:var(--line2);}
+.numspin-btns button:active{background:var(--line);}
+#villesuggest:not(:empty){margin-top:6px;}
+.villechip{display:inline-block;margin:0 5px 5px 0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
+  background:#fff;border:1px solid var(--line);color:var(--ink2);padding:3px 8px;border-radius:2px;cursor:pointer;}
+.villechip:hover{border-color:var(--accent);color:var(--accent);}
+
+.results{min-height:200px;}
+.empty{padding:60px 24px;text-align:center;color:var(--muted);font-style:italic;font-size:15px;}
+.dest{padding:14px 16px;border-bottom:1px solid var(--line2);display:flex;
+  justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.dest .d{font-size:15px;} .dest .d b{font-weight:600;}
+.dest .meta{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+@media(max-width:520px){.cards{grid-template-columns:1fr;}}
+.carrier{padding:18px 16px;position:relative;}
+.carrier+.carrier{border-left:1px solid var(--line2);}
+@media(max-width:520px){.carrier+.carrier{border-left:0;border-top:1px solid var(--line2);}}
+.carrier .name{font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;font-weight:700;margin-bottom:2px;}
+.carrier.clot .name{color:var(--clot);} .carrier.schenker .name{color:var(--schenker);}
+.carrier .svc{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;min-height:12px;}
+.price{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1;}
+.price .cur{font-size:18px;color:var(--ink2);font-weight:400;margin-left:3px;}
+.price.na{font-size:19px;color:var(--muted);font-style:italic;font-weight:400;}
+.delai{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink2);margin-top:8px;
+  letter-spacing:.05em;}
+.mode{font-size:12.5px;color:var(--ink2);margin-top:12px;padding-top:11px;border-top:1px dotted var(--line);
+  line-height:1.5;}
+.mode .k{color:var(--muted);}
+.winner{position:absolute;top:14px;right:14px;font-family:ui-monospace,Menlo,monospace;
+  font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;background:var(--win);color:#fff;
+  padding:5px 10px;border-radius:3px;box-shadow:0 2px 7px rgba(192,39,45,.4);}
+.carrier.won{background:var(--winbg);}
+.carrier.won .price{color:var(--win);}
+.spread{padding:12px 16px;background:#fbfaf6;border-top:1px solid var(--line2);
+  font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink2);letter-spacing:.04em;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.spread b{color:var(--accent);font-weight:700;}
+.warn{padding:12px 16px;font-size:12.5px;color:var(--accent2);border-top:1px solid var(--line2);
+  line-height:1.45;font-style:italic;}
+.actions{display:flex;gap:10px;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--line2);background:#fbfaf6;}
+.actbtn{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:.04em;
+  background:#fff;border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:2px;
+  cursor:pointer;flex:1 1 auto;min-width:180px;text-align:center;}
+.actbtn:hover{border-color:var(--accent);color:var(--accent);}
+.foot{margin-top:22px;font-size:11.5px;color:var(--muted);line-height:1.6;}
+.foot code{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#eee;padding:1px 5px;border-radius:2px;}
+
+.tarifbtn{display:inline-block;margin-top:11px;font-family:ui-monospace,Menlo,monospace;font-size:10px;
+  letter-spacing:.07em;text-transform:uppercase;background:#fff;border:1px solid var(--line);color:var(--ink2);
+  padding:5px 9px;border-radius:2px;cursor:pointer;}
+.tarifbtn:hover{border-color:var(--ink2);color:var(--ink);}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(20,32,28,.55);display:none;
+  align-items:center;justify-content:center;padding:20px;z-index:50;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:4px;max-width:960px;width:100%;max-height:84vh;
+  display:flex;flex-direction:column;box-shadow:0 14px 44px rgba(0,0,0,.32);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;
+  border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);}
+.modal-head button{background:none;border:0;font-size:17px;cursor:pointer;color:var(--ink2);line-height:1;}
+.modal-head button:hover{color:var(--ink);}
+.modal-body{overflow:auto;}
+.modal-body table{border-collapse:collapse;width:100%;font-size:12px;}
+.modal-body th,.modal-body td{border:1px solid var(--line2);padding:4px 6px;text-align:right;white-space:nowrap;}
+.modal-body thead th{position:sticky;top:0;background:#fbfaf6;text-align:center;font-family:ui-monospace,Menlo,monospace;
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;z-index:1;}
+.modal-body tbody th{position:sticky;left:0;background:#fbfaf6;text-align:left;font-family:ui-monospace,Menlo,monospace;
+  font-size:11px;}
+.modal-body tr.hlrow td,.modal-body tr.hlrow th{background:#fff7ec;}
+.modal-body td.hl{outline:2px solid var(--accent2);outline-offset:-2px;background:#fdece0;
+  font-weight:700;color:var(--accent2);}
+.modal-foot{padding:9px 18px;font-size:11px;color:var(--muted);border-top:1px solid var(--line2);line-height:1.5;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-<header>
-  <img class="logo" src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL — Rayonnages Services Lorraine">
-  <h1>Configurateur rayonnages</h1>
-  <span class="meta">EPSILINE galvanisé — chiffrage au détail — tarif 11/05/2026</span>
-  <a class="retour" href="https://rsl.eu/choisissez-que-produit-a-chiffrer/">← Retour au site</a>
-</header>
-
 <div class="wrap">
-<div class="grid">
+  <div class="masthead">
+    <h1>Comparateur de tarifs transport</h1>
+    <div class="sub">RSL · départ Heillecourt</div>
+  </div>
+  <div class="tagline">CLOT 2026 &nbsp;·&nbsp; DB Schenker 10/2025 &nbsp;·&nbsp; hors options — tarif départ + TGo</div>
 
-  <!-- ============ COLONNE GAUCHE : SAISIE ============ -->
-  <div class="card">
-    <h2>Rayonnage à configurer</h2>
-
-    <label for="pf">Profondeur de tablette</label>
-    <select id="pf"></select>
-
-    <label for="ht">Hauteur de poteau</label>
-    <select id="ht"></select>
-
-    <div class="row2 nv-qt">
-      <div>
-        <label for="nv">Niveaux</label>
-        <div class="stepper">
-          <button type="button" data-step="nv" data-d="-1">−</button>
-          <input type="number" id="nv" min="2" step="1">
-          <button type="button" data-step="nv" data-d="1">+</button>
+  <div class="grid">
+    <!-- FORM -->
+    <div class="panel">
+      <div class="hd">Expédition</div>
+      <div class="form">
+        <div class="row2">
+          <div class="field">
+            <label for="poids">Poids marchandise (kg)</label>
+            <input id="poids" type="number" min="0" step="1" inputmode="numeric" placeholder="ex. 320">
+          </div>
+          <div class="field">
+            <label for="pal">Nombre de palettes</label>
+            <div class="stepper">
+              <button type="button" id="palMinus" aria-label="Moins de palettes">−</button>
+              <input id="pal" type="number" min="0" max="6" step="1" inputmode="numeric" value="1">
+              <button type="button" id="palPlus" aria-label="Plus de palettes">+</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div>
-        <label for="qt">Rayonnages identiques</label>
-        <div class="stepper">
-          <button type="button" data-step="qt" data-d="-1">−</button>
-          <input type="number" id="qt" min="1" step="1" value="1">
-          <button type="button" data-step="qt" data-d="1">+</button>
+        <div class="row2">
+          <div class="field">
+            <label for="palkg">Poids palette vide (kg)</label>
+            <input id="palkg" type="number" min="0" step="1" inputmode="numeric" value="20">
+          </div>
+          <div class="field">
+            <label for="poidstotalfield">Poids total expédié (kg)</label>
+            <input id="poidstotalfield" type="text" readonly>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="cp">Département ou CP</label>
+            <div class="numspin">
+              <input id="cp" type="text" inputmode="numeric" maxlength="5" value="54">
+              <div class="numspin-btns">
+                <button type="button" id="cpPlus" aria-label="Département suivant">▲</button>
+                <button type="button" id="cpMinus" aria-label="Département précédent">▼</button>
+              </div>
+            </div>
+            <div class="commune" id="deptname"></div>
+          </div>
+          <div class="field">
+            <label for="ville">Ville <span style="text-transform:none;color:var(--muted)">(facult.)</span></label>
+            <input id="ville" type="text" placeholder="—">
+            <div id="villesuggest"></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="clotBrut">Tarif CLOT (€)</label>
+            <input id="clotBrut" type="text" readonly placeholder="—">
+          </div>
+          <div class="field">
+            <label for="schBrut">Tarif Schenker (€)</label>
+            <input id="schBrut" type="text" readonly placeholder="—">
+          </div>
+        </div>
+        <div class="field">
+          <div class="row2">
+            <div>
+              <label for="tgoClot">TGo CLOT</label>
+              <div class="tgo-wrap">
+                <input id="tgoClot" type="number" min="0" step="0.01" inputmode="decimal" value="13.33">
+                <span class="pct">%</span>
+              </div>
+            </div>
+            <div>
+              <label for="tgoSch">TGo Schenker</label>
+              <div class="tgo-wrap">
+                <input id="tgoSch" type="number" min="0" step="0.01" inputmode="decimal" value="13.33">
+                <span class="pct">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint">Appliquée sur le tarif départ de chaque transporteur.</div>
+        </div>
+        <div class="field">
+          <div class="row2">
+            <div>
+              <label for="fraisClot">Frais CLOT (€)</label>
+              <input id="fraisClot" type="number" min="0" step="0.01" inputmode="decimal" value="1.50">
+            </div>
+            <div>
+              <label for="fraisSch">Frais Schenker (€)</label>
+              <input id="fraisSch" type="number" min="0" step="0.01" inputmode="decimal" value="1.50">
+            </div>
+          </div>
+          <div class="hint">Ajoutés au prix total, après application de la TGo (CTE, sûreté…).</div>
+        </div>
+        <div class="field">
+          <label>Niveau de service Schenker</label>
+          <div class="seg" id="svc">
+            <button data-v="std" aria-pressed="true">Standard</button>
+            <button data-v="prem" aria-pressed="false">Premium 13</button>
+          </div>
+          <div class="hint">Premium 13 = livraison avant 13 h, plus rapide et plus cher. Non proposé par CLOT.</div>
+        </div>
+        <div class="field">
+          <label class="checklabel"><input type="checkbox" id="altitude"> Localités d'altitude (Schenker)</label>
+          <div class="hint">À cocher si la commune de livraison figure sur la <a href="https://dbschenkerfrance.wikipixel.com/ps/nR8fDc" target="_blank" rel="noopener">liste DB Schenker des localités d'altitude</a>.</div>
+        </div>
+        <div class="field">
+          <label class="checklabel"><input type="checkbox" id="urbain"> Centre urbain (Schenker)</label>
+          <div class="hint">À cocher si la commune de livraison figure sur la <a href="https://dbschenkerfrance.wikipixel.com/ps/LdbVm1" target="_blank" rel="noopener">liste DB Schenker des centres urbains</a> (+10,25 € forfaitaire).</div>
         </div>
       </div>
     </div>
 
-    <label>Travées par longueur</label>
-    <div class="travees" id="travees"></div>
-
-    <div class="row2">
-      <div>
-        <label>Recouvrement</label>
-        <div class="optgrp" id="rec">
-          <div class="opt" data-v="aucun"><span class="mark"></span>Aucun (tablette nue)</div>
-          <div class="opt on" data-v="iso"><span class="mark"></span>Dessus isobois</div>
-          <div class="opt" data-v="tole"><span class="mark"></span>Dessus tôle galva</div>
-        </div>
-      </div>
-      <div>
-        <label>Appui au sol</label>
-        <div class="optgrp" id="pd">
-          <div class="opt on" data-v="pied"><span class="mark"></span>Pied plastique</div>
-          <div class="opt" data-v="platine"><span class="mark"></span>Platine métal galva</div>
-          <div class="opt" data-v="calage" data-cumul="1"><span class="mark"></span>+ 1 cale/pied</div>
-          <div class="opt" data-v="aucun"><span class="mark"></span>Aucun</div>
-        </div>
-      </div>
+    <!-- RESULTS -->
+    <div class="panel results">
+      <div class="hd">Comparatif</div>
+      <div id="out"><div class="empty">Renseignez au moins le poids, les palettes et le département.</div></div>
     </div>
-
-    <div class="editbar" id="editbar">
-      <span>Modification d'un rayonnage du devis</span>
-      <button type="button" id="cancelEdit">Annuler</button>
-    </div>
-    <button class="btn-main" id="add">Ajouter au devis</button>
   </div>
 
-  <!-- ============ COLONNE DROITE : APERÇU + NOMENCLATURE ============ -->
-  <div>
-    <div class="card" style="margin-bottom:16px">
-      <h2>Aperçu <span id="apTag" class="tag"></span></h2>
-      <div id="stats" class="stats"></div>
-      <div class="apwrap" id="apwrap" title="Agrandir">
-        <svg id="dessin" viewBox="0 -28 700 448" role="img" aria-label="Vue en perspective du rayonnage configuré"></svg>
-        <button class="zoombtn" id="zoom" title="Agrandir l'aperçu" aria-label="Agrandir">⤢</button>
-      </div>
-      <div id="alertes"></div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px">
-      <h2>Nomenclature de ce rayonnage</h2>
-      <table>
-        <thead><tr>
-          <th>Composant</th><th>Référence</th><th class="num">Qté</th>
-          <th class="num">P.U. HT</th><th class="num">Total HT</th>
-        </tr></thead>
-        <tbody id="bom"></tbody>
-        <tfoot><tr>
-          <td colspan="4">Total rayonnage HT</td><td class="num" id="bomTotal">—</td>
-        </tr></tfoot>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>Devis en cours</h2>
-      <div id="devis"></div>
-      <div id="recap"></div>
-      <div class="actions">
-        <button class="btn-ghost" id="pdf" style="border-color:var(--signal);color:var(--signal)">📄 Devis PDF</button>
-        <button class="btn-ghost" id="copy">Copier le devis</button>
-        <button class="btn-ghost" id="csv">Exporter la nomenclature (CSV)</button>
-        <button class="btn-ghost" id="clear">Vider le devis</button>
-      </div>
-    </div>
+  <div class="foot">
+    Le prix retenu pour Schenker est le moins cher entre son barème <b>au poids</b> et son barème <b>à la palette</b>.
+    Tarif au poids &gt; 100 kg = prix aux 100 kg × (poids ⁄ 100). Calcul hors frais annexes
+    (CTE 1,05 €, sûreté 1,50 €, RDV, région parisienne, ajustement saisonnier…), à ajouter selon le cas.
+    Lignes « localités d'altitude » et « îles » non prises en compte à ce stade.
   </div>
-
-</div>
 </div>
 
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span class="ttl" id="modalTtl">Aperçu du rayonnage</span>
-      <button class="modal-close" id="modalClose" aria-label="Fermer">×</button>
-    </div>
-    <svg id="dessinBig" viewBox="0 -28 700 448" role="img" aria-label="Vue agrandie du rayonnage"></svg>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head"><span id="modalTitle"></span><button type="button" onclick="closeTarif()" aria-label="Fermer">✕</button></div>
+    <div class="modal-body" id="modalTable"></div>
+    <div class="modal-foot">Le prix retenu pour cette expédition est encadré. Grille en lecture seule pour l'instant.</div>
   </div>
 </div>
 
 <script>
-/* ==========================================================
-   PAIEMENT — webhook Make qui crée la session Stripe Checkout
-   Colle ici l'URL du webhook Make (module « Custom webhook »).
-   Le scénario Make doit répondre en JSON : { "url": "https://checkout.stripe.com/..." }
-   ========================================================== */
-const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z'; // webhook du scénario "Rayonnages Strippe" (paiement)
-const MAKE_VERIF_CODE_URL = 'https://hook.eu2.make.com/mnpm5jf706d8n3vdxgpwb7rugpk0f7qp'; // webhook du scénario "Verif code remise" (renvoie {"taux": 20})
+const DATA = {"meta": {"clot_annee": 2026, "schenker_ref": "10/2025", "tgo_note": "% saisi par l'utilisateur, appliqué sur tarif de base"}, "clot": {"01": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "02": {"xs": 76, "s": 84, "pal": [113, 167, 220, 270, 324, 377], "delai": "48H"}, "03": {"xs": 78, "s": 86, "pal": [119, 177, 233, 287, 345, 402], "delai": "24H"}, "04": {"xs": 80, "s": 89, "pal": [123, 185, 245, 302, 363, 424], "delai": "24H"}, "05": {"xs": 80, "s": 88, "pal": [122, 183, 250, 317, 385, 461], "delai": "24H"}, "06": {"xs": 101, "s": 109, "pal": [164, 259, 368, 482, 597, 731], "delai": "24H"}, "07": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "08": {"xs": 80, "s": 89, "pal": [123, 185, 244, 301, 362, 423], "delai": "24H"}, "09": {"xs": 110, "s": 119, "pal": [178, 280, 361, 449, 541, 620], "delai": "48H"}, "10": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "11": {"xs": 106, "s": 115, "pal": [176, 279, 401, 523, 648, 791], "delai": "48H"}, "12": {"xs": 87, "s": 96, "pal": [137, 210, 280, 348, 421, 493], "delai": "48H"}, "13": {"xs": 90, "s": 98, "pal": [143, 220, 307, 397, 487, 590], "delai": "24H"}, "14": {"xs": 80, "s": 89, "pal": [123, 185, 244, 302, 363, 423], "delai": "48H"}, "15": {"xs": 84, "s": 92, "pal": [130, 197, 262, 324, 391, 458], "delai": "24H"}, "16": {"xs": 98, "s": 106, "pal": [152, 236, 309, 382, 462, 532], "delai": "48H"}, "17": {"xs": 91, "s": 99, "pal": [144, 222, 296, 369, 447, 524], "delai": "48H"}, "18": {"xs": 81, "s": 90, "pal": [124, 187, 247, 305, 367, 429], "delai": "48H"}, "19": {"xs": 83, "s": 91, "pal": [129, 195, 258, 320, 385, 451], "delai": "48H"}, "20": {"xs": 97, "s": 107, "pal": [260, 500, 734, 972, 1200, 1458], "delai": "96H"}, "21": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "22": {"xs": 100, "s": 109, "pal": [156, 244, 320, 387, 468, 543], "delai": "72H"}, "23": {"xs": 83, "s": 92, "pal": [129, 196, 260, 322, 388, 454], "delai": "48H"}, "24": {"xs": 115, "s": 123, "pal": [187, 296, 383, 479, 578, 665], "delai": "48H"}, "25": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "26": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "27": {"xs": 76, "s": 84, "pal": [113, 167, 220, 270, 324, 377], "delai": "48H"}, "28": {"xs": 76, "s": 84, "pal": [113, 167, 220, 270, 324, 377], "delai": "48H"}, "29": {"xs": 98, "s": 106, "pal": [158, 248, 314, 378, 458, 538], "delai": "72H"}, "30": {"xs": 82, "s": 90, "pal": [127, 191, 262, 335, 409, 493], "delai": "24H"}, "31": {"xs": 100, "s": 109, "pal": [164, 258, 368, 484, 600, 738], "delai": "48H"}, "32": {"xs": 110, "s": 119, "pal": [178, 280, 361, 449, 541, 620], "delai": "48H"}, "33": {"xs": 103, "s": 111, "pal": [163, 253, 324, 387, 470, 549], "delai": "48H"}, "34": {"xs": 90, "s": 98, "pal": [142, 219, 306, 394, 483, 585], "delai": "24H"}, "35": {"xs": 84, "s": 93, "pal": [131, 199, 265, 328, 396, 464], "delai": "48H"}, "36": {"xs": 82, "s": 90, "pal": [126, 189, 250, 310, 373, 436], "delai": "48H"}, "37": {"xs": 80, "s": 89, "pal": [123, 184, 244, 301, 362, 422], "delai": "48H"}, "38": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "39": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "40": {"xs": 102, "s": 111, "pal": [168, 265, 335, 402, 489, 574], "delai": "48H"}, "41": {"xs": 78, "s": 87, "pal": [119, 177, 233, 287, 345, 402], "delai": "48H"}, "42": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "43": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "44": {"xs": 86, "s": 94, "pal": [134, 205, 272, 338, 408, 478], "delai": "48H"}, "45": {"xs": 76, "s": 85, "pal": [114, 169, 222, 273, 327, 381], "delai": "48H"}, "46": {"xs": 88, "s": 97, "pal": [139, 214, 284, 354, 428, 502], "delai": "48H"}, "47": {"xs": 110, "s": 119, "pal": [178, 280, 361, 449, 541, 620], "delai": "48H"}, "48": {"xs": 87, "s": 95, "pal": [137, 210, 291, 372, 454, 546], "delai": "48H"}, "49": {"xs": 82, "s": 91, "pal": [127, 192, 254, 314, 378, 442], "delai": "48H"}, "50": {"xs": 83, "s": 92, "pal": [128, 194, 257, 319, 384, 449], "delai": "48H"}, "51": {"xs": 79, "s": 87, "pal": [120, 180, 237, 292, 351, 410], "delai": "24H"}, "52": {"xs": 69, "s": 77, "pal": [100, 143, 187, 227, 270, 312], "delai": "24H"}, "53": {"xs": 82, "s": 90, "pal": [126, 190, 251, 311, 374, 437], "delai": "48H"}, "54": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "55": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "56": {"xs": 91, "s": 100, "pal": [145, 224, 299, 372, 451, 530], "delai": "72H"}, "57": {"xs": 77, "s": 86, "pal": [117, 174, 229, 281, 337, 393], "delai": "24H"}, "58": {"xs": 80, "s": 88, "pal": [122, 183, 242, 299, 359, 419], "delai": "24H"}, "59": {"xs": 78, "s": 87, "pal": [119, 177, 234, 288, 346, 404], "delai": "48H"}, "60": {"xs": 76, "s": 84, "pal": [113, 167, 220, 270, 324, 377], "delai": "48H"}, "61": {"xs": 80, "s": 88, "pal": [122, 183, 242, 298, 358, 418], "delai": "48H"}, "62": {"xs": 76, "s": 85, "pal": [115, 170, 224, 276, 330, 385], "delai": "48H"}, "63": {"xs": 77, "s": 86, "pal": [118, 175, 230, 283, 340, 396], "delai": "24H"}, "64": {"xs": 103, "s": 112, "pal": [169, 267, 337, 405, 492, 579], "delai": "48H"}, "65": {"xs": 111, "s": 119, "pal": [179, 281, 362, 451, 544, 624], "delai": "48H"}, "66": {"xs": 100, "s": 109, "pal": [158, 245, 319, 386, 469, 548], "delai": "48H"}, "67": {"xs": 81, "s": 89, "pal": [125, 188, 248, 307, 369, 431], "delai": "24H"}, "68": {"xs": 76, "s": 85, "pal": [115, 170, 224, 276, 330, 385], "delai": "24H"}, "69": {"xs": 69, "s": 77, "pal": [100, 143, 187, 227, 270, 312], "delai": "24H"}, "70": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "71": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "72": {"xs": 79, "s": 87, "pal": [120, 179, 236, 291, 350, 408], "delai": "48H"}, "73": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "74": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "75": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "76": {"xs": 76, "s": 85, "pal": [114, 169, 222, 273, 327, 381], "delai": "48H"}, "77": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "78": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "79": {"xs": 96, "s": 104, "pal": [149, 230, 300, 371, 447, 516], "delai": "48H"}, "80": {"xs": 76, "s": 84, "pal": [113, 167, 220, 270, 324, 377], "delai": "48H"}, "81": {"xs": 106, "s": 114, "pal": [175, 278, 399, 527, 655, 809], "delai": "48H"}, "82": {"xs": 106, "s": 114, "pal": [175, 277, 398, 526, 653, 805], "delai": "48H"}, "83": {"xs": 94, "s": 103, "pal": [152, 236, 333, 432, 533, 649], "delai": "24H"}, "84": {"xs": 80, "s": 89, "pal": [123, 185, 253, 322, 392, 472], "delai": "24H"}, "85": {"xs": 97, "s": 106, "pal": [151, 235, 307, 380, 458, 529], "delai": "48H"}, "86": {"xs": 94, "s": 103, "pal": [146, 225, 294, 362, 436, 502], "delai": "48H"}, "87": {"xs": 87, "s": 95, "pal": [136, 208, 277, 345, 416, 488], "delai": "48H"}, "88": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "89": {"xs": 75, "s": 84, "pal": [113, 167, 220, 270, 323, 376], "delai": "24H"}, "90": {"xs": 75, "s": 83, "pal": [113, 166, 218, 268, 321, 373], "delai": "24H"}, "91": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "92": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "93": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "94": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "95": {"xs": 74, "s": 82, "pal": [109, 162, 214, 263, 314, 365], "delai": "24H"}, "98": {"xs": 102, "s": 111, "pal": [201, 332, 479, 627, 779, 951], "delai": "48H"}}, "schenker": {"names": {"01": "Ain", "02": "Aisne", "03": "Allier", "04": "Alpes-De-Haute-Provence", "05": "Hautes-Alpes", "06": "Alpes-Maritimes", "07": "Ardeche", "08": "Ardennes", "09": "Ariege", "10": "Aube", "11": "Aude", "12": "Aveyron", "13": "Bouches-Du-Rhone", "14": "Calvados", "15": "Cantal", "16": "Charente", "17": "Charente-Maritime", "18": "Cher", "19": "Correze", "20": "Corse", "21": "Cote-D Or", "22": "Cotes-D Armor", "23": "Creuse", "24": "Dordogne", "25": "Doubs", "26": "Drome", "27": "Eure", "28": "Eure-Et-Loir", "29": "Finistere", "30": "Gard", "31": "Haute-Garonne", "32": "Gers", "33": "Gironde", "34": "Herault", "35": "Ille-Et-Vilaine", "36": "Indre", "37": "Indre-Et-Loire", "38": "Isere", "39": "Jura", "40": "Landes", "41": "Loir-Et-Cher", "42": "Loire", "43": "Haute-Loire", "44": "Loire-Atlantique", "45": "Loiret", "46": "Lot", "47": "Lot-Et-Garonne", "48": "Lozere", "49": "Maine-Et-Loire", "50": "Manche", "51": "Marne", "52": "Haute-Marne", "53": "Mayenne", "54": "Meurthe-Et-Moselle", "55": "Meuse", "56": "Morbihan", "57": "Moselle", "58": "Nievre", "59": "Nord", "60": "Oise", "61": "Orne", "62": "Pas-De-Calais", "63": "Puy-De-Dome", "64": "Pyrenees-Atlantiques", "65": "Hautes-Pyrenees", "66": "Pyrenees-Orientales", "67": "Bas-Rhin", "68": "Haut-Rhin", "69": "Rhone", "70": "Haute-Saone", "71": "Saone-Et-Loire", "72": "Sarthe", "73": "Savoie", "74": "Haute-Savoie", "75": "Paris", "76": "Seine-Maritime", "77": "Seine-Et-Marne", "78": "Yvelines", "79": "Deux-Sevres", "80": "Somme", "81": "Tarn", "82": "Tarn-Et-Garonne", "83": "Var", "84": "Vaucluse", "85": "Vendee", "86": "Vienne", "87": "Haute-Vienne", "88": "Vosges", "89": "Yonne", "90": "Terr. De Belfort", "91": "Essonne", "92": "Hauts-De-Seine", "93": "Seine-St-Denis", "94": "Val-De-Marne", "95": "Val-D Oise"}, "forfait_max": [9, 19, 29, 39, 49, 59, 69, 79, 100], "per100_lo": [101, 300, 500, 700, 1000], "system": {"01": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "02": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "03": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "04": [29.01, 33.08, 37.14, 41.2, 44.68, 48.17, 51.65, 55.13, 60.94, 58.03, 53.39, 49.33, 46.43, 43.52], "05": [27.1, 30.89, 34.69, 38.48, 41.73, 44.98, 48.23, 51.49, 56.91, 54.2, 49.86, 46.06, 43.36, 40.65], "06": [32.85, 37.45, 42.05, 46.65, 50.59, 54.53, 58.47, 62.42, 68.99, 65.7, 60.45, 55.85, 52.56, 49.28], "07": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "08": [20.06, 22.88, 25.69, 28.5, 30.9, 33.31, 35.72, 38.13, 42.14, 40.13, 36.92, 34.11, 32.11, 30.1], "09": [32.85, 37.45, 42.05, 46.65, 50.59, 54.53, 58.47, 62.42, 68.99, 65.7, 60.45, 55.85, 52.56, 49.28], "10": [18.15, 20.69, 23.23, 25.77, 27.95, 30.13, 32.31, 34.48, 38.11, 36.3, 33.39, 30.85, 29.04, 27.22], "11": [32.21, 36.72, 41.23, 45.74, 49.61, 53.47, 57.34, 61.2, 67.64, 64.42, 59.27, 54.76, 51.54, 48.32], "12": [29.66, 33.81, 37.96, 42.11, 45.67, 49.22, 52.79, 56.34, 62.28, 59.31, 54.56, 50.41, 47.45, 44.48], "13": [27.1, 30.89, 34.69, 38.48, 41.73, 44.98, 48.23, 51.49, 56.91, 54.2, 49.86, 46.06, 43.36, 40.65], "14": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "15": [27.1, 30.89, 34.69, 38.48, 41.73, 44.98, 48.23, 51.49, 56.91, 54.2, 49.86, 46.06, 43.36, 40.65], "16": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "17": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "18": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "19": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "20": [114.77, 130.84, 146.91, 162.98, 176.76, 190.53, 204.3, 218.08, 241.03, 229.56, 211.19, 195.12, 183.64, 172.16], "21": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "22": [29.01, 33.08, 37.14, 41.2, 44.68, 48.17, 51.65, 55.13, 60.94, 58.03, 53.39, 49.33, 46.43, 43.52], "23": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "24": [28.38, 32.35, 36.32, 40.29, 43.7, 47.1, 50.51, 53.91, 59.59, 56.75, 52.21, 48.24, 45.4, 42.56], "25": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "26": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "27": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "28": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "29": [30.29, 34.54, 38.78, 43.02, 46.66, 50.29, 53.92, 57.56, 63.62, 60.59, 55.74, 51.5, 48.47, 45.44], "30": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "31": [29.66, 33.81, 37.96, 42.11, 45.67, 49.22, 52.79, 56.34, 62.28, 59.31, 54.56, 50.41, 47.45, 44.48], "32": [32.21, 36.72, 41.23, 45.74, 49.61, 53.47, 57.34, 61.2, 67.64, 64.42, 59.27, 54.76, 51.54, 48.32], "33": [28.38, 32.35, 36.32, 40.29, 43.7, 47.1, 50.51, 53.91, 59.59, 56.75, 52.21, 48.24, 45.4, 42.56], "34": [28.38, 32.35, 36.32, 40.29, 43.7, 47.1, 50.51, 53.91, 59.59, 56.75, 52.21, 48.24, 45.4, 42.56], "35": [25.82, 29.43, 33.05, 36.66, 39.76, 42.86, 45.96, 49.06, 54.22, 51.64, 47.51, 43.89, 41.31, 38.73], "36": [22.62, 25.79, 28.96, 32.12, 34.84, 37.56, 40.27, 42.99, 47.51, 45.25, 41.63, 38.46, 36.2, 33.93], "37": [22.62, 25.79, 28.96, 32.12, 34.84, 37.56, 40.27, 42.99, 47.51, 45.25, 41.63, 38.46, 36.2, 33.93], "38": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "39": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "40": [31.57, 35.99, 40.41, 44.83, 48.62, 52.41, 56.2, 59.99, 66.3, 63.14, 58.09, 53.67, 50.52, 47.36], "41": [22.62, 25.79, 28.96, 32.12, 34.84, 37.56, 40.27, 42.99, 47.51, 45.25, 41.63, 38.46, 36.2, 33.93], "42": [20.71, 23.61, 26.5, 29.4, 31.89, 34.37, 36.86, 39.34, 43.48, 41.41, 38.1, 35.2, 33.13, 31.06], "43": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "44": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "45": [20.71, 23.61, 26.5, 29.4, 31.89, 34.37, 36.86, 39.34, 43.48, 41.41, 38.1, 35.2, 33.13, 31.06], "46": [30.94, 35.26, 39.59, 43.93, 47.64, 51.35, 55.06, 58.77, 64.96, 61.87, 56.92, 52.59, 49.5, 46.4], "47": [30.94, 35.26, 39.59, 43.93, 47.64, 51.35, 55.06, 58.77, 64.96, 61.87, 56.92, 52.59, 49.5, 46.4], "48": [27.73, 31.62, 35.5, 39.39, 42.71, 46.05, 49.37, 52.7, 58.25, 55.47, 51.04, 47.15, 44.38, 41.61], "49": [23.9, 27.25, 30.6, 33.94, 36.81, 39.68, 42.55, 45.41, 50.2, 47.8, 43.98, 40.63, 38.24, 35.85], "50": [27.1, 30.89, 34.69, 38.48, 41.73, 44.98, 48.23, 51.49, 56.91, 54.2, 49.86, 46.06, 43.36, 40.65], "51": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "52": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "53": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "54": [14.32, 16.32, 18.32, 20.32, 22.04, 23.76, 25.48, 27.19, 30.06, 28.63, 26.34, 24.33, 22.9, 21.47], "55": [16.23, 18.5, 20.78, 23.05, 24.99, 26.95, 28.89, 30.84, 34.08, 32.46, 29.87, 27.59, 25.97, 24.35], "56": [29.66, 33.81, 37.96, 42.11, 45.67, 49.22, 52.79, 56.34, 62.28, 59.31, 54.56, 50.41, 47.45, 44.48], "57": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "58": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "59": [20.71, 23.61, 26.5, 29.4, 31.89, 34.37, 36.86, 39.34, 43.48, 41.41, 38.1, 35.2, 33.13, 31.06], "60": [20.71, 23.61, 26.5, 29.4, 31.89, 34.37, 36.86, 39.34, 43.48, 41.41, 38.1, 35.2, 33.13, 31.06], "61": [23.27, 26.52, 29.77, 33.04, 35.82, 38.62, 41.41, 44.2, 48.85, 46.53, 42.8, 39.55, 37.22, 34.89], "62": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "63": [23.27, 26.52, 29.77, 33.04, 35.82, 38.62, 41.41, 44.2, 48.85, 46.53, 42.8, 39.55, 37.22, 34.89], "64": [33.49, 38.18, 42.87, 47.55, 51.58, 55.59, 59.61, 63.63, 70.33, 66.98, 61.63, 56.93, 53.58, 50.24], "65": [34.13, 38.91, 43.69, 48.47, 52.56, 56.65, 60.75, 64.85, 71.67, 68.26, 62.8, 58.02, 54.61, 51.19], "66": [30.94, 35.26, 39.59, 43.93, 47.64, 51.35, 55.06, 58.77, 64.96, 61.87, 56.92, 52.59, 49.5, 46.4], "67": [14.95, 17.05, 19.14, 21.23, 23.03, 24.83, 26.62, 28.41, 31.4, 29.91, 27.51, 25.42, 23.92, 22.43], "68": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "69": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "70": [15.59, 17.78, 19.96, 22.14, 24.01, 25.88, 27.75, 29.62, 32.74, 31.18, 28.69, 26.51, 24.95, 23.39], "71": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "72": [23.27, 26.52, 29.77, 33.04, 35.82, 38.62, 41.41, 44.2, 48.85, 46.53, 42.8, 39.55, 37.22, 34.89], "73": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "74": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "75": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "76": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "77": [20.71, 23.61, 26.5, 29.4, 31.89, 34.37, 36.86, 39.34, 43.48, 41.41, 38.1, 35.2, 33.13, 31.06], "78": [21.99, 25.06, 28.14, 31.22, 33.86, 36.49, 39.13, 41.77, 46.17, 43.97, 40.45, 37.37, 35.17, 32.98], "79": [26.46, 30.16, 33.86, 37.57, 40.74, 43.92, 47.1, 50.27, 55.56, 52.92, 48.69, 44.98, 42.34, 39.69], "80": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "81": [31.57, 35.99, 40.41, 44.83, 48.62, 52.41, 56.2, 59.99, 66.3, 63.14, 58.09, 53.67, 50.52, 47.36], "82": [30.94, 35.26, 39.59, 43.93, 47.64, 51.35, 55.06, 58.77, 64.96, 61.87, 56.92, 52.59, 49.5, 46.4], "83": [30.94, 35.26, 39.59, 43.93, 47.64, 51.35, 55.06, 58.77, 64.96, 61.87, 56.92, 52.59, 49.5, 46.4], "84": [23.9, 27.25, 30.6, 33.94, 36.81, 39.68, 42.55, 45.41, 50.2, 47.8, 43.98, 40.63, 38.24, 35.85], "85": [25.18, 28.71, 32.23, 35.75, 38.78, 41.8, 44.82, 47.84, 52.88, 50.36, 46.33, 42.81, 40.29, 37.77], "86": [24.54, 27.98, 31.41, 34.85, 37.79, 40.73, 43.69, 46.63, 51.54, 49.08, 45.16, 41.72, 39.26, 36.82], "87": [23.9, 27.25, 30.6, 33.94, 36.81, 39.68, 42.55, 45.41, 50.2, 47.8, 43.98, 40.63, 38.24, 35.85], "88": [12.39, 14.13, 15.87, 17.6, 19.09, 20.58, 22.07, 23.55, 26.03, 24.79, 22.81, 21.07, 19.83, 18.59], "89": [19.43, 22.15, 24.87, 27.59, 29.92, 32.25, 34.58, 36.91, 40.8, 38.85, 35.75, 33.03, 31.09, 29.14], "90": [14.95, 17.05, 19.14, 21.23, 23.03, 24.83, 26.62, 28.41, 31.4, 29.91, 27.51, 25.42, 23.92, 22.43], "91": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "92": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "93": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "94": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "95": [21.34, 24.33, 27.33, 30.31, 32.87, 35.43, 37.99, 40.56, 44.82, 42.69, 39.27, 36.29, 34.15, 32.02], "98": [78.06, 88.98, 99.91, 110.84, 120.21, 129.57, 138.94, 148.31, 163.92, 156.11, 143.62, 132.69, 124.89, 117.08]}, "system_alt": {"04": [69.89, 79.68, 89.47, 99.25, 107.64, 116.03, 124.41, 132.8, 146.78, 139.79, 128.61, 118.82, 111.83, 104.85], "05": [65.82, 75.03, 84.24, 93.46, 101.36, 109.25, 117.15, 125.05, 138.21, 131.63, 121.1, 111.89, 105.31, 98.72], "06": [78.06, 88.98, 99.91, 110.84, 120.21, 129.57, 138.94, 148.31, 163.92, 156.11, 143.62, 132.69, 124.89, 117.08], "09": [78.06, 88.98, 99.91, 110.84, 120.21, 129.57, 138.94, 148.31, 163.92, 156.11, 143.62, 132.69, 124.89, 117.08], "25": [41.34, 47.12, 52.91, 58.7, 63.66, 68.61, 73.58, 78.53, 86.81, 82.67, 76.06, 70.27, 66.14, 62.01], "31": [71.26, 81.23, 91.21, 101.18, 109.74, 118.28, 126.83, 135.39, 149.63, 142.51, 131.12, 121.13, 114.01, 106.89], "38": [53.57, 61.08, 68.58, 76.07, 82.51, 88.94, 95.37, 101.79, 112.51, 107.15, 98.57, 91.08, 85.72, 80.36], "39": [49.5, 56.42, 63.35, 70.29, 76.22, 82.16, 88.1, 94.04, 103.94, 99.0, 91.07, 84.14, 79.2, 74.24], "42": [52.22, 59.53, 66.84, 74.15, 80.41, 86.67, 92.95, 99.21, 109.65, 104.43, 96.08, 88.77, 83.54, 78.33], "63": [57.66, 65.73, 73.8, 81.87, 88.79, 95.7, 102.62, 109.55, 121.08, 115.31, 106.09, 98.01, 92.25, 86.49], "64": [79.42, 90.54, 101.65, 112.77, 122.3, 131.83, 141.36, 150.9, 166.78, 158.83, 146.13, 135.0, 127.07, 119.12], "65": [80.78, 92.09, 103.4, 114.7, 124.39, 134.09, 143.78, 153.48, 169.63, 161.55, 148.62, 137.32, 129.25, 121.17], "66": [73.98, 84.33, 94.69, 105.04, 113.92, 122.8, 131.68, 140.56, 155.35, 147.95, 136.12, 125.76, 118.36, 110.96], "73": [54.94, 62.62, 70.32, 78.01, 84.6, 91.19, 97.79, 104.38, 115.36, 109.87, 101.08, 93.39, 87.9, 82.4], "74": [53.57, 61.08, 68.58, 76.07, 82.51, 88.94, 95.37, 101.79, 112.51, 107.15, 98.57, 91.08, 85.72, 80.36], "88": [12.39, 14.13, 15.87, 17.6, 19.09, 20.58, 22.07, 23.55, 26.03, 24.79, 22.81, 21.07, 19.83, 18.59]}, "prem13": {"01": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "02": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "03": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "04": [49.32, 56.24, 63.14, 70.04, 75.96, 81.89, 87.81, 93.72, 103.6, 98.65, 90.76, 83.86, 78.93, 73.98], "05": [46.07, 52.51, 58.97, 65.42, 70.94, 76.47, 81.99, 87.53, 96.75, 92.14, 84.76, 78.3, 73.71, 69.11], "06": [55.85, 63.67, 71.49, 79.31, 86.0, 92.7, 99.4, 106.11, 117.28, 111.69, 102.77, 94.95, 89.35, 83.78], "07": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "08": [34.1, 38.9, 43.67, 48.45, 52.53, 56.63, 60.72, 64.82, 71.64, 68.22, 62.76, 57.99, 54.59, 51.17], "09": [55.85, 63.67, 71.49, 79.31, 86.0, 92.7, 99.4, 106.11, 117.28, 111.69, 102.77, 94.95, 89.35, 83.78], "10": [30.86, 35.17, 39.49, 43.81, 47.52, 51.22, 54.93, 58.62, 64.79, 61.71, 56.76, 52.45, 49.37, 46.27], "11": [54.76, 62.42, 70.09, 77.76, 84.34, 90.9, 97.48, 104.04, 114.99, 109.51, 100.76, 93.09, 87.62, 82.14], "12": [50.42, 57.48, 64.53, 71.59, 77.64, 83.67, 89.74, 95.78, 105.88, 100.83, 92.75, 85.7, 80.67, 75.62], "13": [46.07, 52.51, 58.97, 65.42, 70.94, 76.47, 81.99, 87.53, 96.75, 92.14, 84.76, 78.3, 73.71, 69.11], "14": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "15": [46.07, 52.51, 58.97, 65.42, 70.94, 76.47, 81.99, 87.53, 96.75, 92.14, 84.76, 78.3, 73.71, 69.11], "16": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "17": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "18": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "19": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "20": [195.11, 222.43, 249.75, 277.07, 300.49, 323.9, 347.31, 370.74, 409.75, 390.25, 359.02, 331.7, 312.19, 292.67], "21": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "22": [49.32, 56.24, 63.14, 70.04, 75.96, 81.89, 87.81, 93.72, 103.6, 98.65, 90.76, 83.86, 78.93, 73.98], "23": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "24": [48.25, 55.0, 61.74, 68.49, 74.29, 80.07, 85.87, 91.65, 101.3, 96.48, 88.76, 82.01, 77.18, 72.35], "25": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "26": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "27": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "28": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "29": [51.49, 58.72, 65.93, 73.13, 79.32, 85.49, 91.66, 97.85, 108.15, 103.0, 94.76, 87.55, 82.4, 77.25], "30": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "31": [50.42, 57.48, 64.53, 71.59, 77.64, 83.67, 89.74, 95.78, 105.88, 100.83, 92.75, 85.7, 80.67, 75.62], "32": [54.76, 62.42, 70.09, 77.76, 84.34, 90.9, 97.48, 104.04, 114.99, 109.51, 100.76, 93.09, 87.62, 82.14], "33": [48.25, 55.0, 61.74, 68.49, 74.29, 80.07, 85.87, 91.65, 101.3, 96.48, 88.76, 82.01, 77.18, 72.35], "34": [48.25, 55.0, 61.74, 68.49, 74.29, 80.07, 85.87, 91.65, 101.3, 96.48, 88.76, 82.01, 77.18, 72.35], "35": [43.89, 50.03, 56.19, 62.32, 67.59, 72.86, 78.13, 83.4, 92.17, 87.79, 80.77, 74.61, 70.23, 65.84], "36": [38.45, 43.84, 49.23, 54.6, 59.23, 63.85, 68.46, 73.08, 80.77, 76.93, 70.77, 65.38, 61.54, 57.68], "37": [38.45, 43.84, 49.23, 54.6, 59.23, 63.85, 68.46, 73.08, 80.77, 76.93, 70.77, 65.38, 61.54, 57.68], "38": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "39": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "40": [53.67, 61.18, 68.7, 76.21, 82.65, 89.1, 95.54, 101.98, 112.71, 107.34, 98.75, 91.24, 85.88, 80.51], "41": [38.45, 43.84, 49.23, 54.6, 59.23, 63.85, 68.46, 73.08, 80.77, 76.93, 70.77, 65.38, 61.54, 57.68], "42": [35.21, 40.14, 45.05, 49.98, 54.21, 58.43, 62.66, 66.88, 73.92, 70.4, 64.77, 59.84, 56.32, 52.8], "43": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "44": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "45": [35.21, 40.14, 45.05, 49.98, 54.21, 58.43, 62.66, 66.88, 73.92, 70.4, 64.77, 59.84, 56.32, 52.8], "46": [52.6, 59.94, 67.3, 74.68, 80.99, 87.3, 93.6, 99.91, 110.43, 105.18, 96.76, 89.4, 84.15, 78.88], "47": [52.6, 59.94, 67.3, 74.68, 80.99, 87.3, 93.6, 99.91, 110.43, 105.18, 96.76, 89.4, 84.15, 78.88], "48": [47.14, 53.75, 60.35, 66.96, 72.61, 78.29, 83.93, 89.59, 99.03, 94.3, 86.77, 80.16, 75.45, 70.74], "49": [40.63, 46.33, 52.02, 57.7, 62.58, 67.46, 72.34, 77.2, 85.34, 81.26, 74.77, 69.07, 65.01, 60.95], "50": [46.07, 52.51, 58.97, 65.42, 70.94, 76.47, 81.99, 87.53, 96.75, 92.14, 84.76, 78.3, 73.71, 69.11], "51": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "52": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "53": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "54": [24.34, 27.74, 31.14, 34.54, 37.47, 40.39, 43.32, 46.22, 51.1, 48.67, 44.78, 41.36, 38.93, 36.5], "55": [27.59, 31.45, 35.33, 39.19, 42.48, 45.82, 49.11, 52.43, 57.94, 55.18, 50.78, 46.9, 44.15, 41.4], "56": [50.42, 57.48, 64.53, 71.59, 77.64, 83.67, 89.74, 95.78, 105.88, 100.83, 92.75, 85.7, 80.67, 75.62], "57": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "58": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "59": [35.21, 40.14, 45.05, 49.98, 54.21, 58.43, 62.66, 66.88, 73.92, 70.4, 64.77, 59.84, 56.32, 52.8], "60": [35.21, 40.14, 45.05, 49.98, 54.21, 58.43, 62.66, 66.88, 73.92, 70.4, 64.77, 59.84, 56.32, 52.8], "61": [39.56, 45.08, 50.61, 56.17, 60.89, 65.65, 70.4, 75.14, 83.05, 79.1, 72.76, 67.24, 63.27, 59.31], "62": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "63": [39.56, 45.08, 50.61, 56.17, 60.89, 65.65, 70.4, 75.14, 83.05, 79.1, 72.76, 67.24, 63.27, 59.31], "64": [56.93, 64.91, 72.88, 80.84, 87.69, 94.5, 101.34, 108.17, 119.56, 113.87, 104.77, 96.78, 91.09, 85.41], "65": [58.02, 66.15, 74.27, 82.4, 89.35, 96.31, 103.28, 110.25, 121.84, 116.04, 106.76, 98.63, 92.84, 87.02], "66": [52.6, 59.94, 67.3, 74.68, 80.99, 87.3, 93.6, 99.91, 110.43, 105.18, 96.76, 89.4, 84.15, 78.88], "67": [25.42, 28.99, 32.54, 36.09, 39.15, 42.21, 45.25, 48.3, 53.38, 50.85, 46.77, 43.21, 40.66, 38.13], "68": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "69": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "70": [26.5, 30.23, 33.93, 37.64, 40.82, 44.0, 47.18, 50.35, 55.66, 53.01, 48.77, 45.07, 42.42, 39.76], "71": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "72": [39.56, 45.08, 50.61, 56.17, 60.89, 65.65, 70.4, 75.14, 83.05, 79.1, 72.76, 67.24, 63.27, 59.31], "73": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "74": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "75": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "76": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "77": [35.21, 40.14, 45.05, 49.98, 54.21, 58.43, 62.66, 66.88, 73.92, 70.4, 64.77, 59.84, 56.32, 52.8], "78": [37.38, 42.6, 47.84, 53.07, 57.56, 62.03, 66.52, 71.01, 78.49, 74.75, 68.77, 63.53, 59.79, 56.07], "79": [44.98, 51.27, 57.56, 63.87, 69.26, 74.66, 80.07, 85.46, 94.45, 89.96, 82.77, 76.47, 71.98, 67.47], "80": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "81": [53.67, 61.18, 68.7, 76.21, 82.65, 89.1, 95.54, 101.98, 112.71, 107.34, 98.75, 91.24, 85.88, 80.51], "82": [52.6, 59.94, 67.3, 74.68, 80.99, 87.3, 93.6, 99.91, 110.43, 105.18, 96.76, 89.4, 84.15, 78.88], "83": [52.6, 59.94, 67.3, 74.68, 80.99, 87.3, 93.6, 99.91, 110.43, 105.18, 96.76, 89.4, 84.15, 78.88], "84": [40.63, 46.33, 52.02, 57.7, 62.58, 67.46, 72.34, 77.2, 85.34, 81.26, 74.77, 69.07, 65.01, 60.95], "85": [42.81, 48.81, 54.79, 60.78, 65.93, 71.06, 76.19, 81.33, 89.9, 85.61, 78.76, 72.78, 68.49, 64.21], "86": [41.72, 47.57, 53.4, 59.25, 64.24, 69.24, 74.27, 79.27, 87.62, 83.44, 76.77, 70.92, 66.74, 62.59], "87": [40.63, 46.33, 52.02, 57.7, 62.58, 67.46, 72.34, 77.2, 85.34, 81.26, 74.77, 69.07, 65.01, 60.95], "88": [21.06, 24.02, 26.98, 29.92, 32.45, 34.99, 37.52, 40.04, 44.25, 42.14, 38.78, 35.82, 33.71, 31.6], "89": [33.03, 37.66, 42.28, 46.9, 50.86, 54.83, 58.79, 62.75, 69.36, 66.05, 60.78, 56.15, 52.85, 49.54], "90": [25.42, 28.99, 32.54, 36.09, 39.15, 42.21, 45.25, 48.3, 53.38, 50.85, 46.77, 43.21, 40.66, 38.13], "91": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "92": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "93": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "94": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "95": [36.28, 41.36, 46.46, 51.53, 55.88, 60.23, 64.58, 68.95, 76.19, 72.57, 66.76, 61.69, 58.06, 54.43], "98": [132.7, 151.27, 169.85, 188.43, 204.36, 220.27, 236.2, 252.13, 278.66, 265.39, 244.15, 225.57, 212.31, 199.04]}, "prem13_alt": {"04": [118.81, 135.46, 152.1, 168.73, 182.99, 197.25, 211.5, 225.76, 249.53, 237.64, 218.64, 201.99, 190.11, 178.25], "05": [111.89, 127.55, 143.21, 158.88, 172.31, 185.73, 199.16, 212.59, 234.96, 223.77, 205.87, 190.21, 179.03, 167.82], "06": [132.7, 151.27, 169.85, 188.43, 204.36, 220.27, 236.2, 252.13, 278.66, 265.39, 244.15, 225.57, 212.31, 199.04], "09": [132.7, 151.27, 169.85, 188.43, 204.36, 220.27, 236.2, 252.13, 278.66, 265.39, 244.15, 225.57, 212.31, 199.04], "25": [70.28, 80.1, 89.95, 99.79, 108.22, 116.64, 125.09, 133.5, 147.58, 140.54, 129.3, 119.46, 112.44, 105.42], "31": [121.14, 138.09, 155.06, 172.01, 186.56, 201.08, 215.61, 230.16, 254.37, 242.27, 222.9, 205.92, 193.82, 181.71], "38": [91.07, 103.84, 116.59, 129.32, 140.27, 151.2, 162.13, 173.04, 191.27, 182.16, 167.57, 154.84, 145.72, 136.61], "39": [84.15, 95.91, 107.7, 119.49, 129.57, 139.67, 149.77, 159.87, 176.7, 168.3, 154.82, 143.04, 134.64, 126.21], "42": [88.77, 101.2, 113.63, 126.06, 136.7, 147.34, 158.02, 168.66, 186.41, 177.53, 163.34, 150.91, 142.02, 133.16], "63": [98.02, 111.74, 125.46, 139.18, 150.94, 162.69, 174.45, 186.24, 205.84, 196.03, 180.35, 166.62, 156.83, 147.03], "64": [135.01, 153.92, 172.81, 191.71, 207.91, 224.11, 240.31, 256.53, 283.53, 270.01, 248.42, 229.5, 216.02, 202.5], "65": [137.33, 156.55, 175.78, 194.99, 211.46, 227.95, 244.43, 260.92, 288.37, 274.64, 252.65, 233.44, 219.73, 205.99], "66": [125.77, 143.36, 160.97, 178.57, 193.66, 208.76, 223.86, 238.95, 264.1, 251.52, 231.4, 213.79, 201.21, 188.63], "73": [93.4, 106.45, 119.54, 132.62, 143.82, 155.02, 166.24, 177.45, 196.11, 186.78, 171.84, 158.76, 149.43, 140.08], "74": [91.07, 103.84, 116.59, 129.32, 140.27, 151.2, 162.13, 173.04, 191.27, 182.16, 167.57, 154.84, 145.72, 136.61], "88": [21.06, 24.02, 26.98, 29.92, 32.45, 34.99, 37.52, 40.04, 44.25, 42.14, 38.78, 35.82, 33.71, 31.6]}, "pallet": {"01": [99.28, 158.85, 214.13, 262.63, 318.91], "02": [101.94, 163.1, 219.87, 269.66, 327.45], "03": [101.94, 163.1, 219.87, 269.66, 327.45], "04": [141.82, 226.91, 305.88, 375.17, 455.56], "05": [141.82, 226.91, 305.88, 375.17, 455.56], "06": [144.48, 231.16, 311.62, 382.19, 464.1], "07": [112.57, 180.12, 242.8, 297.8, 361.61], "08": [108.58, 169.62, 240.61, 269.66, 327.45], "09": [160.43, 256.69, 346.02, 424.4, 515.34], "10": [85.98, 137.58, 185.46, 227.47, 276.2], "11": [197.31, 372.13, 490.57, 637.07, 773.59], "12": [155.11, 248.18, 334.55, 410.33, 498.26], "13": [131.18, 209.89, 282.94, 347.03, 421.39], "14": [117.89, 188.63, 254.27, 311.86, 378.69], "15": [141.82, 226.91, 305.88, 375.17, 455.56], "16": [125.87, 201.39, 271.47, 332.96, 404.31], "17": [139.55, 217.5, 291.96, 439.76, 534.0], "18": [104.59, 167.36, 225.6, 276.7, 335.99], "19": [128.41, 200.59, 284.53, 318.9, 387.23], "20": [527.94, 777.12, 988.3, 1212.14, 1471.88], "21": [75.35, 120.56, 162.52, 199.33, 242.05], "22": [133.84, 214.15, 288.68, 354.07, 429.94], "23": [167.72, 316.32, 416.98, 541.52, 657.57], "24": [131.18, 209.89, 282.94, 347.03, 421.39], "25": [88.3, 129.98, 165.3, 199.24, 241.94], "26": [107.25, 171.61, 231.33, 283.73, 344.53], "27": [109.91, 175.86, 237.07, 290.76, 353.07], "28": [107.25, 171.61, 231.33, 283.73, 344.53], "29": [141.82, 226.91, 305.88, 375.17, 455.56], "30": [123.21, 197.13, 265.74, 325.93, 395.77], "31": [144.48, 231.16, 311.62, 382.19, 464.1], "32": [144.48, 231.16, 311.62, 382.19, 464.1], "33": [139.16, 222.66, 300.15, 368.13, 447.01], "34": [128.52, 205.64, 277.21, 340.0, 412.85], "35": [128.52, 205.64, 277.21, 340.0, 412.85], "36": [109.91, 175.86, 237.07, 290.76, 353.07], "37": [115.23, 184.37, 248.54, 304.83, 370.15], "38": [104.59, 167.36, 225.6, 276.7, 335.99], "39": [89.43, 139.4, 187.12, 281.85, 342.24], "40": [144.48, 231.16, 311.62, 382.19, 464.1], "41": [121.86, 189.93, 254.96, 384.03, 466.32], "42": [101.94, 163.1, 219.87, 269.66, 327.45], "43": [120.55, 192.88, 260.0, 318.9, 387.23], "44": [123.21, 197.13, 265.74, 325.93, 395.77], "45": [101.94, 163.1, 219.87, 269.66, 327.45], "46": [139.16, 222.66, 300.15, 368.13, 447.01], "47": [144.48, 231.16, 311.62, 382.19, 464.1], "48": [162.4, 253.68, 359.84, 403.3, 489.71], "49": [120.55, 192.88, 260.0, 318.9, 387.23], "50": [136.5, 218.4, 294.42, 361.1, 438.47], "51": [91.31, 146.08, 196.92, 241.53, 293.28], "52": [86.49, 134.8, 180.95, 272.55, 330.95], "53": [128.41, 200.59, 284.53, 318.9, 387.23], "54": [67.37, 107.8, 145.32, 178.23, 216.42], "55": [80.67, 129.07, 173.99, 213.4, 259.12], "56": [133.84, 214.15, 288.68, 354.07, 429.94], "57": [72.69, 116.31, 156.78, 192.29, 233.5], "58": [109.91, 175.86, 237.07, 290.76, 353.07], "59": [107.25, 171.61, 231.33, 283.73, 344.53], "60": [101.94, 163.1, 219.87, 269.66, 327.45], "61": [119.91, 180.12, 242.8, 297.8, 361.61], "62": [104.59, 167.36, 225.6, 276.7, 335.99], "63": [107.25, 171.61, 231.33, 283.73, 344.53], "64": [162.4, 253.68, 359.84, 403.3, 489.71], "65": [176.56, 275.8, 391.22, 438.46, 532.42], "66": [151.07, 235.99, 334.74, 375.17, 455.56], "67": [86.49, 134.8, 180.95, 272.55, 330.95], "68": [70.03, 112.05, 151.05, 185.26, 224.96], "69": [96.62, 154.6, 208.4, 255.59, 310.37], "70": [92.39, 143.99, 193.29, 291.13, 353.52], "71": [99.28, 158.85, 214.13, 262.63, 318.91], "72": [117.89, 188.63, 254.27, 311.86, 378.69], "73": [101.94, 163.1, 219.87, 269.66, 327.45], "74": [99.28, 158.85, 214.13, 262.63, 318.91], "75": [84.21, 146.79, 224.01, 305.28, 383.05], "76": [109.91, 175.86, 237.07, 290.76, 353.07], "77": [84.21, 146.79, 224.01, 305.28, 383.05], "78": [84.21, 146.79, 224.01, 305.28, 383.05], "79": [125.87, 201.39, 271.47, 332.96, 404.31], "80": [104.59, 167.36, 225.6, 276.7, 335.99], "81": [157.77, 252.44, 340.29, 417.36, 506.8], "82": [144.48, 231.16, 311.62, 382.19, 464.1], "83": [136.5, 218.4, 294.42, 361.1, 438.47], "84": [120.55, 192.88, 260.0, 318.9, 387.23], "85": [125.87, 201.39, 271.47, 332.96, 404.31], "86": [117.89, 188.63, 254.27, 311.86, 378.69], "87": [171.42, 323.29, 426.19, 553.46, 672.07], "88": [57.6, 89.99, 127.65, 143.06, 173.72], "89": [99.28, 158.85, 214.13, 262.63, 318.91], "90": [86.49, 134.8, 180.95, 272.55, 330.95], "91": [84.21, 146.79, 224.01, 305.28, 383.05], "92": [84.21, 146.79, 224.01, 305.28, 383.05], "93": [84.21, 146.79, 224.01, 305.28, 383.05], "94": [84.21, 146.79, 224.01, 305.28, 383.05], "95": [84.21, 146.79, 224.01, 305.28, 383.05], "98": [348.76, 513.37, 652.87, 800.75, 972.34]}, "pallet_alt": {"04": [342.98, 504.87, 642.06, 787.48, 956.23], "05": [342.98, 504.87, 642.06, 787.48, 956.23], "06": [348.76, 513.37, 652.87, 800.75, 972.34], "09": [383.44, 564.42, 717.8, 880.38, 1069.03], "25": [181.15, 266.64, 339.1, 415.9, 505.03], "31": [348.76, 513.37, 652.87, 800.75, 972.34], "38": [262.06, 385.75, 490.57, 601.69, 730.63], "39": [204.26, 300.68, 382.38, 468.99, 569.48], "42": [256.28, 377.25, 479.76, 588.42, 714.51], "63": [267.84, 394.26, 501.4, 614.96, 746.74], "64": [366.1, 538.89, 685.34, 840.56, 1020.68], "65": [395.0, 581.44, 739.44, 906.91, 1101.25], "66": [342.98, 504.87, 642.06, 787.48, 956.23], "73": [256.28, 377.25, 479.76, 588.42, 714.51], "74": [250.5, 368.74, 468.94, 575.15, 698.4], "88": [57.6, 89.99, 127.65, 143.06, 173.72]}, "palletp": {"01": [129.06, 206.51, 278.37, 341.42, 414.58], "02": [132.52, 212.03, 285.83, 350.56, 425.69], "03": [132.52, 212.03, 285.83, 350.56, 425.69], "04": [184.37, 294.98, 397.64, 487.72, 592.23], "05": [184.37, 294.98, 397.64, 487.72, 592.23], "06": [187.82, 300.51, 405.11, 496.85, 603.33], "07": [146.34, 234.16, 315.64, 387.14, 470.09], "08": [141.15, 220.51, 312.79, 350.56, 425.69], "09": [208.56, 333.7, 449.83, 551.72, 669.94], "10": [111.77, 178.85, 241.1, 295.71, 359.06], "11": [256.5, 483.77, 637.74, 828.19, 1005.67], "12": [201.64, 322.63, 434.92, 533.43, 647.74], "13": [170.53, 272.86, 367.82, 451.14, 547.81], "14": [153.26, 245.22, 330.55, 405.42, 492.3], "15": [184.37, 294.98, 397.64, 487.72, 592.23], "16": [163.63, 261.81, 352.91, 432.85, 525.6], "17": [181.42, 282.75, 379.55, 571.69, 694.2], "18": [135.97, 217.57, 293.28, 359.71, 436.79], "19": [166.93, 260.77, 369.89, 414.57, 503.4], "20": [686.32, 1010.26, 1284.79, 1575.78, 1913.44], "21": [97.96, 156.73, 211.28, 259.13, 314.67], "22": [173.99, 278.4, 375.28, 460.29, 558.92], "23": [218.04, 411.22, 542.07, 703.98, 854.84], "24": [170.53, 272.86, 367.82, 451.14, 547.81], "25": [114.79, 168.97, 214.89, 259.01, 314.52], "26": [139.43, 223.09, 300.73, 368.85, 447.89], "27": [142.88, 228.62, 308.19, 377.99, 458.99], "28": [139.43, 223.09, 300.73, 368.85, 447.89], "29": [184.37, 294.98, 397.64, 487.72, 592.23], "30": [160.17, 256.27, 345.46, 423.71, 514.5], "31": [187.82, 300.51, 405.11, 496.85, 603.33], "32": [187.82, 300.51, 405.11, 496.85, 603.33], "33": [180.91, 289.46, 390.2, 478.57, 581.11], "34": [167.08, 267.33, 360.37, 442.0, 536.71], "35": [167.08, 267.33, 360.37, 442.0, 536.71], "36": [142.88, 228.62, 308.19, 377.99, 458.99], "37": [149.8, 239.68, 323.1, 396.28, 481.2], "38": [135.97, 217.57, 293.28, 359.71, 436.79], "39": [116.26, 181.22, 243.26, 366.41, 444.91], "40": [187.82, 300.51, 405.11, 496.85, 603.33], "41": [158.42, 246.91, 331.45, 499.24, 606.22], "42": [132.52, 212.03, 285.83, 350.56, 425.69], "43": [156.72, 250.74, 338.0, 414.57, 503.4], "44": [160.17, 256.27, 345.46, 423.71, 514.5], "45": [132.52, 212.03, 285.83, 350.56, 425.69], "46": [180.91, 289.46, 390.2, 478.57, 581.11], "47": [187.82, 300.51, 405.11, 496.85, 603.33], "48": [211.12, 329.78, 467.79, 524.29, 636.62], "49": [156.72, 250.74, 338.0, 414.57, 503.4], "50": [177.45, 283.92, 382.75, 469.43, 570.01], "51": [118.7, 189.9, 256.0, 313.99, 381.26], "52": [112.44, 175.24, 235.24, 354.32, 430.24], "53": [166.93, 260.77, 369.89, 414.57, 503.4], "54": [87.58, 140.14, 188.92, 231.7, 281.35], "55": [104.87, 167.79, 226.19, 277.42, 336.86], "56": [173.99, 278.4, 375.28, 460.29, 558.92], "57": [94.5, 151.2, 203.81, 249.98, 303.55], "58": [142.88, 228.62, 308.19, 377.99, 458.99], "59": [139.43, 223.09, 300.73, 368.85, 447.89], "60": [132.52, 212.03, 285.83, 350.56, 425.69], "61": [155.88, 234.16, 315.64, 387.14, 470.09], "62": [135.97, 217.57, 293.28, 359.71, 436.79], "63": [139.43, 223.09, 300.73, 368.85, 447.89], "64": [211.12, 329.78, 467.79, 524.29, 636.62], "65": [229.53, 358.54, 508.59, 570.0, 692.15], "66": [196.39, 306.79, 435.16, 487.72, 592.23], "67": [112.44, 175.24, 235.24, 354.32, 430.24], "68": [91.04, 145.67, 196.37, 240.84, 292.45], "69": [125.61, 200.98, 270.92, 332.27, 403.48], "70": [120.11, 187.19, 251.28, 378.47, 459.58], "71": [129.06, 206.51, 278.37, 341.42, 414.58], "72": [153.26, 245.22, 330.55, 405.42, 492.3], "73": [132.52, 212.03, 285.83, 350.56, 425.69], "74": [129.06, 206.51, 278.37, 341.42, 414.58], "75": [109.47, 190.83, 291.21, 396.86, 497.97], "76": [142.88, 228.62, 308.19, 377.99, 458.99], "77": [109.47, 190.83, 291.21, 396.86, 497.97], "78": [109.47, 190.83, 291.21, 396.86, 497.97], "79": [163.63, 261.81, 352.91, 432.85, 525.6], "80": [135.97, 217.57, 293.28, 359.71, 436.79], "81": [205.1, 328.17, 442.38, 542.57, 658.84], "82": [187.82, 300.51, 405.11, 496.85, 603.33], "83": [177.45, 283.92, 382.75, 469.43, 570.01], "84": [156.72, 250.74, 338.0, 414.57, 503.4], "85": [163.63, 261.81, 352.91, 432.85, 525.6], "86": [153.26, 245.22, 330.55, 405.42, 492.3], "87": [222.85, 420.28, 554.05, 719.5, 873.69], "88": [74.88, 116.99, 165.95, 185.98, 225.84], "89": [129.06, 206.51, 278.37, 341.42, 414.58], "90": [112.44, 175.24, 235.24, 354.32, 430.24], "91": [109.47, 190.83, 291.21, 396.86, 497.97], "92": [109.47, 190.83, 291.21, 396.86, 497.97], "93": [109.47, 190.83, 291.21, 396.86, 497.97], "94": [109.47, 190.83, 291.21, 396.86, 497.97], "95": [109.47, 190.83, 291.21, 396.86, 497.97], "98": [453.39, 667.38, 848.73, 1040.98, 1264.04]}, "palletp_alt": {"04": [445.87, 656.33, 834.68, 1023.72, 1243.1], "05": [445.87, 656.33, 834.68, 1023.72, 1243.1], "06": [453.39, 667.38, 848.73, 1040.98, 1264.04], "09": [498.47, 733.75, 933.14, 1144.49, 1389.74], "25": [235.5, 346.63, 440.83, 540.67, 656.54], "31": [453.39, 667.38, 848.73, 1040.98, 1264.04], "38": [340.68, 501.48, 637.74, 782.2, 949.82], "39": [265.54, 390.88, 497.09, 609.69, 740.32], "42": [333.16, 490.43, 623.69, 764.95, 928.86], "63": [348.19, 512.54, 651.82, 799.45, 970.76], "64": [475.93, 700.56, 890.94, 1092.73, 1326.88], "65": [513.5, 755.87, 961.27, 1178.98, 1431.63], "66": [445.87, 656.33, 834.68, 1023.72, 1243.1], "73": [333.16, 490.43, 623.69, 764.95, 928.86], "74": [325.65, 479.36, 609.62, 747.7, 907.92], "88": [74.88, 116.99, 165.95, 185.98, 225.84]}, "altitude_communes": {"04": ["ALLONS", "ALLOS", "ANGLES", "ANNOT", "ARCHAIL", "AUTHON", "AUZET", "BANON", "BARCELONNETTE", "BARLES", "BARREME", "BAYONS", "BEAUJEU", "BEAUVEZER", "BELLAFFAIRE", "BLIEUX", "BRAUX", "UBAYE-SERRE-PONCON", "LE BRUSQUET", "LE CAIRE", "CASTELLANE", "LE CASTELLARD-MELAN", "CHATEAUNEUF-MIRAVAIL", "CHAUDON NORANTE", "CLAMENSANE", "CLUMANC", "COLMARS", "CONDAMINE CHATELARD", "CUREL", "DEMANDOLX", "DRAIX", "ENCHASTRAYES", "ENTREPIERRES", "ENTREVAUX", "ESPARRON DE VERDON", "FAUCON-DU-CAIRE", "FAUCON DE BARCELONNE", "LE FUGERET", "GANAGOBIE", "LA GARDE", "GIGORS", "L'HOSPITALET", "JAUSIERS", "LA JAVIE", "LAMBRUISSE", "LARCHE", "LARDIERS", "LE LAUZET-UBAYE", "MAJASTRES", "MARCOUX", "MEAILLES", "MELVE", "MEYRONNES", "MONTCLAR", "MORIEZ", "LA MOTTE-DU-CAIRE", "MOUSTIERS STE MARIE", "LA MURE-ARGENS", "NOYERS SUR JABRON", "LES OMERGUES", "LA PALUD-SUR-VERDON", "PEYROULES", "PIEGUT", "PONTIS", "PRADS-HAUTE-BLEONE", "REDORTIERS", "MEOLANS-REVEL", "REVEST DU BION", "REVEST ST MARTIN", "LA ROBINE-SUR-GALABRE", "LA ROCHEGIRON", "LA ROCHETTE", "ROUGON", "ST ANDRE LES ALPES", "HAUTES-DUYES", "SAINT-GENIEZ", "SAINT-JACQUES", "ST JULIEN DU VERDON", "SAINT-JURS", "SAINT-LIONS", "SAINT-MARTIN-LES-EAUX", "ST MARTIN LES SEYNE", "SAINT-PAUL-SUR-UBAYE", "SAINT-PIERRE", "ST PONS", "ST VINCENT LES FORTS", "SAUMANE", "SAUSSES", "SELONNET", "SENEZ", "SEYNE", "SIMIANE LA ROTONDE", "SOLEILHAS", "SOURRIBES", "TARTONNE", "THOARD", "THORAME-BASSE", "THORAME-HAUTE", "LES THUILES", "TURRIERS", "UBRAYE", "UVERNET FOURS", "VALAVOIRE", "VERDACHES", "VERGONS", "LE VERNET", "VILLARS-COLMARS", "LE SAUZET", "PRA LOUP", "LA FOUX-D'ALLOS"], "05": ["ABRIES", "AIGUILLES", "ANCELLE", "ANTONAVES", "ARGENTIERE LA BESSEE", "ARVIEUX", "ASPRES LES CORPS", "AVANCON", "BARATIER", "BARCILLONNETTE", "LA BATIE-MONTSALEON", "LA BEAUME", "LE BERSAC", "BREZIERS", "BRIANCON", "VALDOULE", "BUISSARD", "CEILLAC", "CERVIERES", "CHABESTAN", "CHABOTTES", "CHAMPCELLA", "CHAMPOLEON", "CHANOUSSE", "CHATEAUNEUF-D'OZE", "CHATEAUROUX-LES-ALPES", "CHATEAU-VILLE-VIEILLE", "CHAUFFAYER", "CHORGES", "CREVOUX", "CROTS", "EMBRUN", "EOURRES", "L'EPINE", "ESPARRON", "ESPINASSES", "ETOILE-SAINT-CYRICE", "EYGLIERS", "LA FARE-EN-CHAMPSAUR", "LA FAURIE", "FOREST-SAINT-JULIEN", "FREISSINIERES", "LA FREISSINOUSE", "FURMEYER", "LE GLAIZIL", "LA GRAVE", "CHAPELLE EN VALGAUDE", "GUILLESTRE", "LA HAUTE-BEAUME", "LAYE", "MANTEYER", "MEREUIL", "MOLINES-EN-QUEYRAS", "MONETIER ALLEMONT", "LE MONETIER-LES-BAINS", "MONTBRAND", "MONTCLUS", "MONT DAUPHIN", "MONTGARDIN", "MONTGENEVRE", "MONTJAY", "MONTMAUR", "MONTROND", "LA MOTTE-EN-CHAMPSAUR", "MOYDANS", "NEVACHE", "NOSSAGE-ET-BENEVENT", "LE NOYER", "ORCIERES", "ORPIERRE", "LES ORRES", "OZE", "PELLEAUTIER", "PELVOUX", "LA PIARRE", "POLIGNY", "PRUNIERES", "PUY ST ANDRE", "PUY-SAINT-EUSEBE", "PUY ST PIERRE", "REALLON", "REMOLLON", "REOTIER", "RIBEYRET", "RISOUL", "RISTOLAS", "ROCHEBRUNE", "LA ROCHE-DE-RAME", "LA ROCHE-DES-ARNAUDS", "ROSANS", "ROUSSET", "SAINT-ANDRE-D'EMBRUN", "SAINT-APOLLINAIRE", "SAINT-AUBAN-D'OZE", "SAINT-BONNET-EN-CHAMPSAUR", "SAINT-CHAFFREY", "SAINT-CLEMENT-SUR-DURANCE", "SAINTE-COLOMBE", "SAINT-CREPIN", "SAINT-ETIENNE-EN-DEVOLUY", "SAINT-ETIENNE-LE-LAUS", "ST EUSEBE EN CHAMPSAUR", "SAINT-FIRMIN", "SAINT-JACQUES-EN-VALGODEMARD", "SAINT-JEAN-SAINT-NICOLAS", "SAINT-JULIEN-EN-BEAUCHENE", "ST JULIEN EN CHAMPSAUR", "ST LAURENT DU CROS", "SAINT-LEGER-LES-MELEZES", "STE MARIE", "SAINT-MARTIN-DE-QUEYRIERES", "ST MAURICE EN VALGOD", "SAINT-MICHEL-DE-CHAILLOL", "SAINT-PIERRE-D'ARGENCON", "SAINT-PIERRE-AVEZ", "ST SAUVEUR", "LE SAIX", "SALERANS", "LA SALLE-LES-ALPES", "LE SAUZE-DU-LAC", "SAVINES-LE-LAC", "SAVOURNON", "SIGOTTIER", "SORBIERS", "THEUS", "TRESCLEOUX", "UPAIX", "VAL DES PRES", "VALLOUISE", "VALSERRES", "VARS", "VEYNES", "LES VIGNEAUX", "VILLAR D ARENE", "VILLAR LOUBIERE", "VILLAR ST PANCRACE", "AILE FROIDE", "VALLOUISE-PELVOUX", "SUPER DEVOLUY", "SERRE CHEVALIER", "VAL BUECH-MEOUGE"], "06": ["AIGLUN", "AMIRAT", "ANDON", "ASCROS", "AUVARE", "BAIROLS", "BELVEDERE", "BENDEJUN", "BERRE-LES-ALPES", "BEUIL", "BEZAUDUN-LES-ALPES", "LA BOLLENE-VESUBIE", "BREIL-SUR-ROYA", "BRIANCONNET", "CAILLE", "CAUSSOLS", "CHATEAUNEUF-D'ENTRAUNES", "CIPIERES", "CLANS", "COURMES", "COURSEGOULES", "LA CROIX-SUR-ROUDOULE", "CUEBRIS", "DALUIS", "DURANUS", "ENTRAUNES", "ESCRAGNOLLES", "FONTAN", "GARS", "GREOLIERES", "GUILLAUMES", "ISOLA", "LANTOSQUE", "LIEUCHE", "LUCERAM", "MARIE", "LE MAS", "MASSOINS", "MOULINET", "LES MUJOULS", "LA PENNE", "PEONE", "PIERLAS", "PIERREFEU", "PUGET-ROSTANG", "PUGET THENIERS", "REVEST LES ROCHES", "RIGAUD", "RIMPLAS", "ROQUEBILLIERE", "ROQUESTERON", "ROUBION", "ROURE", "SAINTE-AGNES", "SAINT-ANTONIN", "SAINT-AUBAN", "SAINT-DALMAS-LE-SELVAGE", "SAINT-ETIENNE-DE-TINEE", "SAINT-LEGER", "SAINT-MARTIN-D'ENTRAUNES", "SAINT-MARTIN-VESUBIE", "SAINT-VALLIER-DE-THIEY", "SALLAGRIFFON", "SAORGE", "SAUZE", "SERANON", "SIGALE", "SOSPEL", "THIERY", "TOUDON", "LA TOUR", "TOURNEFORT", "UTELLE", "VALDEBLORE", "VALDEROURE", "VENANSON", "VILLENEUVE-D'ENTRAUNES", "LA BRIGUE", "TENDE", "VALBERG", "PEIRA CAVA"], "09": ["ANTRAS", "APPY", "ARTIGUES", "ASCOU", "AUGIREIN", "AULUS-LES-BAINS", "AUZAT", "AXIAT", "AX-LES-THERMES", "BALACET", "BESTIAC", "BETHMALE", "BONAC-IRAZEIN", "LE BOSC", "BOUSSENAC", "CARCANIERES", "CAUSSOU", "CAYCHAX", "CAZENAVE-SERRES-ET-ALLENS", "GALEY", "GENAT", "GESTIES", "GOURBIT", "HOSPITALET PRES L AN", "IGNAUX", "ILLIER-ET-LARAMADE", "LAPEGE", "LARCAT", "LARNAT", "LERCOUL", "LORDAT", "MERENS-LES-VALS", "MIJANES", "MONTAILLOU", "MONTSEGUR", "ORGEIX", "ORLU", "ORUS", "PERLES-ET-CASTELET", "LE PLA", "LE PORT", "PRADES", "LE PUCH", "QUERIGUT", "ROUZE", "SAINT-JEAN-DU-CASTILLONNAIS", "SAINT-LARY", "SAURAT", "SAVIGNAC-LES-ORMEAUX", "SENCONAC", "SENTEIN", "SIGUER", "SORGEAT", "TIGNAC", "VAYCHIS", "VERNAUX", "VAL-DE-SOS"], "25": ["LES ALLIES", "AMATHAY-VESIGNEUX", "ARC-SOUS-MONTENOT", "LE BARBOUX", "BELFAYS", "LE BIZOT", "BONNEVAUX", "LA BOSSE", "BREY-ET-MAISON-DU-BOIS", "CERNAY-L'EGLISE", "CHAMESEY", "CHAPELLE DES BOIS", "CHATELBLANC", "LA CHAUX", "CHAUX-NEUVE", "LES COMBES", "COUR ST MAURICE", "COURVIERES", "LE CROUZET", "FERRIERES-LE-LAC", "FOURCATIER-ET-MAISON-NEUVE", "FROIDEVAUX", "GELLIN", "GERMEFONTAINE", "GEVRESIN", "GILLEY", "GRAND COMBE CHATELEU", "GRAND'COMBE-DES-BOIS", "GRANDFONTAINE-SUR-CREUSE", "LA GRANGE", "LES GRANGETTES", "LES GRAS", "HAUTERIVE-LA-FRESSE", "LES HOPITAUX-NEUFS", "LES HOPITAUX-VIEUX", "JOUGNE", "LABERGEMENT-SAINTE-MARIE", "VILLERS LE LAC", "LONGECHAUX", "LONGEMAISON", "LA LONGEVILLE", "LONGEVILLES-MONT-D'OR", "LE LUHIER", "MAISONS-DU-BOIS-LIEVREMONT", "MALBUISSON", "MALPAS", "LE MEMONT", "METABIEF", "MONTBENOIT", "MONTFLOVIN", "MONTLEBON", "MONTPERREUX", "MOUTHE", "NARBIEF", "OUVANS", "OYE-ET-PALLET", "PETITE-CHAUX", "LES PLAINS-ET-GRANDS-ESSARTS", "LA PLANEE", "LES PONTETS", "RECULFOZ", "REMORAY-BOUJEONS", "RENEDALE", "ROCHEJEAN", "RONDEFONTAINE", "SAINT-ANTOINE", "SAINTE-COLOMBE", "SAINT-POINT-LAC", "SARRAGEOIS", "THIEBOUHANS", "TOUILLON-ET-LOUTELET", "TREVILLERS", "URTIERE", "VAUX-ET-CHANTEGRUE", "VERRIERES-DE-JOUX", "VILLE-DU-PONT", "VILLERS-LA-COMBE", "VILLERS-SOUS-CHALAMONT", "STATIONS"], "31": ["ARTIGUE", "BAGNERES-DE-LUCHON", "BAREN", "BENQUE-DESSOUS-ET-DESSUS", "BILLIERE", "BOURG-D'OUEIL", "CASTILLON-DE-LARBOUST", "CATHERVIELLE", "CAUBOUS", "CAZARILH-LASPENES", "CAZEAUX-DE-LARBOUST", "CIRES", "GARIN", "GOUAUX-DE-LARBOUST", "GOUAUX-DE-LUCHON", "JURVIELLE", "JUZET-DE-LUCHON", "MAYREGNE", "MONTAUBAN-DE-LUCHON", "MOUSTAJON", "OO", "PORTET-D'ASPET", "PORTET-DE-LUCHON", "POUBEAU", "SACCOURVIELLE", "SAINT-AVENTIN", "SAINT-MAMET", "SAINT-PAUL-D'OUEIL", "SODE", "TREBONS-DE-LUCHON", "BINOS", "SUPERBAGNERES"], "38": ["LES ADRETS", "ALLEMOND", "ALLEVARD", "AMBEL", "AURIS", "AUTRANS", "AVIGNONET", "BEAUFIN", "BESSE", "LE BOURG-D'OISANS", "CHANTELOUVE", "LA CHAPELLE-DU-BARD", "CHATEAU BERNARD", "CHATELUS", "CHICHILIANNE", "CHOLONGE", "CHORANCHE", "CLAVANS-EN-HAUT-OISANS", "LA COMBE-DE-LANCEY", "CORDEAC", "CORPS", "CORRENCON-EN-VERCORS", "LES COTES-DE-CORPS", "ENTRAIGUES", "LA FERRIERE", "LE FRENEY-D'OISANS", "LA GARDE", "GRESSE-EN-VERCORS", "HUEZ", "HURTIERES", "LAFFREY", "LALLEY", "LANS-EN-VERCORS", "LAVAL", "LAVALDENS", "LAVARS", "MALLEVAL", "MARCIEU", "MAYRES-SAVEL", "MEAUDRE", "MENS", "MIZOEN", "MONESTIER-D'AMBEL", "MONESTIER-DE-CLERMONT", "MONT DE LANS", "MONTEYNARD", "MONT ST MARTIN", "LA MORTE", "LA MOTTE-D'AVEILLANS", "LA MOTTE-SAINT-MARTIN", "LE MOUTARET", "LA MURE", "NOTRE-DAME-DE-VAULX", "ORIS EN RATTIER", "ORNON", "OULLES", "OZ", "PELLAFOL", "PERCY", "LE PERIER", "PIERRE-CHATEL", "PINSOT", "PREBOIS", "PRESLES", "PROVEYSIEUX", "QUAIX-EN-CHARTREUSE", "RENCUREL", "REVEL", "SAINT-ANDEOL", "SAINT-AREY", "SAINT-BAUDILLE-ET-PIPET", "SAINT-BERNARD", "SAINT-CHRISTOPHE-EN-OISANS", "SAINT-GUILLAUME", "SAINT-HILAIRE", "SAINT-HONORE", "SAINT-JEAN-DE-VAULX", "SAINT-JEAN-D'HERANS", "ST JEAN LE VIEUX", "SAINTE-LUCE", "SAINTE-MARIE-DU-MONT", "SAINT-MAURICE-EN-TRIEVES", "SAINT-MAXIMIN", "SAINT-MICHEL-EN-BEAUMONT", "ST MURY MONTEYMOND", "SAINT-NIZIER-DU-MOUCHEROTTE", "SAINT-PANCRASSE", "SAINT-PIERRE-D'ALLEVARD", "SAINT-PIERRE-DE-CHARTREUSE", "SAINT-PIERRE-DE-MESAGE", "ST PHILIBERT D ENTREMONT", "SAINT-SEBASTIEN", "SAINT-THEOFFREY", "LA SALETTE-FALLAVAUX", "LE SAPPEY-EN-CHARTREUSE", "SARCENAS", "SIEVOZ", "SUSVILLE", "THEYS", "TREFFORT", "TREMINIS", "VALBONNAIS", "LA VALETTE", "VALJOUFFREY", "VAUJANY", "VENON", "VENOSC", "VILLARD DE LANS", "VILLARD NOTRE DAME", "VILLARD RECULAS", "VILLARD REYMOND", "VILLARD ST CHRISTOPH", "CHAMROUSSE", "SEPT LAUX", "LE PLEYNET", "LES DEUX-ALPES", "CHATEL-EN-TRIEVES", "COLLET D ALLEVAR", "CRETS EN BELLEDONNE", "AUTRANS-MEAUDRE EN VERCORS", "L'ALPE-DE-VENOSC", "L'ALPE-D'HUEZ"], "39": ["ABERGEMENT-LES-THESY", "ARSURE-ARSURETTE", "BELLECOMBE", "BELLEFONTAINE", "BIEF-DES-MAISONS", "BIEF-DU-FOURG", "BILLECUL", "BOIS-D'AMONT", "LES BOUCHOUX", "CERNANS", "CERNIEBAUD", "LES CHALESMES", "CHARENCY", "CHATELNEUF", "LA CHAUMUSSE", "CHAUX DES PRES", "LA CHAUX-DU-DOMBIEF", "CHEVROTAINE", "CONTE", "CRANS", "LES CROZETS", "CUVIER", "DOYE", "ENTRE-DEUX-MONTS", "ESSERVAL-TARTRE", "ETIVAL", "LA FAVIERE", "FONCINE-LE-BAS", "FONCINE-LE-HAUT", "FRAROZ", "GILLOIS", "GRANDE-RIVIERE CHATEAU", "LAJOUX", "LAMOURA", "LA LATETTE", "LEMUY", "LENT", "LESCHERES", "LONGCHAUMOIS", "LONGCOCHON", "LOULLE", "MENETRUX-EN-JOUX", "MIEGES", "MIGNOVILLARD", "MONTMARLON", "MORBIER", "HAUTS DE BIENNE", "MOURNANS-CHARBONNY", "LES MOUSSIERES", "LES NANS", "NOZEROY", "ONGLIERES", "LA PESSE", "PILLEMOINE", "PLENISE", "PLENISETTE", "PREMANON", "RIX", "LES ROUSSES", "SAFFLOZ", "SUPT", "THESY", "VALEMPOULIERES"], "42": ["APINAC", "LE BESSAT", "BOURG-ARGENTAL", "CERVIERES", "CHALMAZEL", "LA CHAMBA", "LA CHAMBONIE", "LA CHAPELLE-EN-LAFAYE", "COLOMBIER", "LA COTE-EN-COUZAN", "ESTIVAREILLES", "FONTANES", "GRAIX", "GUMIERES", "JONZIEUX", "LERIGNEUX", "MARCENOD", "MARLHES", "MAROLS", "MERLE-LEIGNEC", "MONTARCHER", "NOIRETABLE", "PLANFOY", "ROCHE", "ST BONNET LE CHATEAU", "ST GENEST MALIFAUX", "ST GEORGES EN COUZAN", "ST HILAIRE CUSSON LA VALMITTE", "SAINT-JEAN-LA-VETRE", "SAINT-JEAN-SOLEYMIEUX", "ST JULIEN MOLIN MOLE", "SAINT-JUST-EN-BAS", "SAINT-NIZIER-DE-FORNAS", "SAINT-PRIEST-LA-PRUGNE", "SAINT-PRIEST-LA-VETRE", "ST REGIS DU COIN", "SAINT-ROMAIN-LES-ATHEUX", "LES SALLES", "SAUVAIN", "TARENTAISE", "LA TOURETTE", "LA TUILIERE", "USSON EN FOREZ", "LA VALLA-SUR-ROCHEFORT", "LA VERSANNE", "CHAUSSETERRE"], "63": ["AIX-LA-FAYETTE", "ANZAT-LE-LUGUET", "ARDES", "AURIERES", "AVEZE", "BAFFIE", "BAGNOLS", "BESSE-ET-SAINT-ANASTAISE", "BIOLLET", "LA BOURBOULE", "BOURG LASTIC", "BRIFFONS", "LE BRUGERON", "LA CELLE", "CHAMBON-SUR-DOLORE", "CHAMBON-SUR-LAC", "CHAMEANE", "CHAMPAGNAT LE JEUNE", "LA CHAPELLE-MARCOUSSE", "CHASSAGNE", "CHASTREIX", "CHATEAUNEUF-LES-BAINS", "LA CHAULME", "COMPAINS", "CONDAT-EN-COMBRAILLE", "CONDAT LES MONTBOISS", "CROS", "DAUZAT-SUR-VODABLE", "DORANGES", "ECHANDELYS", "EGLISENEUVE-D'ENTRAIGUES", "EGLISOLLES", "ESPINCHAL", "FAYET-RONAYE", "FERNOEL", "FOURNOLS", "GELLES", "GIAT", "LA GODIVELLE", "LA GOUTELLE", "GRANDRIF", "GRANDVAL", "HERMENT", "HEUME L EGLISE", "LACHAUX", "LAQUEUILLE", "LASTIC", "LA TOUR-D'AUVERGNE", "MAYRES", "MAZAYE", "MAZOIRES", "MEDEYROLLES", "MESSEIX", "LE MONESTIER", "MONT DORE", "MONTEL-DE-GELAT", "MURAT-LE-QUAIRE", "MUROL", "NEBOUZAT", "NOVACELLES", "OLBY", "ORCIVAL", "PERPEZAT", "PICHERANDE", "PONTAUMUR", "PRONDINES", "PULVERIERES", "PUY-SAINT-GULMIER", "LA RENAUDIE", "ROCHE CHARLES LA MAY", "ROCHEFORT-MONTAGNE", "SAILLANT", "SAINT-ALYRE-D'ARLANC", "SAINT-ALYRE-ES-MONTAGNE", "SAINT-AMANT-ROCHE-SAVINE", "SAINT-ANTHEME", "SAINT-AVIT", "SAINT-BONNET-LE-BOURG", "SAINT-BONNET-LE-CHASTEL", "ST BONNET PRES ORCIVAL", "SAINTE-CATHERINE", "SAINT-CLEMENT-DE-VALORGUE", "SAINT-DONAT", "SAINT-ELOY-LA-GLACIERE", "SAINT-ETIENNE-DES-CHAMPS", "SAINT-GENES-CHAMPESPE", "SAINT-GENES-LA-TOURETTE", "ST GERMAIN PRES HERM", "ST GERMAIN L HERM", "SAINT-GERVAIS-D'AUVERGNE", "SAINT-GERVAIS-SOUS-MEYMONT", "ST HERENT", "SAINT-HILAIRE-LES-MONGES", "ST JEAN ST GERVAIS", "SAINT-JULIEN-PUY-LAVEZE", "SAINT-MARTIN-DES-OLMES", "SAINT-NECTAIRE", "SAINT-PIERRE-COLAMINE", "SAINT-PIERRE-LA-BOURLHONNE", "SAINT-PIERRE-LE-CHASTEL", "SAINT-PIERRE-ROCHE", "SAINT-ROMAIN", "SAINT-SATURNIN", "SAINT-SAUVES-D'AUVERGNE", "SAINT-SAUVEUR-LA-SAGNE", "SAINT-SULPICE", "SAINT-VICTOR-LA-RIVIERE", "ST VICTOR MONTVIANEIX", "SAULZET LE FROID", "SAUVAGNAT", "SAUVESSANGES", "SINGLES", "TAUVES", "TORTEBESSE", "TRALAIGUES", "TREMOUILLE-SAINT-LOUP", "VALBELEIX", "VALCIVIERES", "VALZ SOUS CHATEAUNEU", "VERNET-LA-VARENNE", "VERNET STE MARGUERIT", "VERNEUGHEOL", "VERNINES", "VIVEROLS", "VOINGT", "VOLLORE-MONTAGNE", "VOLLORE-VILLE", "SUPER BESSE"], "64": ["AINHOA", "ALDUDES", "ARETTE", "ARNEGUY", "BANCA", "BORCE", "CETTE-EYGUN", "EAUX-BONNES", "ESTERENCUBY", "ETCHEBAR", "ETSAUT", "GABAT", "HOSTA", "LACARRY ARHAN CHARRI", "LARRAU", "LESCUN", "LICQ-ATHEREY", "LOURDIOS-ICHERE", "SAINTE-ENGRACE", "SAINT-JUST-IBARRE", "SAINT PEE SUR NIVELLE", "SARE", "URDOS", "UREPEL", "GOURETTE", "EAUX CHAUDES"], "65": ["ADERVIELLE-POUCHERGUES", "ANCIZAN", "ARAGNOUET", "ARCIZANS-DESSUS", "ARDENGOST", "ARREAU", "ARRENS-MARSOUS", "ARTALENS-SOUIN", "ARTIGUES", "ASPIN-AURE", "AUCUN", "AULON", "AVAJAN", "AZET", "BAREILLES", "BARLEST", "BARRANCOUEU", "BAZUS-AURE", "BEAUDEAN", "BETPOUEY", "BEYREDE-JUMET-CAMOUS", "BORDERES-LOURON", "BOURISP", "BUN", "CADEAC", "CADEILHAN-TRACHERE", "CAMPAN", "CAMPARAN", "CAUTERETS", "CAZAUX-DEBAT", "CAZAUX-FRECHET-ANERAN-CAMORS", "ENS", "ESBAREICH", "ESQUIEZE-SERE", "ESTAING", "ESTARVIELLE", "ESTENSAN", "ESTERRE", "FERRERE", "FRECHET-AURE", "GAILLAGOS", "GAVARNIE", "GEDRE", "GENOS", "GERM", "GOUAUX", "GRAILHEN", "GREZIAN", "GRUST", "GUCHAN", "GUCHEN", "ILHET", "JEZEAU", "LANCON", "LOUDENVIELLE", "LOUDERVIELLE", "LUZ-SAINT-SAUVEUR", "MONT", "PAILHAC", "RIS", "SAILHAN", "SAINT-LARY-SOULAN", "SASSIS", "SAZOS", "SERS", "SIREIX", "SOST", "TRAMEZAIGUES", "UZ", "VIELLA", "VIELLE AURE", "VIELLE-LOURON", "VIER-BORDES", "VIEY", "VIGNEC", "BAREGES", "GAVARNIE-GEDRE"], "66": ["L'ALBERE", "AMELIE-LES-BAINS-PALALDA", "LES ANGLES", "ANGOUSTRINE-VILLENEUVE-DES-ESCALDES", "ANSIGNAN", "ARBOUSSOLS", "ARLES-SUR-TECH", "AYGUATEBIA-TALAU", "BAILLESTAVY", "LA BASTIDE", "BOLQUERE", "BOURG-MADAME", "LA CABANASSE", "CAIXAS", "CALMEILLES", "CAMPOME", "CAMPOUSSY", "CANAVEILLES", "CASEFABRE", "CASTEIL", "CATLLAR", "CAUDIES-DE-CONFLENT", "CONAT", "CORSAVY", "COUSTOUGES", "DORRES", "LES CLUSES", "EGAT", "ENVEITG", "ERR", "ESCARO", "ESPIRA-DE-CONFLENT", "ESTAVAR", "ESTOHER", "EYNE", "FELLUNS", "FENOUILLET", "FILLOLS", "FINESTRET", "FONTPEDROUSE", "FONTRABIOUSE", "FORMIGUERES", "FOSSE", "FUILLA", "GLORIANES", "JOCH", "JUJOLS", "LAMANERE", "LANSAC", "LATOUR-DE-CAROL", "LESQUERDE", "LA LLAGONNE", "LLAURO", "LLO", "MANTET", "LOS MASOS", "MATEMALE", "MOLITG-LES-BAINS", "MONTALBA-LE-CHATEAU", "MONTAURIOL", "MONTBOLO", "MONTFERRER", "MONT LOUIS", "MONTNER", "MOSSET", "NAHUJA", "NOHEDES", "NYER", "FONT-ROMEU-ODEILLO-VIA", "OLETTE", "OMS", "OREILLA", "OSSEJA", "PALAU-DE-CERDAGNE", "PEZILLA-DE-CONFLENT", "PLANES", "PLANEZES", "PORTA", "PORTE-PUYMORENS", "PRATS-DE-MOLLO-LA-PRESTE", "PRATS DE SOURNIA", "PRUGNANES", "PRUNET-ET-BELPUIG", "PUYVALADOR", "PY", "RABOUILLET", "RAILLEU", "RASIGUERES", "REAL", "RIGARDA", "RODES", "SAHORRE", "SAILLAGOUSE", "SAINT-ARNAC", "SAINTE-LEOCADIE", "SAINT-MARSAL", "SAINT-MARTIN", "SAINT-MICHEL-DE-LLOTES", "SAINT-PIERRE-DELS-FORCATS", "SANSA", "SAUTO", "SERDINYA", "SERRALONGUE", "SOUANYAS", "SOURNIA", "TAILLET", "TARERACH", "TARGASSONNE", "TAULIS", "TAURINYA", "LE TECH", "THUES-ENTRE-VALLS", "TORDERES", "TREVILLACH", "TRILLA", "UR", "URBANYA", "VALCEBOLLERE", "VALMANYA", "VILLEFRANCHE-DE-CONFLENT", "VIRA", "VIVES", "LE VIVIER", "SUPERBOLQUERE"], "73": ["AIGUEBLANCHE", "AILLON-LE-JEUNE", "AILLON-LE-VIEUX", "AIME", "ALBIEZ-LE-JEUNE", "ALBIEZ MONTROND", "ALLONDAZ", "LES ALLUES", "APREMONT", "ARITH", "ARVILLARD", "AUSSOIS", "LES AVANCHERS-VALMOREL", "AVRIEUX", "BEAUFORT", "BEAUNE", "BELLECOMBE-EN-BAUGES", "BELLENTRE", "BESSANS", "LE BOIS", "BONNEVAL", "BONNEVAL-SUR-ARC", "BONVILLARD", "BONVILLARET", "BOURGET-EN-HUILE", "BOURG-SAINT-MAURICE", "BOZEL", "BRAMANS", "BRIDES-LES-BAINS", "CELLIERS", "CHAMPAGNY-EN-VANOISE", "CHAMP LAURENT", "LA CHAPELLE-DU-MONT-DU-CHAT", "CHAPELLES LES", "LA CHAPELLE-SAINT-MARTIN", "LE CHATELARD", "CLERY", "COHENNOZ", "LA COMPOTE", "CONJUX", "CORBEL", "LA COTE-D'AIME", "CREST-VOLAND", "CURIENNE", "LES DESERTS", "DOUCY EN BAUGES", "ECOLE", "ENTREMONT-LE-VIEUX", "FEISSONS SUR ISERE", "FEISSONS SUR SALINS", "FLUMET", "FONTAINE-LE-PUITS", "FONTCOUVERTE-LA-TOUSSUIRE", "LA GIETTAZ", "GRANIER", "HAUTECOUR", "HAUTELUCE", "JARRIER", "JARSY", "LANDRY", "LANSLEBOURG-MONT-CENIS", "LANSLEVILLARD", "LESCHERAINES", "LONGEFOY", "MACOT-LA-PLAGNE", "MERCURY", "MONTAGNY", "MONTAIMONT", "MONTENDRY", "MONTGELLAFREY", "MONTGILBERT", "MONTGIROD", "MONTRICHER-ALBANNE", "MONTROND", "MONTSAPEY", "MONTVALEZAN", "LA MOTTE-EN-BAUGES", "NAVES", "NOTRE-DAME-DE-BELLECOMBE", "LE NOYER", "ONTEX", "ORELLE", "PEISEY-NANCROIX", "LA PERRIERE", "PLANAY", "PLANCHERINE", "LE PONTET", "PRALOGNAN-LA-VANOISE", "PUSSY", "PUYGROS", "QUEIGE", "ROGNAIX", "SAINT-ALBAN-DES-HURTIERES", "SAINT-ALBAN-DES-VILLARDS", "SAINT-ANDRE", "SAINT-BON-TARENTAISE", "ST COLOMBAN DES VILLARDS", "SAINTE-FOY-TARENTAISE", "ST FRANC", "SAINT-FRANCOIS-DE-SALES", "ST FRANCOIS LONGCHAMP", "SAINT-GEORGES-DES-HURTIERES", "ST GERMAIN LA CHAMBOTTE", "SAINT-JEAN-D'ARVES", "ST JEAN DE BELLEVILLE", "SAINT-JEAN-DE-LA-PORTE", "SAINT-MARCEL", "SAINT-MARTIN-D'ARC", "ST MARTIN DE BELLEVILLE", "SAINT-MARTIN-DE-LA-PORTE", "SAINT-MICHEL-DE-MAURIENNE", "ST NICOLAS LA CHAPELLE", "SAINT-PANCRACE", "SAINT-PIERRE-D'ALVEY", "ST PIERRE DE BELLEVILLE", "SAINT-PIERRE-DE-SOUCY", "SAINTE-REINE", "SAINT-SORLIN-D'ARVES", "SALINS LES THERMES", "SEEZ", "SOLLIERES-SARDIERES", "TERMIGNON", "THOIRY", "LA THUILE", "THYL", "TIGNES", "VAL D ISERE", "VALEZAN", "VALLOIRE", "VALMEINIER", "VERTHEMEX", "VILLARD D HERY", "VILLARD LEGER", "VILLARD SALLET", "VILLARD SUR DORON", "VILLAREMBERT", "VILLARGONDRAN", "VILLARLURIN", "VILLARODIN-BOURGET", "VILLAROGER", "LA PLAGNE", "VALFREJUS", "LA PRAZ", "VAL THORENS", "VALMOREL", "VAL CLARET", "VAL CENIS", "LA TOUSSUIRE", "LES SAISIES", "LA NORMA", "MORIOND", "MONTCHAVIN", "MERIBEL", "LES MENUIRES", "SALINS-FONTAINE", "LA FECLAZ", "COURCHEVEL", "LE CORBIER", "LES BELLEVILLE", "LA PLAGNE TARENTAISE", "LES AVANCHERS", "ARECHES", "LES ARCS", "ALBIEZ LE VIEUX", "AIME-LA-PLAGNE"], "74": ["ABONDANCE", "ALEX", "ARACHES-LA-FRASSE", "ARBUSIGNY", "AVIERNOZ", "LA BAUME", "BELLEVAUX", "BERNEX", "LE BIOT", "BOEGE", "BOGEVE", "BONNEVAUX", "LE BOUCHET", "BRIZON", "BURDIGNIN", "CHAMONIX-MONT-BLANC", "CHAMPANGES", "CHAPELLE D ABONDANCE", "LA CHAPELLE-RAMBAUD", "CHAPELLE ST MAURICE", "CHATEL", "CHATILLON-SUR-CLUSES", "CHEVENOZ", "LES CLEFS", "LA CLUSAZ", "COMBLOUX", "CONTAMINES MONTJOIE", "CONTAMINE SARZIN", "CORDON", "LA COTE-D'ARBROZ", "DEMI-QUARTIER", "ENTREMONT", "ENTREVERNES", "ESSERT-ROMAND", "ESSERTS SALEVE", "FETERNES", "LA FORCLAZ", "PETIT BORNAND LES GLIERES", "LES GETS", "LE GRAND-BORNAND", "HABERE-LULLIN", "HABERE POCHE", "LES HOUCHES", "LARRINGES", "LESCHAUX", "LUGRIN", "LULLIN", "LULLY", "LYAUD", "MANIGOD", "MAXILLY-SUR-LEMAN", "MEGEVE", "MEGEVETTE", "MENTHONNEX-EN-BORNES", "MENTHONNEX SOUS CLER", "MESSERY", "MIEUSSY", "MONNETIER-MORNEX", "MONTRIOND", "MONT SAXONNEX", "MORILLON", "MORZINE", "LA MURAZ", "NANCY-SUR-CLUSES", "NEUVECELLE", "NOVEL", "LES OLLIERES", "ONNION", "ORCIER", "PASSY", "PEILLONNEX", "LE PETIT-BORNAND-LES-GLIERES", "PRAZ-SUR-ARLY", "LE REPOSOIR", "REYVROZ", "LA RIVIERE-ENVERSE", "SAINT-ANDRE-DE-BOEGE", "SAINT-BLAISE", "SAINT-EUSTACHE", "SAINT-GERVAIS-LES-BAINS", "SAINT-JEAN-D'AULPS", "SAINT-JEAN-DE-SIXT", "SAINT-JEAN-DE-THOLOME", "SAINT-LAURENT", "SAINT-PAUL-EN-CHABLAIS", "SAINT-SIGISMOND", "SAINT-SYLVESTRE", "SAMOENS", "LE SAPPEY", "SAVIGNY", "SAXEL", "SERRAVAL", "SERVOZ", "SEYTHENEX", "SEYTROUX", "SIXT-FER-A-CHEVAL", "TANINGES", "THOLLON-LES-MEMISES", "THONES", "THORENS-GLIERES", "LA TOUR", "VACHERESSE", "VAILLY", "VALLORCINE", "VERCHAIX", "LA VERNAZ", "VILLARD", "LES VILLARDS-SUR-THONES", "VILLY-LE-BOUVERET", "VINZIER", "VOVRAY-EN-BORNES", "SANCELLEMOZ", "PRAZ DE LYS", "LES PRAZ-DE-CHAMONIX", "PRAZ COUTANT", "LE PLATEAU-D'ASSY", "ORANGE", "LE MONT-D'ARBOIS", "LE MONT-BLANC-D'ASSY", "MARTEL DE JANVILLE", "GUEBRIANT", "FLAINE", "LE CHINAILLON", "FAVERGES-SEYTHENEX", "LES CARROZ", "LES BOSSONS", "AVORIAZ", "ARGENTIERE"], "88": ["ARRENTES DE CORCIEUX", "LA BRESSE", "BAN SUR MEURTHE CLEF", "GERARDMER", "LE VALTIN", "VENTRON"]}, "urban_communes": {"06": ["NICE"], "13": ["MARSEILLE"], "21": ["DIJON"], "30": ["NIMES"], "31": ["TOULOUSE", "TOURNEFEUILLE", "COLOMIERS"], "33": ["BORDEAUX"], "34": ["MONTPELLIER", "BEAULIEU", "CASTRIES", "MONTAUD", "RESTINCLIERES", "SAINT-DREZERY", "SAINT-GENIES-DES-MOURGUES", "SUSSARGUES", "CASTELNAU-LE-LEZ", "SAINT JEAN DE VEDAS", "PEROLS", "MURVIEL-LES-MONTPELLIER", "PIGNAN", "SAUSSAN", "COURNONSEC", "COURNONTERRAL", "BAILLARGUES", "SAINT-BRES", "SAINT-GEORGES D'ORQUES", "FABREGUES", "PRADES-LE-LEZ", "VENDARGUES", "VILLENEUVE-LES-MAGUELONE", "GRABELS", "CLAPIERS", "JACOU", "LAVERUNE", "LE CRES", "LATTES", "MONTFERRIER-SUR-LEZ", "JUVIGNAC"], "35": ["RENNES"], "38": ["GRENOBLE", "VEUREY-VOROIZE", "SAINT EGREVE", "ECHIROLLES", "SEYSSINET-PARISET", "SEYSSINS", "MONTCHABOUD", "MEYLAN", "BRESSON", "EYBENS", "POISAT", "NOYAREY", "SASSENAGE", "SAINT MARTIN D'HERES", "CHAMP SUR DRAC", "JARRIE", "VARCES-ALLIERES-ET-RISSET", "FONTAINE", "GIERES", "VENON", "CLAIX", "CORENC", "LA TRONCHE", "CHAMPAGNIER", "PONT DE CLAIX", "QUAIX EN CHARTREUSE", "SAINT MARTIN LE VINOUX"], "42": ["SAINT ETIENNE", "VILLARS", "SAINT GENEST-LERPT"], "44": ["NANTES"], "45": ["ORLEANS"], "51": ["REIMS"], "54": ["NANCY"], "59": ["LILLE", "LAMBERSART", "CAPINGHEM", "HELLEMMES", "EURALILLE"], "63": ["CLERMONT-FERRAND"], "67": ["STRASBOURG", "BREUSCHWICKERSHEIM", "BLAESHEIM", "ESCHAU", "PLOBSHEIM", "REICHSTETT", "GEISPOLSHEIM", "KOLBSHEIM", "ECKBOLSHEIM", "WOLFISHEIM", "OBERSCHAEFFOLSHEIM", "ACHENHEIM", "OBERHAUSBERGEN", "MITTELHAUSBERGEN", "NIEDERHAUSBERGEN", "SCHILTIGHEIM", "LINGOLSHEIM", "ILLKIRCH-GRAFFENSTADEN", "LAMPERTHEIM", "MUNDOLSHEIM", "SOUFFELWEYERSHEIM", "OSTWALD", "ECKWERSHEIM", "VENDENHEIM", "LA WANTZENAU", "FEGERSHEIM", "LIPSHEIM", "BISCHHEIM", "HOENHEIM", "HOLTZHEIM", "ENTZHEIM", "HANGENBIETEN", "OSTHOFFEN"], "69": ["LYON", "VILLEURBANNE", "VENISSIEUX", "CALUIRE-ET-CUIRE", "BRON"], "73": ["CHAMBERY"], "74": ["ANNECY"], "76": ["ROUEN", "LE GRAND-QUEVILLY", "LE PETIT-QUEVILLY", "DARNETAL", "BOIS-GUILLAUME", "BONSECOURS", "LE MESNIL-ESNARD", "DEVILLE-LES-ROUEN", "SOTTEVILLE-LES-ROUEN", "BIHOREL", "AMFREVILLE-LA-MI-VOIE", "NOTRE-DAME-DE-BONDEVILLE"], "83": ["TOULON", "LA GARDE", "SIX-FOURS-LES-PLAGES", "LA VALETTE-DU-VAR", "OLLIOULES", "LE REVEST-LES-EAUX", "LE PRADET", "LA CRAU", "CARQUEIRANNE", "HYERES", "SAINT-MANDRIER-SUR-MER", "LA SEYNE-SUR-MER"]}}};
+const S = DATA.schenker, C = DATA.clot;
+const FMAX = S.forfait_max, PLO = S.per100_lo;
+const euro = n => n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-// état de la remise (code privilégié)
-let remise = 0;        // taux en % appliqué (0 = aucune)
-let codeRemise = '';   // code validé
-let codeSaisi = '';    // ce que le client a tapé (conservé à l'affichage)
+let svc = 'std';
+const el = id => document.getElementById(id);
 
-// coordonnées client (obligatoires avant paiement)
-let clientEmail = '';
-let clientTel = '';
+// dept name lookup
+function deptName(code){ return (S.names[code]||C[code]&&'Département '+code) || null; }
 
-/* ==========================================================
-   DONNÉES — tarif EPSILINE au 11/05/2026, prix HT unitaires
-   ========================================================== */
-const LONGUEURS = [1000,1250,1500];
-const PROFS     = [300,388,500,600,700,800,1000];
-const HAUTEURS  = [1760,2000,2280,2520,2760,3000];
-
-const POTEAU = {
-  1760:{ref:'AS01001760EAAC099',pu:9.08150},
-  2000:{ref:'AS01002000EAAC099',pu:10.34225},
-  2280:{ref:'AS01002280EAAC099',pu:11.78750},
-  2520:{ref:'AS01002520EAAC099',pu:13.04825},
-  2760:{ref:'AS01002760EAAC099',pu:14.28850},
-  3000:{ref:'AS01003000EAAC099',pu:15.51850}
-};
-
-// prix indexés [longueur][profondeur]
-const PU_TAB = {
-  1000:[13.29425,14.16550,17.44550,18.50125,20.47950,21.56600,24.82550],
-  1250:[15.69275,16.35900,19.83375,21.13550,22.87800,24.60000,27.66475],
-  1500:[17.31225,17.95800,21.35075,23.55450,24.82550,28.95625,29.62250]
-};
-const PU_ISO = {
-  1000:[2.26525,2.65475,3.21850,3.78225,4.54075,5.10450,6.24225],
-  1250:[2.83925,3.58750,4.34600,5.29925,5.66825,6.62150,8.50750],
-  1500:[3.78225,4.73550,6.42675,7.38000,8.32300,9.46075,10.58825]
-};
-const PU_TOLE = {
-  1000:[8.42550,10.51650,12.90475,14.68825,17.08675,19.50575,23.37000],
-  1250:[10.21925,12.90475,15.86700,18.27575,21.30975,23.37000,29.37650],
-  1500:[11.10075,14.08350,17.34300,19.80300,23.06250,25.50200,32.08250]
-};
-// charge de service par niveau (kg), flèche 1/200
-const CHARGE = {
-  1000:[221,221,180,180,235,215,159],
-  1250:[148,148,150,150,216,162,162],
-  1500:[71,71,76,120,117,110,94]
-};
-// nombre de profils centraux de la tablette (sert au dessin)
-const PROFILS = {300:1,388:1,500:2,600:2,700:2,800:3,1000:3};
-
-const ACCESSOIRE = {
-  pied:    {ref:'AS23000040AC00000',pu:0.70725,lib:'Pied plastique'},
-  platine: {ref:'AS23006752BB00099',pu:1.51700,lib:'Platine métal galvanisée 67×52×2,5'},
-  calage:  {ref:'AS23006752CB00099',pu:0.98400,lib:'Platine de calage'}
-};
-
-// codes de référence
-const CL = {1000:'0100',1250:'0125',1500:'0150'};
-const CP = {300:'30',388:'38',500:'50',600:'60',700:'70',800:'80',1000:'10'};
-// tablettes tubulaires à 1 tube central renforcé : suffixe 0199
-const TAB_0199 = ['1000x500','1000x600','1250x500','1250x600'];
-
-function refTablette(L,P){
-  const s = TAB_0199.includes(L+'x'+P) ? 'AAA0199' : 'AAA0099';
-  return 'AS02'+CL[L]+CP[P]+s;
+// ---- Grille tarifaire (lecture seule — édition à la source prévue plus tard) ----
+const CLOT_COLS = ['XS ≤100 kg','S 101-250 kg','1 palette','2 palettes','3 palettes','4 palettes','5 palettes','6 palettes'];
+function clotGet(dept, idx){ return idx===0 ? C[dept].xs : idx===1 ? C[dept].s : C[dept].pal[idx-2]; }
+function schCols(grid){
+  if(grid.startsWith('pallet')) return [1,2,3,4,5].map(n=>n+' palette'+(n>1?'s':''));
+  const f = FMAX.map(v=>'≤'+v+' kg');
+  const r = PLO.map((v,i)=> i<PLO.length-1 ? v+'–'+(PLO[i+1]-1)+' kg' : '≥'+v+' kg');
+  return f.concat(r);
 }
-const refIso  = (L,P) => 'AS03'+CL[L]+CP[P]+'AAA0000';
-const refTole = (L,P) => 'AS03'+CL[L]+CP[P]+'GGA0099';
+function schGet(grid, dept, idx){ return S[grid][dept][idx]; }
 
-/* ==========================================================
-   RÈGLES DE STRUCTURE
-   ========================================================== */
-const PREMIER = 40;        // 1er niveau à 40 mm du sol
-const PAS     = 40;        // perforation au pas de 40 mm
-const EP_TAB  = 32;        // épaisseur prise par la tablette dans le pas
-const ECART_MAX = 500;     // espace maximum entre 2 tablettes (montage)
-
-// nombre maximum de tablettes pour une hauteur de poteau
-function maxNiveaux(H){ return Math.floor((H-PREMIER)/(88+EP_TAB)) + 1; }
-
-// écartement utile obtenu si les n tablettes sont réparties régulièrement
-function ecartement(H,n){
-  if(n < 2) return null;
-  const pas = Math.floor((H-PREMIER)/(n-1)/PAS)*PAS;   // multiple de 40 mm
-  return {pas, utile: pas - EP_TAB};
-}
-
-const eur = v => v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
-// version PDF : jsPDF ne rend pas l'espace insécable fin (U+202F) de toLocaleString ;
-// on formate avec un espace normal comme séparateur de milliers
-const eurPdf = v => {
-  const neg = v < 0 ? '-' : '';
-  const [ent, dec] = Math.abs(v).toFixed(2).split('.');
-  const entSep = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return `${neg}${entSep},${dec} €`;
-};
-
-/* ==========================================================
-   TRANSPORT — grille au 15/02/2026 (Epsiline = grille 1)
-   dep -> [forfait 0-150, forfait 151-300, puis % par tranche] ou 'C' (consultation)
-   tranches % : 301-1500, 1501-2600, 2601-5200, 5201-7800, 7801-10000, >10000
-   forfait si total < 300 € · % appliqué au total HT au-delà
-   ========================================================== */
-const TRANSPORT = {"01":[24.0312,39.1986,0.10812,0.0765,0.06528,0.05202,0.04284,0.0306],"02":[24.61199,43.30027,0.088478,0.059345,0.045318,0.036686,0.031291,0.020501],"03":[27.6726,40.9326,0.1173,0.08364,0.07446,0.04692,0.04284,0.02856],"04":[41.3202,53.9988,0.15198,0.10914,0.10404,0.07446,0.06528,0.04998],"05":[40.7388,52.8462,0.1479,0.10914,0.10404,0.07446,0.06528,0.04998],"06":[33.2214,52.8054,0.1377,0.11322,0.10914,0.07344,0.06222,0.04896],"07":[38.25,50.1534,0.1428,0.10506,0.09792,0.07854,0.0561,0.04182],"08":[23.17692,29.27327,0.102505,0.055029,0.05395,0.033449,0.026975,0.019422],"09":[40.341,53.0502,0.1377,0.10812,0.10404,0.0867,0.0765,0.051],"10":[29.27327,38.82242,0.116532,0.07553,0.069056,0.042081,0.03237,0.020501],"11":[40.341,53.0502,0.14382,0.11628,0.10506,0.0867,0.07446,0.0561],"12":[39.1986,51.306,0.1479,0.11628,0.08976,0.07956,0.06528,0.051],"13":[28.917,40.6266,0.11934,0.0918,0.08874,0.07344,0.06834,0.04896],"14":[30.50333,38.82242,0.098189,0.069056,0.05395,0.042081,0.034528,0.026975],"15":[39.1986,51.1224,0.14382,0.08976,0.08364,0.07344,0.06222,0.04284],"16":[30.9264,40.9326,0.15606,0.08976,0.0816,0.0612,0.051,0.03264],"17":[32.4768,43.6254,0.1428,0.08976,0.0816,0.0612,0.051,0.03264],"18":[30.3756,42.4626,0.1224,0.0765,0.06528,0.04998,0.03978,0.02448],"19":[35.9448,57.0894,0.1377,0.08976,0.07956,0.06528,0.05406,0.03876],"20":"C","21":[27.1116,37.0872,0.1071,0.0765,0.06528,0.04998,0.03978,0.0255],"22":[35.547,44.1966,0.1377,0.09792,0.06528,0.05814,0.03978,0.03264],"23":[34.986,45.3594,0.13056,0.0765,0.06528,0.05814,0.04998,0.03264],"24":[33.4356,44.0028,0.11934,0.08976,0.08364,0.06324,0.05406,0.03876],"25":[34.7718,42.8604,0.1224,0.0816,0.07242,0.05304,0.04488,0.03162],"26":[27.6726,39.1986,0.09792,0.08874,0.08364,0.05202,0.051,0.04998],"27":[27.03974,37.0097,0.094952,0.067977,0.052871,0.034528,0.03237,0.020501],"28":[28.054,37.0097,0.111137,0.06474,0.05395,0.042081,0.035607,0.02158],"29":[36.3222,48.2358,0.1428,0.08874,0.0816,0.07242,0.0561,0.03876],"30":[29.784,43.8294,0.11016,0.10812,0.10812,0.06528,0.06426,0.051],"31":[26.5812,38.505,0.11628,0.0918,0.08262,0.06222,0.05304,0.04488],"32":[41.1162,53.9988,0.1377,0.10608,0.09792,0.0816,0.06732,0.04998],"33":[35.3022,56.3346,0.10404,0.08364,0.0816,0.06426,0.0612,0.04182],"34":[31.0794,53.3868,0.10608,0.09486,0.09486,0.06528,0.06426,0.05304],"35":[34.4046,41.3202,0.10914,0.0765,0.05814,0.03978,0.03366,0.03162],"36":[35.547,42.4626,0.1173,0.06528,0.0612,0.04692,0.03978,0.02754],"37":[28.0602,38.046,0.10608,0.07956,0.07752,0.04998,0.03978,0.02754],"38":[24.2352,35.1594,0.10506,0.07038,0.06732,0.051,0.051,0.03366],"39":[28.8354,42.8604,0.11016,0.0765,0.0663,0.0561,0.04692,0.03162],"40":[34.4046,45.543,0.1275,0.10404,0.09792,0.07854,0.0714,0.051],"41":[30.9264,41.3202,0.10506,0.06426,0.05406,0.03978,0.0357,0.02346],"42":[25.1838,39.5862,0.09792,0.06426,0.06426,0.04284,0.04182,0.03366],"43":[32.283,44.1966,0.12648,0.08772,0.07446,0.0612,0.05202,0.0357],"44":[34.221,43.095,0.09894,0.07446,0.06834,0.051,0.04284,0.0306],"45":[30.28753,46.75307,0.105742,0.061503,0.049634,0.042081,0.035607,0.020501],"46":[41.1162,44.7678,0.1479,0.10404,0.08874,0.07344,0.06732,0.04692],"47":[35.1696,39.1986,0.1479,0.0969,0.09282,0.07548,0.06528,0.051],"48":[40.1676,54.1926,0.1581,0.1224,0.1224,0.07548,0.06528,0.051],"49":[28.8354,45.543,0.10506,0.0765,0.06426,0.05814,0.0459,0.02856],"50":[35.547,51.1224,0.10914,0.07242,0.06426,0.0459,0.04284,0.02856],"51":[27.03974,46.36463,0.103584,0.058266,0.049634,0.035607,0.03237,0.019422],"52":[34.35536,43.30027,0.102505,0.063661,0.060424,0.042081,0.041002,0.023738],"53":[29.2026,31.3242,0.1173,0.07242,0.06834,0.04386,0.03978,0.02448],"54":[37.60315,43.71029,0.124085,0.055029,0.05395,0.03237,0.029133,0.023738],"55":[30.89177,38.63899,0.102505,0.072293,0.055029,0.03237,0.029133,0.025896],"56":[39.1986,41.3202,0.12852,0.08466,0.07752,0.06324,0.051,0.03468],"57":[29.47828,41.87599,0.102505,0.058266,0.049634,0.036686,0.029133,0.02158],"58":[35.3634,45.543,0.11526,0.06732,0.05814,0.051,0.03978,0.02448],"59":[17.4798,38.25055,0.061503,0.03237,0.030212,0.018343,0.015106,0.011869],"60":[23.57615,41.87599,0.088478,0.059345,0.046397,0.033449,0.029133,0.019422],"61":[30.89177,45.73881,0.116532,0.067977,0.060424,0.04316,0.035607,0.023738],"62":[18.70986,38.25055,0.06474,0.046397,0.044239,0.020501,0.020501,0.012948],"63":[32.4768,43.2378,0.10812,0.06528,0.06018,0.04386,0.04284,0.03366],"64":[32.6808,43.2378,0.1479,0.11322,0.08364,0.07446,0.06732,0.04998],"65":[33.4356,40.9326,0.13668,0.11832,0.08262,0.07446,0.06732,0.04998],"66":[33.6294,45.543,0.13974,0.11322,0.09792,0.07446,0.06732,0.05202],"67":[29.93146,47.476,0.110058,0.071214,0.051792,0.033449,0.03237,0.024817],"68":[31.09678,48.79238,0.120848,0.05395,0.05395,0.036686,0.03237,0.026975],"69":[16.6056,39.4128,0.0765,0.04386,0.04284,0.03978,0.03876,0.03162],"70":[29.6004,41.514,0.10404,0.07344,0.05202,0.051,0.04182,0.02856],"71":[24.99,45.543,0.08772,0.06834,0.05814,0.04182,0.0408,0.03264],"72":[28.4478,40.1676,0.11424,0.06018,0.04386,0.04182,0.03264,0.02244],"73":[21.1446,35.547,0.0765,0.06732,0.06222,0.05814,0.04692,0.03468],"74":[21.5118,40.1676,0.11832,0.07446,0.06324,0.05814,0.04692,0.03468],"75":[28.054,34.57116,0.113295,0.061503,0.049634,0.034528,0.030212,0.020501],"76":[27.41739,67.41592,0.090636,0.05395,0.045318,0.03237,0.031291,0.020501],"77":[25.63704,46.37542,0.110058,0.05395,0.052871,0.03237,0.030212,0.020501],"78":[26.64051,37.20392,0.113295,0.056108,0.052871,0.033449,0.031291,0.020501],"79":[30.9264,40.9326,0.10914,0.0714,0.06528,0.05202,0.04386,0.02958],"80":[23.57615,41.87599,0.088478,0.059345,0.036686,0.030212,0.024817,0.015106],"81":[29.6004,43.2378,0.1173,0.0969,0.08772,0.0765,0.06834,0.04998],"82":[29.6004,43.2378,0.11934,0.09996,0.08976,0.07446,0.06528,0.04998],"83":[29.2434,48.3072,0.1224,0.09486,0.08874,0.0765,0.0663,0.04998],"84":[29.0088,43.6254,0.10506,0.09792,0.09792,0.06426,0.05508,0.04182],"85":[34.4046,44.5842,0.11118,0.0765,0.0663,0.051,0.04998,0.03162],"86":[30.3756,41.8914,0.1173,0.0765,0.06426,0.051,0.04182,0.02958],"87":[33.4356,44.3904,0.10914,0.0765,0.06834,0.05508,0.051,0.02958],"88":[31.5068,42.49102,0.114374,0.069056,0.061503,0.047476,0.041002,0.026975],"89":[31.5068,44.71376,0.123006,0.069056,0.055029,0.042081,0.036686,0.025896],"90":[32.283,39.1986,0.11016,0.07956,0.07854,0.051,0.04182,0.02958],"91":[30.50333,42.28601,0.111137,0.061503,0.045318,0.033449,0.029133,0.020501],"92":[29.68329,45.73881,0.113295,0.05395,0.042081,0.034528,0.029133,0.019422],"93":[29.68329,46.40779,0.113295,0.05395,0.042081,0.041002,0.029133,0.019422],"94":[29.68329,45.73881,0.113295,0.05395,0.042081,0.03237,0.029133,0.019422],"95":[31.5068,41.68177,0.113295,0.052871,0.051792,0.03237,0.029133,0.019422],"AUTRE":"C"};
-
-function calculTransport(total, dep){
-  const g = TRANSPORT[dep];
-  if(!g) return {val:null, txt:'—'};
-  if(g === 'C') return {val:null, txt:'Sur consultation', consult:true};
-  if(total <= 0) return {val:0, txt:'0,00 €'};
-  if(total <= 150)  return {val:g[0], txt:'forfait'};
-  if(total <= 300)  return {val:g[1], txt:'forfait'};
-  let pct;
-  if(total <= 1500)      pct=g[2];
-  else if(total <= 2600) pct=g[3];
-  else if(total <= 5200) pct=g[4];
-  else if(total <= 7800) pct=g[5];
-  else if(total <= 10000)pct=g[6];
-  else                   pct=g[7];
-  return {val: total*pct, txt:(pct*100).toLocaleString('fr-FR',{maximumFractionDigits:3})+' %'};
-}
-
-/* ==========================================================
-   ÉTAT
-   ========================================================== */
-const $ = id => document.getElementById(id);
-let devis = [];
-
-// groupes d'options (recouvrement, appui au sol) — lecture / écriture
-const getOpt = id => $(id).querySelector('.opt.on').dataset.v;
-const setOpt = (id,v) => $(id).querySelectorAll('.opt').forEach(o=>
-  o.classList.toggle('on', o.dataset.v===v));
-// appui au sol : appui principal (radio parmi pied/platine/aucun) + cales (toggle cumulable)
-const getAppui = () => {
-  const on = [...$('pd').querySelectorAll('.opt.on')].map(o=>o.dataset.v);
-  return on.find(v=>v!=='calage') || 'aucun';
-};
-const getCalage = () => $('pd').querySelector('.opt[data-v="calage"]').classList.contains('on');
-const setAppui = (pd, calage) => {
-  $('pd').querySelectorAll('.opt').forEach(o=>{
-    if(o.dataset.v==='calage') o.classList.toggle('on', !!calage && pd!=='aucun');
-    else o.classList.toggle('on', o.dataset.v===pd);
+function openTarif(carrier, grid, dept, idx){
+  const cols = carrier==='clot' ? CLOT_COLS : schCols(grid);
+  const depts = Object.keys(carrier==='clot' ? C : S[grid]).sort();
+  const get = (d,i)=> carrier==='clot' ? clotGet(d,i) : schGet(grid,d,i);
+  let rows='';
+  depts.forEach(d=>{
+    const isHl = d===dept;
+    let cells='';
+    cols.forEach((label,i)=>{
+      const cellHl = isHl && i===idx;
+      cells += `<td class="${cellHl?'hl':''}">${euro(get(d,i))}</td>`;
+    });
+    rows += `<tr class="${isHl?'hlrow':''}" id="tarifrow-${carrier}-${grid}-${d}"><th>${d}${isHl?' ←':''}</th>${cells}</tr>`;
   });
-};
-let editIndex = -1;   // -1 = ajout ; sinon index du rayonnage en cours d'édition
-let departement = ''; // département de livraison (donnée globale du devis)
-
-// nombre de travées par longueur (ordre d'affichage = 1000 puis 1250 puis 1500)
-let nbTravees = {1000:3, 1250:0, 1500:0};
-
-// construit le tableau des longueurs, travées de 1000 d'abord, puis 1250, puis 1500
-function longsFromCompteur(){
-  const arr = [];
-  LONGUEURS.forEach(L => { for(let i=0;i<(nbTravees[L]||0);i++) arr.push(L); });
-  return arr;
+  const head = '<th></th>'+cols.map(c=>`<th>${c}</th>`).join('');
+  let titleGrid;
+  const altSuffix = grid.endsWith('_alt') ? ' (localités d\'altitude)' : '';
+  if(carrier==='clot') titleGrid='Grille tarifaire';
+  else if(grid==='system'||grid==='system_alt') titleGrid='Tarif au poids — Standard'+altSuffix;
+  else if(grid==='prem13'||grid==='prem13_alt') titleGrid='Tarif au poids — Premium 13'+altSuffix;
+  else if(grid==='pallet'||grid==='pallet_alt') titleGrid='Tarif à la palette — Standard'+altSuffix;
+  else titleGrid='Tarif à la palette — Premium 13'+altSuffix;
+  el('modalTitle').textContent = (carrier==='clot'?'CLOT':'DB Schenker')+' — '+titleGrid;
+  el('modalTable').innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  el('modalOverlay').classList.add('open');
+  requestAnimationFrame(()=>{ const row=document.getElementById(`tarifrow-${carrier}-${grid}-${dept}`); if(row) row.scrollIntoView({block:'center'}); });
 }
-const totalTravees = () => LONGUEURS.reduce((s,L)=>s+(nbTravees[L]||0),0);
+function closeTarif(){ el('modalOverlay').classList.remove('open'); }
+el('modalOverlay').addEventListener('click', e=>{ if(e.target===el('modalOverlay')) closeTarif(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeTarif(); });
 
-function initSelects(){
-  $('pf').innerHTML = PROFS.map(v=>`<option value="${v}">${v} mm</option>`).join('');
-  $('ht').innerHTML = HAUTEURS.map(v=>`<option value="${v}"${v===2000?' selected':''}>${v} mm</option>`).join('');
-  $('pf').value = 500;
-  $('nv').value = 5;
+document.querySelectorAll('#svc button').forEach(b=>{
+  b.onclick=()=>{ svc=b.dataset.v;
+    document.querySelectorAll('#svc button').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    render(); };
+});
+['poids','pal','palkg','cp','tgoClot','tgoSch','fraisClot','fraisSch','ville'].forEach(id=> el(id).addEventListener('input', render));
+el('altitude').addEventListener('change', render);
+el('urbain').addEventListener('change', render);
+el('palMinus').onclick=()=>{ const v=Math.max(0,(parseInt(el('pal').value,10)||0)-1); el('pal').value=v; render(); };
+el('palPlus').onclick=()=>{ const v=Math.min(6,(parseInt(el('pal').value,10)||0)+1); el('pal').value=v; render(); };
+
+const padDept = n => String(n).padStart(2,'0');
+function currentDeptNum(){
+  let v=(el('cp').value||'').trim();
+  if(/^[0-9]$/.test(v)) v='0'+v;
+  const d=cpToDept(v);
+  return d ? parseInt(d,10) : 54;
 }
 
-function lire(){
-  const P = +$('pf').value, H = +$('ht').value;
-  const max = maxNiveaux(H);
-  $('nv').max = max;
-  let n = Math.min(Math.max(+$('nv').value||2,2),max);
-  if(+$('nv').value !== n) $('nv').value = n;
-  const q = Math.max(+$('qt').value||1,1);
-  const lg = longsFromCompteur();
-  const t = lg.length;
-  return {P,H,n,t,q,longs:lg,rec:getOpt('rec'),pd:getAppui(),calage:getCalage(),max};
-}
-
-/* ==========================================================
-   NOMENCLATURE
-   travée départ : 4 poteaux · travée suite : 2 poteaux
-   → 2 × travées + 2 poteaux au total
-   ========================================================== */
-function nomenclature(c){
-  const iP = PROFS.indexOf(c.P);
-  const nbPoteaux = 2*c.t + 2;
-  const lignes = [];
-
-  // poteaux : nombre inchangé, indépendant des longueurs (poteaux communs partagés)
-  lignes.push({lib:`Poteau galvanisé ${c.H} mm`, ref:POTEAU[c.H].ref, qte:nbPoteaux, pu:POTEAU[c.H].pu});
-
-  // tablettes regroupées par longueur de travée
-  const parLong = {};
-  c.longs.forEach(L => parLong[L] = (parLong[L]||0) + c.n);   // n niveaux par travée
-  const longsTriees = Object.keys(parLong).map(Number).sort((a,b)=>a-b);
-
-  longsTriees.forEach(L=>{
-    const q = parLong[L];
-    lignes.push({lib:`Tablette tubulaire ${L}×${c.P}`, ref:refTablette(L,c.P), qte:q, pu:PU_TAB[L][iP]});
-  });
-  if(c.rec==='iso') longsTriees.forEach(L=>
-    lignes.push({lib:`Dessus isobois naturel ${L}×${c.P}`, ref:refIso(L,c.P), qte:parLong[L], pu:PU_ISO[L][iP]}));
-  if(c.rec==='tole') longsTriees.forEach(L=>
-    lignes.push({lib:`Dessus tôle galvanisée ${L}×${c.P}`, ref:refTole(L,c.P), qte:parLong[L], pu:PU_TOLE[L][iP]}));
-
-  if(c.pd!=='aucun'){
-    const a = ACCESSOIRE[c.pd];
-    lignes.push({lib:a.lib, ref:a.ref, qte:nbPoteaux, pu:a.pu});
+// Un changement de département invalide la ville et les cases altitude/centre urbain saisies pour l'ancien département.
+let lastDept = cpToDept(el('cp').value);
+function resetCityIfDeptChanged(){
+  const d = cpToDept(el('cp').value);
+  if(d !== lastDept){
+    el('ville').value='';
+    el('villesuggest').innerHTML='';
+    el('altitude').checked=false;
+    el('urbain').checked=false;
+    villeAuto=false;
+    lastDept = d;
   }
-  // cales de niveau : cumulables, une par poteau (sauf appui = aucun)
-  if(c.calage && c.pd!=='aucun'){
-    const cal = ACCESSOIRE.calage;
-    lignes.push({lib:cal.lib, ref:cal.ref, qte:nbPoteaux, pu:cal.pu});
-  }
-  lignes.forEach(l => l.total = l.qte * l.pu);
-  return lignes;
 }
 
-const totalLignes = l => l.reduce((s,x)=>s+x.total,0);
+el('cpMinus').onclick=()=>{ el('cp').value=padDept(Math.max(1,currentDeptNum()-1)); resetCityIfDeptChanged(); render(); };
+el('cpPlus').onclick=()=>{ el('cp').value=padDept(Math.min(98,currentDeptNum()+1)); resetCityIfDeptChanged(); render(); };
+el('cp').addEventListener('blur', ()=>{
+  const v=el('cp').value.trim();
+  if(/^[0-9]$/.test(v)){ el('cp').value='0'+v; }
+  resetCityIfDeptChanged();
+  render();
+});
 
-// formate les longueurs façon "2x1000+1250+1500" (ordre 1000,1250,1500)
-function fmtLongs(longs){
-  return LONGUEURS.filter(L=>longs.includes(L)).map(L=>{
-    const n = longs.filter(x=>x===L).length;
-    return n>1 ? `${n}x${L}` : `${L}`;
-  }).join('+');
-}
-
-function libelle(c){
-  const rec = {aucun:'tablettes nues', iso:'dessus isobois', tole:'dessus tôle galva'}[c.rec];
-  const pd = {pied:'pieds plastique', platine:'platines métal', calage:'cales de niveau', aucun:'sans appui'}[c.pd];
-  const cal = (c.calage && c.pd!=='aucun') ? ' + 1 cale/pied' : '';
-  return `Rayonnage H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} — ${c.n} niveaux, ${rec}, ${pd}${cal}`;
-}
-
-/* ==========================================================
-   DESSIN — projection cavalière, redessinée à chaque choix
-   ========================================================== */
-function svgMarkup(c){
-  const DX = 0.46, DY = 0.30;                       // fuyante
-  const prof = c.P, haut = c.H;
-  // bornes horizontales cumulées : une par poteau (t+1 bornes)
-  const bornes = [0];
-  c.longs.forEach(L => bornes.push(bornes[bornes.length-1] + L));
-  const larg = bornes[bornes.length-1];             // largeur totale (somme des travées)
-  const largTot = larg + 30;                        // +30 mm : poteaux extérieurs débordants
-  const W = largTot + prof*DX, Hh = haut + prof*DY;
-  const s = Math.min(600/W, 340/Hh);                // échelle d'ajustement
-  const ox = (700 - W*s)/2 + 15*s, oy = 385 - prof*DY*s;
-
-  const X = (x,z) => ox + (x + z*DX)*s;
-  const Y = (y,z) => oy - (y + z*DY)*s;
-  const pt = (x,y,z) => X(x,z)+','+Y(y,z);
-
-  const e = ecartement(c.H, c.n);
-  const niveaux = [];
-  for(let i=0;i<c.n;i++) niveaux.push(PREMIER + i*(e?e.pas:0));
-
-  const POT = 40;                                    // largeur apparente du poteau
-  const o = [];
-  o.push(`<rect x="0" y="0" width="700" height="420" fill="none"/>`);
-
-  // ---- ombre au sol
-  o.push(`<polygon points="${pt(0,0,0)} ${pt(larg,0,0)} ${pt(larg,0,prof)} ${pt(0,0,prof)}"
-           fill="#000" opacity=".07"/>`);
-
-  const poteauX = bornes.slice();                    // abscisse de chaque poteau
-
-  // ---- poteaux arrière (z = prof)
-  const poteau = (x,z,face) => {
-    const w = POT;
-    return `<polygon points="${pt(x-w/2,0,z)} ${pt(x+w/2,0,z)} ${pt(x+w/2,c.H,z)} ${pt(x-w/2,c.H,z)}"
-            fill="${face}" stroke="#5c6875" stroke-width=".7"/>`;
-  };
-  poteauX.forEach(x => o.push(poteau(x, prof, '#7d8a97')));
-
-  // ---- tablettes, du bas vers le haut
-  const nbTubes = PROFILS[c.P] + 2;
-  niveaux.forEach(y=>{
-    for(let k=0;k<c.t;k++){
-      const x0 = bornes[k], x1 = bornes[k+1];
-      const rempli = c.rec!=='aucun';
-      if(rempli){
-        // recouvrement : surface pleine (isobois ou tôle)
-        const fill = c.rec==='iso' ? '#c89a5b' : '#c2cad3';
-        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y,prof)} ${pt(x0,y,prof)}"
-                fill="${fill}" stroke="#6d7a87" stroke-width=".7"/>`);
-      } else {
-        // tablette tubulaire nue : tubes fins (section 20×20 mm) avec du vide entre eux
-        const larg_tube = 20;                        // section réelle du tube, en mm
-        for(let j=0;j<nbTubes;j++){
-          const zc = prof*(j+0.5)/nbTubes;            // centre du tube
-          const za = zc - larg_tube/2, zb = zc + larg_tube/2;
-          o.push(`<polygon points="${pt(x0,y,za)} ${pt(x1,y,za)} ${pt(x1,y,zb)} ${pt(x0,y,zb)}"
-                  fill="#c3ccd5" stroke="#7a8794" stroke-width=".6"/>`);
-        }
-      }
-      // chant de façade
-      if(rempli){
-        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y-26,0)} ${pt(x0,y-26,0)}"
-                fill="${c.rec==='iso'?'#a87f45':'#aab5c0'}" stroke="#6d7a87" stroke-width=".7"/>`);
-      } else {
-        // deux tubes de façade (section 20 mm), superposés
-        o.push(`<polygon points="${pt(x0,y,0)} ${pt(x1,y,0)} ${pt(x1,y-20,0)} ${pt(x0,y-20,0)}"
-                fill="#aab5c0" stroke="#7a8794" stroke-width=".6"/>`);
-        o.push(`<polygon points="${pt(x0,y-24,0)} ${pt(x1,y-24,0)} ${pt(x1,y-44,0)} ${pt(x0,y-44,0)}"
-                fill="#aab5c0" stroke="#7a8794" stroke-width=".6"/>`);
-      }
+// ---- Auto-remplissage de la ville via l'API publique geo.api.gouv.fr (gratuite, sans clé) ----
+let villeAuto=false, cpFetchTimer=null;
+el('ville').addEventListener('input', ()=>{ villeAuto=false; el('villesuggest').innerHTML=''; });
+el('ville').addEventListener('blur', ()=>{ autoFlagFromVille(); render(); });
+el('cp').addEventListener('input', ()=>{
+  resetCityIfDeptChanged();
+  clearTimeout(cpFetchTimer);
+  const v=el('cp').value.trim();
+  el('villesuggest').innerHTML='';
+  if(!/^[0-9]{5}$/.test(v)) return;
+  cpFetchTimer=setTimeout(()=>lookupCommunes(v), 250);
+});
+async function lookupCommunes(cp){
+  try{
+    const res = await fetch(`https://geo.api.gouv.fr/communes?codePostal=${cp}&fields=nom&format=json`);
+    if(!res.ok) return;
+    const list = await res.json();
+    if(!Array.isArray(list) || !list.length) return;
+    if(list.length===1){
+      if(!el('ville').value || villeAuto){ el('ville').value=list[0].nom; villeAuto=true; autoFlagFromVille(); render(); }
+    } else {
+      el('villesuggest').innerHTML = list.map(c=>
+        `<button type="button" class="villechip" onclick="pickVille(this.textContent)">${c.nom}</button>`
+      ).join('');
     }
-  });
+  }catch(e){ /* hors ligne ou API injoignable : on laisse la saisie manuelle */ }
+}
+function pickVille(nom){ el('ville').value=nom; villeAuto=true; el('villesuggest').innerHTML=''; autoFlagFromVille(); render(); }
 
-  // ---- poteaux avant (z = 0) — dessinés en dernier
-  poteauX.forEach(x => o.push(poteau(x, 0, '#9aa6b2')));
+// ---- Détection auto localités d'altitude / centres urbains selon la ville saisie ----
+function normName(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+function checkCityFlags(dept, ville){
+  const n = normName(ville);
+  if(!n || !dept) return;
+  const alt = S.altitude_communes && S.altitude_communes[dept];
+  if(alt && alt.some(c=>normName(c)===n)) el('altitude').checked = true;
+  const urb = S.urban_communes && S.urban_communes[dept];
+  if(urb && urb.some(c=>normName(c)===n)) el('urbain').checked = true;
+}
+function autoFlagFromVille(){ checkCityFlags(cpToDept(el('cp').value), el('ville').value); }
 
-  // ---- étiquette de charge sur la tablette du haut de chaque travée
-  const iPo = PROFS.indexOf(c.P);
-  const yTop = niveaux[c.n-1];
-  for(let k=0;k<c.t;k++){
-    const cx = X((bornes[k]+bornes[k+1])/2, prof/2);   // centré sur le milieu de la tablette (suit la fuyante)
-    const cy = Y(yTop, prof/2) - 30;                     // au-dessus de la tablette haute (espace blanc)
-    const kg = CHARGE[c.longs[k]][iPo];
-    const txt = `${kg} kg`;
-    const w = 40 + txt.length*6.4;
-    const ix = cx - w/2 + 13;                         // centre du pictogramme
-    const tx = ix + 11;                               // début du texte, à droite de l'icône
-    o.push(`<g font-family="Inter,Arial">
-      <rect x="${cx-w/2}" y="${cy-11}" width="${w}" height="19" rx="9.5"
-            fill="#fff" stroke="#0f6ea8" stroke-width="1"/>
-      <path d="M ${ix-4} ${cy+4} L ${ix-2.6} ${cy-4} L ${ix+2.6} ${cy-4} L ${ix+4} ${cy+4} Z"
-            fill="#0f6ea8"/>
-      <path d="M ${ix-1.6} ${cy-4} a 1.6 1.6 0 0 1 3.2 0"
-            fill="none" stroke="#0f6ea8" stroke-width="1"/>
-      <text x="${tx}" y="${cy+3.5}" fill="#0c4d74" font-size="10.5"
-            font-weight="600" text-anchor="start">${txt}</text>
-    </g>`);
-  }
-
-  // ---- cotes
-  const cote = (x1,y1,x2,y2,txt,dx=0,dy=0) =>
-    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#0f6ea8" stroke-width=".9"/>
-     <text x="${(x1+x2)/2+dx}" y="${(y1+y2)/2+dy}" fill="#0f6ea8" font-size="11"
-       font-family="Inter,Arial" text-anchor="middle">${txt}</text>`;
-  // largeur : une cote par travée (montre les longueurs mixtes)
-  for(let k=0;k<c.t;k++){
-    const xa = X(bornes[k],0), xb = X(bornes[k+1],0), yb = Y(0,0)+22;
-    o.push(cote(xa+ (k===0?-15*s:0), yb, xb + (k===c.t-1?15*s:0), yb, `${c.longs[k]}`, 0, 13));
-    // petits traits de séparation
-    o.push(`<line x1="${xa}" y1="${yb-4}" x2="${xa}" y2="${yb+4}" stroke="#0f6ea8" stroke-width=".9"/>`);
-  }
-  o.push(`<text x="${(X(0,0)+X(larg,0))/2}" y="${Y(0,0)+50}" fill="#5d6b7a" font-size="10.5"
-     font-family="Inter,Arial" text-anchor="middle">${largTot} mm hors tout</text>`);
-  // hauteur, reportée le long du poteau arrière droit
-  o.push(cote(X(larg,prof)+22, Y(0,prof), X(larg,prof)+22, Y(c.H,prof), `${c.H} mm`, 26, 0));
-  // profondeur, en bas le long de la fuyante
-  o.push(cote(X(larg,0)+8, Y(0,0)+6, X(larg,prof)+8, Y(0,prof)+6, `${prof} mm`, 30, 12));
-
-  // viewBox dynamique : borne haute = badge de charge, borne basse = cotes du bas
-  const yHautBadge = Y(niveaux[c.n-1], prof/2) - 30 - 11 - 4;   // haut du badge + marge
-  const yBasCotes  = Y(0,0) + 58;                                // sous le texte "hors tout"
-  const vTop = Math.floor(yHautBadge);
-  const vH   = Math.ceil(yBasCotes - yHautBadge);
-  svgMarkup.lastViewBox = `0 ${vTop} 700 ${vH}`;
-
-  return o.join('');
+function cpToDept(v){
+  v=(v||'').trim();
+  if(v.length>=2){ let d=v.slice(0,2); if(d==='20') return '20'; return d; }
+  return null;
 }
 
-function dessiner(c){
-  const svg = svgMarkup(c);
-  const el = $('dessin');
-  el.innerHTML = svg;
-  if(svgMarkup.lastViewBox) el.setAttribute('viewBox', svgMarkup.lastViewBox);
+// Schenker weight price
+function schWeight(code, poids, grid){
+  const v = S[grid][code]; if(!v) return null;
+  if(poids<=100){
+    for(let i=0;i<FMAX.length;i++){ if(poids<=FMAX[i]) return {p:v[i], how:'forfait ≤'+FMAX[i]+' kg', idx:i}; }
+  }
+  for(let i=PLO.length-1;i>=0;i--){
+    if(poids>=PLO[i]){ const t=v[9+i]; return {p: Math.round(poids/100*t*100)/100, how:euro(t)+' €/100 kg × '+poids+' kg', idx:9+i}; }
+  }
+  return null;
+}
+function schPallet(code, npal, grid){
+  const v=S[grid][code]; if(!v||npal<1||npal>5) return null;
+  return {p:v[npal-1], how:npal+' palette'+(npal>1?'s':''), idx:npal-1};
 }
 
-/* ==========================================================
-   RENDU
-   ========================================================== */
-function rendreTravees(){
-  $('travees').innerHTML = LONGUEURS.map(L=>{
-    const n = nbTravees[L]||0;
-    return `<div class="tvl">
-      <span class="lab">L.${L}</span>
-      <div class="stepper">
-        <button type="button" data-tvl="${L}" data-d="-1">−</button>
-        <input type="number" data-tvl-inp="${L}" min="0" max="20" value="${n}">
-        <button type="button" data-tvl="${L}" data-d="1">+</button>
-      </div>
-      <span class="cnt">${n>0 ? n+' travée'+(n>1?'s':'') : ''}</span>
+function render(){
+  const poidsMarch=parseFloat(el('poids').value);
+  const npal=parseInt(el('pal').value,10);
+  const palkg=parseFloat(el('palkg').value)||0;
+  const dept=cpToDept(el('cp').value);
+  const tgoClot=parseFloat(el('tgoClot').value)||0;
+  const tgoSch=parseFloat(el('tgoSch').value)||0;
+  const fraisClot=parseFloat(el('fraisClot').value)||0;
+  const fraisSch=parseFloat(el('fraisSch').value)||0;
+  const name=dept?deptName(dept):null;
+  el('deptname').textContent = dept ? (name?('→ '+name):('Département '+dept+' inconnu')) : '';
+
+  const poidsPal = (!isNaN(npal) && npal>0) ? npal*palkg : 0;
+  el('poidstotalfield').value = poidsMarch ? (poidsMarch+poidsPal) : '';
+
+  const out=el('out');
+  if(!poidsMarch||!dept||isNaN(npal)){
+    out.innerHTML='<div class="empty">Renseignez au moins le poids, les palettes et le département.</div>';
+    el('clotBrut').value=''; el('schBrut').value='';
+    return;
+  }
+  const poids = poidsMarch + poidsPal;
+  const fClot = 1 + tgoClot/100;
+  const fSch = 1 + tgoSch/100;
+  const wGridBase = svc==='std'?'system':'prem13';
+  const pGridBase = svc==='std'?'pallet':'palletp';
+  const altitude = el('altitude').checked;
+  const urbain = el('urbain').checked;
+  const hasAltW = altitude && S[wGridBase+'_alt'] && S[wGridBase+'_alt'][dept];
+  const hasAltP = altitude && S[pGridBase+'_alt'] && S[pGridBase+'_alt'][dept];
+  const wGrid = hasAltW ? wGridBase+'_alt' : wGridBase;
+  const pGrid = hasAltP ? pGridBase+'_alt' : pGridBase;
+  const URBAIN_FEE = 10.25;
+
+  // ---- Schenker ----
+  let sBest=null, sDetail='', sWarn='';
+  const sw = schWeight(dept, poids, wGrid);
+  const sp = npal>=1 ? schPallet(dept, npal, pGrid) : null;
+  const opts=[];
+  if(sw) opts.push({mode:'au poids', base:sw.p, how:sw.how, grid:wGrid, idx:sw.idx});
+  if(sp) opts.push({mode:'à la palette', base:sp.p, how:sp.how, grid:pGrid, idx:sp.idx});
+  if(opts.length){
+    opts.forEach(o=>o.final=Math.round((o.base*fSch+fraisSch+(urbain?URBAIN_FEE:0))*100)/100);
+    opts.sort((a,b)=>a.final-b.final);
+    sBest=opts[0];
+    const other=opts[1];
+    sDetail='<span class="k">Retenu :</span> '+sBest.mode+' — '+sBest.how;
+    if(other) sDetail+='<br><span class="k">Autre option :</span> '+other.mode+' '+euro(other.final)+' €';
+  } else {
+    if(npal>5) sWarn='Schenker palette s\'arrête à 5 ; au-delà, consultez un tarif spécifique.';
+  }
+  if(altitude && !hasAltW && !hasAltP){
+    sWarn=(sWarn?sWarn+' ':'')+'Aucune zone d\'altitude référencée pour ce département — tarif standard appliqué.';
+  }
+
+  // ---- CLOT ----
+  const c=C[dept]; let cVal=null, cHow='', cDelai='', cWarn='', clotIdx=null;
+  if(c){
+    if(poids<=100){ cVal=c.xs; cHow='XS (≤100 kg)'; clotIdx=0; }
+    else if(poids<=250){ cVal=c.s; cHow='S (101-250 kg)'; clotIdx=1; }
+    else if(npal>=1 && npal<=6){ cVal=c.pal[npal-1]; cHow=npal+' palette'+(npal>1?'s':''); clotIdx=2+(npal-1); }
+    else if(npal>6){ cWarn='CLOT s\'arrête à 6 palettes.'; }
+    cDelai=c.delai;
+  }
+  const cFinal = cVal!=null ? Math.round((cVal*fClot+fraisClot)*100)/100 : null;
+
+  el('clotBrut').value = cVal!=null ? euro(cVal)+' €' : '—';
+  el('schBrut').value = sBest ? euro(sBest.base)+' €' : '—';
+
+  // winner
+  let winner=null;
+  if(sBest && cFinal!=null) winner = sBest.final < cFinal ? 'sch' : (cFinal < sBest.final ? 'clot' : 'tie');
+  else if(sBest) winner='sch'; else if(cFinal!=null) winner='clot';
+
+  const svcLabel = svc==='std'?'Standard':'Premium 13';
+  const clotCard = `
+    <div class="carrier clot ${winner==='clot'?'won':''}">
+      ${winner==='clot'?'<span class="winner">Moins cher</span>':''}
+      <div class="name">CLOT</div>
+      <div class="svc">Standard</div>
+      ${cFinal!=null
+        ? `<div class="price">${euro(cFinal)}<span class="cur">€</span></div>
+           <div class="delai">Délai ${cDelai}</div>
+           <div class="mode"><span class="k">Barème :</span> ${cHow}${tgoClot?`<br><span class="k">dont TGo +${euro(tgoClot)} %</span>`:''}${fraisClot?`<br><span class="k">+ frais transporteur ${euro(fraisClot)} €</span>`:''}</div>
+           <button type="button" class="tarifbtn" onclick="openTarif('clot','main','${dept}',${clotIdx})">Voir le tarif ↗</button>`
+        : `<div class="price na">${cWarn||'Non tarifé'}</div>`}
     </div>`;
-  }).join('');
-  const setN = (L,v)=>{ nbTravees[L] = Math.max(0, Math.min(20, v)); };
-  $('travees').querySelectorAll('button[data-tvl]').forEach(b=>{
-    b.onclick = ()=>{
-      const L = +b.dataset.tvl;
-      setN(L, (nbTravees[L]||0) + (+b.dataset.d));
-      if(totalTravees() < 1) setN(L, nbTravees[L]+1);   // garder au moins 1 travée
-      rendre();
-    };
-  });
-  $('travees').querySelectorAll('input[data-tvl-inp]').forEach(inp=>{
-    inp.onchange = ()=>{
-      const L = +inp.dataset.tvlInp;
-      setN(L, +inp.value||0);
-      if(totalTravees() < 1) setN(L, 1);
-      rendre();
-    };
-  });
+  const schCard = `
+    <div class="carrier schenker ${winner==='sch'?'won':''}">
+      ${winner==='sch'?'<span class="winner">Moins cher</span>':''}
+      <div class="name">DB Schenker</div>
+      <div class="svc">${svcLabel}</div>
+      ${sBest
+        ? `<div class="price">${euro(sBest.final)}<span class="cur">€</span></div>
+           <div class="mode">${sDetail}${tgoSch?`<br><span class="k">dont TGo +${euro(tgoSch)} %</span>`:''}${fraisSch?`<br><span class="k">+ frais transporteur ${euro(fraisSch)} €</span>`:''}${urbain?`<br><span class="k">+ centre urbain ${euro(URBAIN_FEE)} €</span>`:''}${(hasAltW||hasAltP)?`<br><span class="k">Tarif localité d'altitude appliqué</span>`:''}</div>
+           <button type="button" class="tarifbtn" onclick="openTarif('sch','${sBest.grid}','${dept}',${sBest.idx})">Voir le tarif ↗</button>`
+        : `<div class="price na">${sWarn||'Non tarifé'}</div>`}
+    </div>`;
+
+  let spread='';
+  if(sBest && cFinal!=null){
+    const diff=Math.abs(sBest.final-cFinal);
+    const cheap = winner==='tie'?'égalité':(winner==='sch'?'Schenker':'CLOT');
+    spread=`<div class="spread"><span>Écart : <b>${euro(diff)} €</b></span>
+      <span>${winner==='tie'?'Tarifs identiques':'<b style="color:var(--win)">'+cheap+' est le moins cher</b>'}</span></div>`;
+  }
+  const warns=[sWarn,cWarn].filter(Boolean);
+  const warnHtml = warns.length?`<div class="warn">${warns.join(' ')}</div>`:'';
+
+  const destLabel = name ? (name.startsWith('Département')?name:dept+' - '+name) : ('Dépt '+dept);
+
+  lastResult = (winner==='clot'||winner==='sch') ? {
+    dest: destLabel, poids, npal,
+    winner,
+    clot: cFinal!=null ? {price:cFinal, delai:cDelai, how:cHow} : null,
+    sch: sBest ? {price:sBest.final, mode:sBest.mode, how:sBest.how} : null,
+  } : null;
+
+  const actionsHtml = lastResult ? `
+    <div class="actions">
+      <button type="button" class="actbtn" onclick="copyResult(event)">📋 Copier le résultat</button>
+      <button type="button" class="actbtn" onclick="downloadEml()">✉️ Brouillon Outlook (HTML)</button>
+    </div>` : '';
+
+  out.innerHTML =
+    `<div class="dest"><div class="d"><b>${destLabel}</b> — ${poids} kg · ${npal||0} palette${npal>1?'s':''}</div></div>
+     <div class="cards">${clotCard}${schCard}</div>${spread}${warnHtml}${actionsHtml}`;
 }
+let lastResult = null;
 
-function rendre(){
-  rendreTravees();
-  const c = lire();
-  const e = ecartement(c.H,c.n);
-  const lignes = nomenclature(c);
-  const tot = totalLignes(lignes);
+function copyResult(evt){
+  const r = lastResult; if(!r) return;
+  const winnerName = r.winner==='sch' ? 'DB SCHENKER' : 'CLOT';
+  const winnerObj = r.winner==='sch' ? r.sch : r.clot;
+  const otherName = r.winner==='sch' ? 'CLOT' : 'DB Schenker';
+  const otherObj = r.winner==='sch' ? r.clot : r.sch;
 
-  // longueur totale et libellé dimensions
-  const iP = PROFS.indexOf(c.P);
-  const uniques = [...new Set(c.longs)];
-  const lgTag = fmtLongs(c.longs);
-  const largeurTot = c.longs.reduce((s,L)=>s+L,0) + 30;
+  let txt = `Départ : RSL (54180 - Heillecourt)\n\n`;
+  txt += `Destination : ${r.dest}\n\n`;
+  txt += `Poids total : ${r.poids} kg — ${r.npal} palette${r.npal>1?'s':''}\n\n`;
+  txt += `Tarif ${winnerName} — ${euro(winnerObj.price)} €\n`;
+  if(r.winner==='clot') txt += `Délai : ${r.clot.delai}\nBarème : ${r.clot.how}\n`;
+  else txt += `Barème : ${r.sch.mode} — ${r.sch.how}\n`;
+  if(otherObj){
+    txt += `\nAutre transporteur (${otherName}) : ${euro(otherObj.price)} €\n`;
+    txt += `Écart : ${euro(Math.abs(winnerObj.price-otherObj.price))} €\n`;
+  }
 
-  $('apTag').textContent = `H.${c.H}  P.${c.P}  L.${lgTag}`;
-
-  $('stats').innerHTML = `
-    <div class="stat"><b>${largeurTot} mm</b><span>Longueur totale</span></div>
-    <div class="stat"><b>${e?e.utile:'—'} mm</b><span>Écartement utile</span></div>
-    <div class="stat"><b>${eur(tot)}</b><span>Prix 1 rayonnage HT</span></div>
-    <div class="stat"><b>${eur(tot*c.q)}</b><span>Prix config. HT${c.q>1?` (×${c.q})`:''}</span></div>`;
-
-  const al = [];
-  if(e && e.utile > ECART_MAX)
-    al.push(`<div class="note warn"><b>Écartement ${e.utile} mm</b> — le montage impose 500 mm maximum entre 2 tablettes. Ajoutez un niveau ou réduisez la hauteur de poteau.</div>`);
-  if(c.n >= c.max)
-    al.push(`<div class="note info">Maximum atteint : ${c.max} niveaux pour un poteau de ${c.H} mm.</div>`);
-  const faibles = uniques.filter(L=>c.P<=388 && L===1500);
-  if(faibles.length)
-    al.push(`<div class="note info">Charge limitée à ${CHARGE[1500][iP]} kg par niveau sur les travées de 1500 en profondeur ${c.P} — vérifiez le besoin client.</div>`);
-  $('alertes').innerHTML = al.join('');
-
-  $('bom').innerHTML = lignes.map(l=>`<tr>
-      <td>${l.lib}</td><td class="ref">${l.ref}</td>
-      <td class="num">${l.qte}</td><td class="num">${eur(l.pu)}</td><td class="num">${eur(l.total)}</td>
-    </tr>`).join('');
-  $('bomTotal').textContent = eur(tot * c.q);
-
-  dessiner(c);
-}
-
-function rendreDevis(){
-  if(!devis.length){
-    $('devis').innerHTML = `<div class="vide">Aucun rayonnage pour l'instant. Configurez à gauche, puis ajoutez au devis.</div>`;
+  const btn = evt && evt.target ? evt.target.closest('button') : null;
+  const done = ()=>{ if(btn){ const old=btn.textContent; btn.textContent='✅ Copié !'; setTimeout(()=>btn.textContent=old,1600); } };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>alert('Copie impossible — copiez manuellement :\n\n'+txt));
   } else {
-    $('devis').innerHTML = devis.map((d,i)=>`
-      <div class="devis-item">
-        <div class="d">
-          <div class="t">${d.q > 1 ? d.q+' × ' : ''}${d.lib}</div>
-        </div>
-        <div class="p">${eur(d.total)}</div>
-        <button class="mod${editIndex===i?' actif':''}" data-i="${i}" title="Recharger dans le formulaire">Modifier</button>
-        <button class="x" data-i="${i}" title="Retirer">×</button>
-      </div>`).join('');
-    $('devis').querySelectorAll('.x').forEach(b=>b.onclick=()=>{
-      const i=+b.dataset.i;
-      devis.splice(i,1);
-      if(editIndex===i) sortirEdition();
-      else if(editIndex>i) editIndex--;
-      rendreDevis();
-    });
-    $('devis').querySelectorAll('.mod').forEach(b=>b.onclick=()=>chargerPourEdition(+b.dataset.i));
-  }
-
-  const marchandise = devis.reduce((s,d)=>s+d.total,0);
-  const dep = departement;
-  const t = calculTransport(marchandise, dep);
-
-  const optsDep = () => {
-    const deps = Object.keys(TRANSPORT).filter(d=>d!=='AUTRE').sort();
-    return `<option value="">— dépt —</option>` +
-      deps.map(d=>`<option value="${d}"${d===dep?' selected':''}>${d}</option>`).join('') +
-      `<option value="AUTRE"${dep==='AUTRE'?' selected':''}>Autres</option>`;
-  };
-  const selDep = `<select id="dep">${optsDep()}</select>`;
-
-  if(!devis.length){
-    remise = 0; codeRemise = ''; codeSaisi = '';
-    $('recap').innerHTML = '';
-  } else {
-    // total HT dépend de l'état du transport
-    // REMISE : s'applique sur la marchandise uniquement ; le transport reste calculé sur le brut
-    const remiseVal = marchandise * (remise/100);
-    const marchandiseNette = marchandise - remiseVal;
-
-    let ligneTransport, htLabel, totalHT, payable = false;
-    if(!dep){
-      ligneTransport = `<span>Transport ${selDep}</span><span class="warn">choisir un département</span>`;
-      htLabel = 'Total HT'; totalHT = marchandiseNette;
-    } else if(t.consult){
-      ligneTransport = `<span>Transport ${selDep}</span><span class="warn">sur consultation</span>`;
-      htLabel = 'Total HT hors transport'; totalHT = marchandiseNette;
-    } else {
-      ligneTransport = `<span class="txp"><span>Transport <span class="sub">${t.txt}</span></span>${selDep}</span><span>${eur(t.val)}</span>`;
-      htLabel = 'Total HT rendu'; totalHT = marchandiseNette + t.val; payable = true;
-    }
-    const tva = totalHT * 0.20;
-    const ttc = totalHT + tva;
-
-    // ligne remise (affichée seulement si un taux est actif)
-    const ligneRemise = remise > 0
-      ? `<div class="recap-l remise"><span>Remise ${remise} % <span class="sub">(${codeRemise})</span></span><span>− ${eur(remiseVal)}</span></div>`
-      : '';
-
-    // zone code remise : champ + bouton, ou confirmation si déjà appliqué
-    const zoneCode = remise > 0
-      ? `<div class="coderemise ok">
-           <span>✓ Code <b>${codeRemise}</b> appliqué (−${remise} %)</span>
-           <button type="button" id="code-retirer">retirer</button>
-         </div>`
-      : `<div class="coderemise">
-           <input type="text" id="code-input" placeholder="Code remise" value="${codeSaisi}" autocomplete="off">
-           <button type="button" id="code-appliquer">Appliquer</button>
-           <span id="code-msg" class="code-msg"></span>
-         </div>`;
-
-    // validation coordonnées : email format correct + téléphone non vide
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
-    const telOk = clientTel.trim().length >= 6;
-    const coordOk = emailOk && telOk;
-    const peutPayer = payable && coordOk;
-
-    // bloc coordonnées client (obligatoire pour payer)
-    const zoneCoord = `
-      <div class="coord">
-        <div class="coord-t">Vos coordonnées <span class="req">(obligatoire pour commander)</span></div>
-        <div class="coord-f">
-          <input type="email" id="cli-email" placeholder="Adresse email *" value="${clientEmail}" autocomplete="email">
-          <input type="tel" id="cli-tel" placeholder="Téléphone *" value="${clientTel}" autocomplete="tel">
-        </div>
-      </div>`;
-
-    // message d'incitation si paiement bloqué par coordonnées
-    let payLabel, payNote = '';
-    if(!payable){
-      payLabel = 'Choisissez un département pour payer';
-      payNote = '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>';
-    } else if(!coordOk){
-      payLabel = 'Payer '+eur(ttc)+' en ligne';
-      payNote = '<div class="paynote">Renseignez votre email et votre téléphone pour valider la commande.</div>';
-    } else {
-      payLabel = 'Payer '+eur(ttc)+' en ligne';
-    }
-
-    $('recap').innerHTML = `
-      <div class="recap">
-        <div class="recap-l"><span>Marchandise HT</span><span>${eur(marchandise)}</span></div>
-        ${ligneRemise}
-        <div class="recap-l">${ligneTransport}</div>
-        <div class="recap-l sub-ht"><span>${htLabel}</span><span>${eur(totalHT)}</span></div>
-        <div class="recap-l"><span>TVA 20 %</span><span>${eur(tva)}</span></div>
-        <div class="recap-l grand"><span>Total TTC</span><b>${eur(ttc)}</b></div>
-      </div>
-      ${zoneCode}
-      ${zoneCoord}
-      <div class="payzone">
-        <button class="btn-pay" id="pay"${peutPayer?'':' disabled'}>${payLabel}</button>
-        ${payNote}
-      </div>`;
-    $('dep').onchange = e => { departement = e.target.value; rendreDevis(); };
-    // coordonnées : mise à jour sans re-render à chaque frappe (pour ne pas perdre le focus)
-    const emailInp = $('cli-email');
-    const telInp = $('cli-tel');
-    const majBtnPay = () => {
-      const eOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
-      const tOk = clientTel.trim().length >= 6;
-      const btn = $('pay');
-      if(!btn) return;
-      const ok = payable && eOk && tOk;
-      btn.disabled = !ok;
-      const note = document.querySelector('.payzone .paynote');
-      if(payable && !(eOk && tOk)){
-        if(!note){
-          const d = document.createElement('div');
-          d.className = 'paynote';
-          d.textContent = 'Renseignez votre email et votre téléphone pour valider la commande.';
-          $('pay').after(d);
-        }
-      } else if(note && payable){ note.remove(); }
-    };
-    if(emailInp) emailInp.oninput = e => { clientEmail = e.target.value; majBtnPay(); };
-    if(telInp) telInp.oninput = e => { clientTel = e.target.value; majBtnPay(); };
-    // gestion du code remise
-    if(remise > 0){
-      $('code-retirer').onclick = () => { remise = 0; codeRemise = ''; codeSaisi = ''; rendreDevis(); };
-    } else {
-      const inp = $('code-input');
-      if(inp) inp.oninput = e => { codeSaisi = e.target.value; };
-      const btn = $('code-appliquer');
-      if(btn) btn.onclick = () => verifierCode();
-    }
-    if(peutPayer || payable) $('pay').onclick = () => {
-      if($('pay').disabled) return;
-      payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise}, {email:clientEmail.trim(), tel:clientTel.trim()});
-    };
+    alert('Copie impossible — copiez manuellement :\n\n'+txt);
   }
 }
 
-/* ---- nomenclature consolidée du devis (regroupée par référence) ---- */
-function consolide(){
-  const m = new Map();
-  devis.forEach(d => d.lignes.forEach(l=>{
-    const k = l.ref;
-    const q = l.qte * d.q;
-    if(m.has(k)) m.get(k).qte += q;
-    else m.set(k,{lib:l.lib,ref:l.ref,qte:q,pu:l.pu});
-  }));
-  return [...m.values()].map(l=>({...l,total:l.qte*l.pu}));
-}
+function downloadEml(){
+  const r = lastResult; if(!r) return;
+  const winnerName = r.winner==='sch' ? 'DB Schenker' : 'CLOT';
+  const winnerObj = r.winner==='sch' ? r.sch : r.clot;
+  const otherName = r.winner==='sch' ? 'CLOT' : 'DB Schenker';
+  const otherObj = r.winner==='sch' ? r.clot : r.sch;
+  const winnerDetail = r.winner==='clot'
+    ? `Délai ${r.clot.delai} — Barème : ${r.clot.how}`
+    : `${r.sch.mode} — ${r.sch.how}`;
 
-/* ==========================================================
-   ÉDITION D'UN RAYONNAGE DU DEVIS
-   ========================================================== */
-function chargerPourEdition(i){
-  const c = devis[i].cfg;
-  $('pf').value = c.P; $('ht').value = c.H;
-  $('nv').value = c.n; $('qt').value = c.q;
-  nbTravees = {1000:0,1250:0,1500:0};
-  c.longs.forEach(L => nbTravees[L] = (nbTravees[L]||0) + 1);
-  setOpt('rec', c.rec); setAppui(c.pd, c.calage);
-  editIndex = i;
-  $('editbar').classList.add('on');
-  $('add').textContent = 'Mettre à jour le rayonnage';
-  rendre(); rendreDevis();
-  document.querySelector('.grid').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function sortirEdition(){
-  editIndex = -1;
-  $('editbar').classList.remove('on');
-  $('add').textContent = 'Ajouter au devis';
-}
+  const html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;color:#14201c;max-width:520px;">
+    <p style="margin:0 0 10px;">Départ : RSL (54180 - Heillecourt)</p>
+    <p style="margin:0 0 12px;">Destination : <b>${r.dest}</b><br>Poids total : ${r.poids} kg — ${r.npal} palette${r.npal>1?'s':''}</p>
+    <table style="border-collapse:collapse;width:100%;margin-bottom:12px;">
+      <tr><td style="background:#eaf3ed;border-left:4px solid #0f5a3c;padding:12px;">
+        Tarif <b style="color:#c0272d;">${winnerName}</b><br>
+        <span style="font-size:22px;font-weight:bold;">${euro(winnerObj.price)} €</span><br>
+        <span style="color:#41524b;font-size:12.5px;">${winnerDetail}</span>
+      </td></tr>
+    </table>
+    ${otherObj ? `<p style="color:#41524b;font-size:13px;margin:0;">Autre transporteur (${otherName}) : ${euro(otherObj.price)} € — écart de ${euro(Math.abs(winnerObj.price-otherObj.price))} €</p>` : ''}
+  </div>`;
 
-/* ==========================================================
-   ACTIONS
-   ========================================================== */
-function entree(c){
-  const lignes = nomenclature(c);
-  return {lib:libelle(c), q:c.q, cfg:c, lignes, total: totalLignes(lignes)*c.q};
-}
-
-$('add').onclick = ()=>{
-  const c = lire();
-  if(editIndex >= 0){
-    devis[editIndex] = entree(c);
-    sortirEdition();
-    rendreDevis();
-  } else {
-    devis.push(entree(c));
-    $('qt').value = 1;
-    rendreDevis();
-    $('devis').scrollIntoView({behavior:'smooth',block:'center'});
-  }
-};
-
-$('cancelEdit').onclick = ()=>{ sortirEdition(); rendreDevis(); };
-
-$('clear').onclick = ()=>{ devis = []; sortirEdition(); rendreDevis(); };
-
-$('copy').onclick = ()=>{
-  if(!devis.length) return;
-  const marchandise = devis.reduce((s,d)=>s+d.total,0);
-  const dep = departement, t = calculTransport(marchandise, dep);
-  const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 11/05/2026 (prix HT)',''];
-  devis.forEach(d=>{
-    l.push(`${d.q>1?d.q+' × ':''}${d.lib}    ${eur(d.total)}`);
-    d.lignes.forEach(x=> l.push(`    ${String(x.qte*d.q).padStart(4)} × ${x.ref}  ${x.lib}`));
-    l.push('');
-  });
-  l.push(`Marchandise HT : ${eur(marchandise)}`);
-  if(!dep) l.push('Transport : département non renseigné');
-  else if(t.consult) l.push(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep}) : sur consultation`);
-  else {
-    l.push(`Transport dépt ${dep} (${t.txt}) : ${eur(t.val)}`);
-    l.push(`TOTAL HT RENDU : ${eur(marchandise + t.val)}`);
-  }
-  navigator.clipboard.writeText(l.join('\n'));
-  $('copy').textContent = 'Devis copié';
-  setTimeout(()=>$('copy').textContent='Copier le devis',1800);
-};
-
-$('csv').onclick = ()=>{
-  if(!devis.length) return;
-  const rows = [['Reference','Designation','Quantite','PU HT','Total HT']];
-  consolide().forEach(l=>rows.push([l.ref,l.lib,l.qte,l.pu.toFixed(5),l.total.toFixed(2)]));
-  const csv = rows.map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const subject = `Comparatif transport RSL — ${r.dest} (${winnerName} ${euro(winnerObj.price)} €)`;
+  const eml = `From: \r\nTo: \r\nSubject: ${subject}\r\nX-Unsent: 1\r\nContent-Type: text/html; charset="UTF-8"\r\n\r\n${html}`;
+  const blob = new Blob([eml], {type:'message/rfc822'});
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download = 'nomenclature-epsiline.csv';
-  a.click();
-};
-
-/* ==========================================================
-   EXPORT PDF DU DEVIS
-   ========================================================== */
-// convertit un SVG (chaîne <svg…>) en PNG dataURL via canvas
-function svgToPng(svgInner, scale=2){
-  return new Promise((resolve,reject)=>{
-    const vw = 700, vh = 448, vy = -28;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${vy} ${vw} ${vh}" width="${vw}" height="${vh}">`
-              + `<rect x="0" y="${vy}" width="${vw}" height="${vh}" fill="#ffffff"/>` + svgInner + `</svg>`;
-    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = ()=>{
-      const cv = document.createElement('canvas');
-      cv.width = vw*scale; cv.height = vh*scale;
-      const ctx = cv.getContext('2d');
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,cv.width,cv.height);
-      ctx.drawImage(img,0,0,cv.width,cv.height);
-      URL.revokeObjectURL(url);
-      resolve({data:cv.toDataURL('image/png'), w:vw, h:vh});
-    };
-    img.onerror = e=>{ URL.revokeObjectURL(url); reject(e); };
-    img.src = url;
-  });
+  a.href = URL.createObjectURL(blob);
+  a.download = 'comparatif-transport.eml';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
 }
 
-// Construit le devis PDF et retourne l'objet jsPDF (réutilisé : bouton PDF + envoi au paiement)
-async function construirePDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'mm', format:'a4'});
-  const M = 15, PW = 210, PH = 297;
-  let y = M;
-
-    // ---- en-tête
-    doc.setFillColor(61,71,83); doc.rect(0,0,PW,22,'F');
-    doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text('DEVIS RAYONNAGES EPSILINE', M, 10);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
-    doc.text('RSL — Rayonnages Services Lorraine  ·  tarif au 11/05/2026  ·  prix HT', M, 16);
-    const dateStr = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    doc.text('Date : '+dateStr, PW-M, 16, {align:'right'});
-    y = 30;
-
-    // ---- SYNTHÈSE : une ligne par rayonnage + vignette
-    doc.setTextColor(30); doc.setFont('helvetica','bold'); doc.setFontSize(11);
-    doc.text('Synthèse', M, y); y += 5;
-
-    // pré-rendu des vignettes
-    const vignettes = [];
-    for(const d of devis) vignettes.push(await svgToPng(svgMarkup(d.cfg), 2));
-
-    for(let i=0;i<devis.length;i++){
-      const d = devis[i], v = vignettes[i];
-      const imgW = 55, imgH = imgW * v.h / v.w;
-      const blocH = Math.max(imgH, 20) + 6;
-      if(y + blocH > PH - 30){ doc.addPage(); y = M; }
-
-      doc.setDrawColor(220); doc.setLineWidth(0.2);
-      doc.line(M, y, PW-M, y); y += 4;
-
-      doc.addImage(v.data,'PNG', M, y, imgW, imgH);
-      const tx = M + imgW + 6;
-      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(30);
-      const titre = `${d.q>1?d.q+' × ':''}${d.lib}`;
-      doc.text(doc.splitTextToSize(titre, PW-M-tx), tx, y+4);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90);
-      doc.text(`Prix HT : ${eurPdf(d.total)}`, tx, y+imgH-2);
-
-      y += Math.max(imgH, 16) + 4;
-    }
-
-    // ---- DÉTAIL : nomenclature consolidée
-    if(y > PH - 60){ doc.addPage(); y = M; } else y += 6;
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30);
-    doc.text('Nomenclature détaillée', M, y); y += 2;
-
-    const body = consolide().map(l=>[l.ref, l.lib, String(l.qte), eurPdf(l.pu), eurPdf(l.total)]);
-    doc.autoTable({
-      startY: y+3, margin:{left:M, right:M},
-      head:[['Référence','Désignation','Qté','P.U. HT','Total HT']],
-      body,
-      styles:{fontSize:8, cellPadding:1.6},
-      headStyles:{fillColor:[61,71,83], textColor:255, fontSize:8},
-      columnStyles:{0:{cellWidth:32, font:'courier', fontSize:7.5},
-                    2:{halign:'right', cellWidth:14},
-                    3:{halign:'right', cellWidth:24},
-                    4:{halign:'right', cellWidth:24}},
-      alternateRowStyles:{fillColor:[245,248,250]}
-    });
-    y = doc.lastAutoTable.finalY + 8;
-
-    // ---- RÉCAP marchandise + transport + total
-    const marchandise = devis.reduce((s,d)=>s+d.total,0);
-    const dep = departement, t = calculTransport(marchandise, dep);
-    if(y > PH - 45){ doc.addPage(); y = M; }
-    const rx = PW - M, lx = PW - M - 80;
-    const ligne = (lib, val, bold=false)=>{
-      doc.setFont('helvetica', bold?'bold':'normal'); doc.setFontSize(bold?11:9.5);
-      doc.setTextColor(bold?30:90);
-      doc.text(lib, lx, y); doc.text(val, rx, y, {align:'right'}); y += bold?7:5.5;
-    };
-    doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
-    const remiseValPdf = marchandise * (remise/100);
-    const marchandiseNettePdf = marchandise - remiseValPdf;
-    ligne('Marchandise HT', eurPdf(marchandise));
-    if(remise > 0){
-      doc.setTextColor(26,122,76);
-      ligne(`Remise ${remise} % (${codeRemise})`, '− '+eurPdf(remiseValPdf));
-      doc.setTextColor(90);
-    }
-    if(!dep) ligne('Transport', 'département non renseigné');
-    else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
-    else {
-      ligne(`Transport dépt ${dep} (${t.txt})`, eurPdf(t.val));
-      doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
-      ligne('TOTAL HT RENDU', eurPdf(marchandiseNettePdf + t.val), true);
-    }
-
-    // ---- pied de page
-    const pages = doc.getNumberOfPages();
-    for(let p=1;p<=pages;p++){
-      doc.setPage(p);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(150);
-      doc.text('RSL — Rayonnages Services Lorraine  ·  Heillecourt/Nancy', M, PH-8);
-      doc.text(`${p} / ${pages}`, PW-M, PH-8, {align:'right'});
-    }
-
-    return doc;
-}
-
-// Nom de fichier PDF standard
-function nomPDF(){
-  const d = new Date();
-  const s = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
-  return `devis-rayonnages-epsiline-${s}.pdf`;
-}
-
-// Bouton « Télécharger le PDF »
-$('pdf').onclick = async ()=>{
-  if(!devis.length) return;
-  const btn = $('pdf'); const label = btn.textContent;
-  btn.textContent = 'Génération…'; btn.disabled = true;
-  try{
-    const doc = await construirePDF();
-    doc.save(nomPDF());
-  } catch(err){
-    console.error(err);
-    alert("La génération du PDF a échoué. Réessayez ; si le problème persiste, vérifiez la connexion (les librairies PDF se chargent en ligne).");
-  } finally {
-    btn.textContent = label; btn.disabled = false;
-  }
-};
-
-/* ==========================================================
-   PAIEMENT STRIPE via webhook Make
-   ========================================================== */
-/* ==========================================================
-   VÉRIFICATION DU CODE REMISE via webhook Make
-   Le code n'est JAMAIS dans la page : Make répond le taux.
-   ========================================================== */
-async function verifierCode(){
-  const code = (codeSaisi||'').trim();
-  const msg = $('code-msg');
-  if(!code){ if(msg){msg.textContent='Saisissez un code.'; msg.className='code-msg err';} return; }
-
-  if(!MAKE_VERIF_CODE_URL){
-    if(msg){msg.textContent="Vérification non activée (URL manquante)."; msg.className='code-msg err';}
-    return;
-  }
-
-  const btn = $('code-appliquer');
-  if(btn){ btn.disabled = true; btn.textContent = '…'; }
-  try{
-    const rep = await fetch(MAKE_VERIF_CODE_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ code })
-    });
-    const data = await rep.json();
-    const taux = Number(data && data.taux) || 0;
-    if(taux > 0){
-      remise = taux; codeRemise = code.toUpperCase(); rendreDevis();
-    } else {
-      if(btn){ btn.disabled=false; btn.textContent='Appliquer'; }
-      const m = $('code-msg');
-      if(m){ m.textContent='Code non valide.'; m.className='code-msg err'; }
-    }
-  } catch(err){
-    console.error(err);
-    if(btn){ btn.disabled=false; btn.textContent='Appliquer'; }
-    const m = $('code-msg');
-    if(m){ m.textContent='Erreur de vérification. Réessayez.'; m.className='code-msg err'; }
-  }
-}
-
-/* ==========================================================
-   PAIEMENT STRIPE via webhook Make
-   ========================================================== */
-async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
-  if(!MAKE_WEBHOOK_URL){
-    alert("Le paiement en ligne n'est pas encore activé : l'URL du webhook Make n'a pas été renseignée dans le configurateur.");
-    return;
-  }
-  const btn = $('pay'); const label = btn.textContent;
-  btn.textContent = 'Redirection vers le paiement…'; btn.disabled = true;
-
-  // charge utile : détail complet du devis pour Make/Stripe
-  const lignesNomen = consolide();
-
-  // CSV nomenclature construit ici : ordre des colonnes garanti, séparateur ; pour Excel FR
-  const csvSep = ';';
-  const csvCell = v => {
-    const s = String(v).replace(/"/g,'""');
-    return /[";\n]/.test(s) ? `"${s}"` : s;
-  };
-  const csvNum = v => String(v).replace('.', ',');   // virgule décimale FR
-  const csvHeader = ['Reference','Designation','Quantite','PU HT','Total HT'];
-  const csvRows = lignesNomen.map(l => [
-    l.ref, l.lib, l.qte, csvNum(l.pu.toFixed(5)), csvNum(l.total.toFixed(2))
-  ]);
-  const csvNomenclature = [csvHeader, ...csvRows]
-    .map(r => r.map(csvCell).join(csvSep)).join('\r\n');
-
-  // résumé compact des rayonnages pour les metadata Stripe (limite 500 caractères/valeur)
-  let resumeRayonnages = devis
-    .map(d => `${d.q>1?d.q+'x ':''}${d.lib} — ${eur(d.total)}`)
-    .join(' | ');
-  if(resumeRayonnages.length > 480) resumeRayonnages = resumeRayonnages.slice(0,477) + '…';
-
-  // référence commande RAY-jjmmaa-XXXX (lien entre la commande et le paiement Stripe)
-  const now = new Date();
-  const jj = String(now.getDate()).padStart(2,'0');
-  const mm = String(now.getMonth()+1).padStart(2,'0');
-  const aa = String(now.getFullYear()).slice(-2);
-  const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
-  const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
-
-  const payload = {
-    reference: reference,
-    date: `${aa.length===2?'20'+aa:aa}-${mm}-${jj}`,   // AAAA-MM-JJ (champ Airtable date sans heure)
-    date_iso: new Date().toISOString(),                // horodatage complet si besoin
-    departement: dep,
-    client: {
-      email: coord?.email || '',
-      telephone: coord?.tel || ''
-    },
-    resume_rayonnages: resumeRayonnages,
-    montants: {
-      marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
-      remise_taux: remiseInfo?.remise_taux || 0,
-      remise_ht: +(remiseInfo?.remise_val || 0).toFixed(2),
-      code_remise: remiseInfo?.code || '',
-      transport_ht: +transport.toFixed(2),
-      total_ht: +ht.toFixed(2),
-      tva: +tva.toFixed(2),
-      total_ttc: +ttc.toFixed(2),
-      // Stripe attend un entier en centimes
-      montant_stripe_centimes: Math.round(ttc*100),
-      devise: 'eur'
-    },
-    rayonnages: devis.map(d=>({
-      designation: d.lib,
-      quantite: d.q,
-      prix_ht: +d.total.toFixed(2)
-    })),
-    nomenclature: lignesNomen.map(l=>({
-      reference: l.ref, designation: l.lib,
-      quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
-    })),
-    // CSV prêt à l'emploi (ordre des colonnes garanti)
-    csv_nomenclature: csvNomenclature
-  };
-
-  try{
-    const rep = await fetch(MAKE_WEBHOOK_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    if(!rep.ok) throw new Error('HTTP '+rep.status);
-
-    // Make peut répondre soit du JSON {url:...}, soit l'URL en texte brut
-    const txt = (await rep.text()).trim();
-    let url = txt;
-    try { const j = JSON.parse(txt); url = j.url || j.checkout_url || j.URL || txt; } catch(_){}
-
-    if(url && /^https:\/\//.test(url)){
-      window.location.href = url;               // redirection vers Stripe Checkout
-    } else {
-      throw new Error('Réponse inattendue : '+txt.slice(0,120));
-    }
-  } catch(err){
-    console.error(err);
-    alert("Le paiement n'a pas pu démarrer.\n\nVérifiez que le scénario Make est actif et qu'il répond bien l'URL Stripe.\n\nDétail : "+err.message);
-    btn.textContent = label; btn.disabled = false;
-  }
-}
-
-['pf','ht','nv','qt'].forEach(id=>{
-  $(id).addEventListener('input', rendre);
-  $(id).addEventListener('change', rendre);
-});
-
-// recouvrement : radio simple
-$('rec').querySelectorAll('.opt').forEach(o=>{
-  o.onclick = ()=>{ setOpt('rec', o.dataset.v); rendre(); };
-});
-// appui au sol : radio (pied/platine/aucun) + cale cumulable (toggle)
-$('pd').querySelectorAll('.opt').forEach(o=>{
-  o.onclick = ()=>{
-    const v = o.dataset.v;
-    if(v==='calage'){
-      // toggle des cales, sans effet si appui = aucun
-      if(getAppui()==='aucun') return;
-      setAppui(getAppui(), !getCalage());
-    } else {
-      // change l'appui principal ; 'aucun' annule les cales
-      setAppui(v, v==='aucun' ? false : getCalage());
-    }
-    rendre();
-  };
-});
-
-// ---- zoom en popup de l'aperçu
-function ouvrirZoom(){
-  const c = lire();
-  $('dessinBig').innerHTML = svgMarkup(c);
-  $('modalTtl').textContent = `Aperçu — H.${c.H} P.${c.P} L.${fmtLongs(c.longs)} · ${c.n} niveaux`;
-  $('modal').classList.add('on');
-}
-function fermerZoom(){ $('modal').classList.remove('on'); }
-$('zoom').onclick = e => { e.stopPropagation(); ouvrirZoom(); };
-$('apwrap').onclick = ouvrirZoom;
-$('modalClose').onclick = fermerZoom;
-$('modal').onclick = e => { if(e.target === $('modal')) fermerZoom(); };
-document.addEventListener('keydown', e => { if(e.key==='Escape') fermerZoom(); });
-
-// steppers − / + (nv, qt) — les steppers de travées ont leur propre handler
-document.querySelectorAll('.stepper button[data-step]').forEach(b=>{
-  b.onclick = ()=>{
-    const inp = $(b.dataset.step);
-    const min = inp.min!=='' ? +inp.min : -Infinity;
-    const max = inp.max!=='' ? +inp.max : Infinity;
-    let v = (+inp.value||min) + (+b.dataset.d);
-    v = Math.max(min, Math.min(max, v));
-    inp.value = v;
-    inp.dispatchEvent(new Event('input',{bubbles:true}));
-  };
-});
-
-initSelects();
-rendre();
-rendreDevis();
-
-/* ---- retour de paiement Stripe (?paiement=ok | annule) ---- */
-(function retourPaiement(){
-  const p = new URLSearchParams(location.search).get('paiement');
-  if(!p) return;
-  const banniere = document.createElement('div');
-  banniere.className = 'bandeau-paiement ' + (p==='ok' ? 'ok' : 'annule');
-  banniere.innerHTML = p==='ok'
-    ? '✓ Votre paiement a bien été enregistré. Un reçu vous a été envoyé par email. Merci !'
-    : 'Paiement annulé — votre commande n\'a pas été validée. Vous pouvez réessayer.';
-  const fermer = document.createElement('button');
-  fermer.textContent = '×'; fermer.className = 'bandeau-close';
-  fermer.onclick = () => banniere.remove();
-  banniere.appendChild(fermer);
-  document.body.prepend(banniere);
-  // nettoie l'URL pour ne pas ré-afficher au rechargement
-  history.replaceState(null, '', location.pathname);
-  if(p==='ok') setTimeout(()=>banniere.remove(), 12000);
-})();
+render();
 </script>
 </body>
 </html>
