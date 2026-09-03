@@ -82,6 +82,9 @@ select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);ou
 }
 .opt.on .mark{border-color:var(--signal)}
 .opt.on .mark::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--signal)}
+.btn-add2{background:var(--signal);color:#fff;border:none;border-radius:3px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:filter .15s}
+.btn-add2:hover{filter:brightness(1.08)}
+tfoot .tot-lbl{margin-left:14px;font-weight:600;color:var(--encre)}
 button{
   font:inherit;font-weight:600;cursor:pointer;border-radius:3px;border:1px solid transparent;padding:10px 14px
 }
@@ -176,7 +179,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 .recap-l.remise span:first-child{color:#1a7a4c}
 .recap-l.remise span:last-child{color:#1a7a4c;font-weight:600}
 .coderemise{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
-.coderemise input{padding:6px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px;width:130px;text-transform:uppercase}
+.coderemise input{padding:6px 9px;border:1px solid var(--trait);border-radius:3px;background:#fbfcfd;font:inherit;font-size:13px;width:130px}
 .coderemise button{padding:6px 12px;border:1px solid var(--acier);background:#fff;color:var(--acier);border-radius:3px;font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s,color .15s}
 .coderemise button:hover{background:var(--acier);color:#fff}
 .coderemise.ok{background:#eaf6ef;border:1px solid #b7e0c8;border-radius:3px;padding:8px 11px;justify-content:space-between;color:#1a7a4c;font-size:13px}
@@ -289,7 +292,11 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
         </tr></thead>
         <tbody id="bom"></tbody>
         <tfoot><tr>
-          <td colspan="4">Total rayonnage HT</td><td class="num" id="bomTotal">—</td>
+          <td colspan="4">
+            <button class="btn-add2" id="add2" type="button">Ajouter au devis</button>
+            <span class="tot-lbl">Total rayonnage HT</span>
+          </td>
+          <td class="num" id="bomTotal">—</td>
         </tr></tfoot>
       </table>
     </div>
@@ -380,9 +387,29 @@ const CHARGE = {
 const PROFILS = {300:1,388:1,500:2,600:2,700:2,800:3,1000:3};
 
 const ACCESSOIRE = {
-  pied:    {ref:'AS23000040AC00000',pu:0.73766,lib:'Pied plastique'},
-  platine: {ref:'AS23006752BB00099',pu:1.58223,lib:'Platine métal galvanisée 67×52×2,5'},
-  calage:  {ref:'AS23006752CB00099',pu:1.02631,lib:'Platine de calage'}
+  pied:    {ref:'AS23000040AC00000',pu:0.73766,eco:0.00000,lib:'Pied plastique'},
+  platine: {ref:'AS23006752BB00099',pu:1.58223,eco:0.00000,lib:'Platine métal galvanisée 67×52×2,5'},
+  calage:  {ref:'AS23006752CB00099',pu:1.02631,eco:0.00910,lib:'Platine de calage'}
+};
+
+// éco-contribution par article (au 01/09/2026), même indexation que les prix
+const ECO_POTEAU = {
+  1760:0.24700, 2000:0.27300, 2280:0.31200, 2520:0.35100, 2760:0.37700, 3000:0.41600
+};
+const ECO_TAB = {
+  1000:[0.29393,0.30953,0.33033,0.34853,0.43446,0.52039,0.55679],
+  1250:[0.35542,0.37102,0.39182,0.41002,0.51324,0.61646,0.65286],
+  1500:[0.41678,0.43238,0.55536,0.57356,0.59176,0.71214,0.74854]
+};
+const ECO_ISO = {
+  1000:[0.00000,0.00000,0.00000,0.16120,0.00000,0.00000,0.26910],
+  1250:[0.00000,0.00000,0.00000,0.00000,0.00000,0.00000,0.33540],
+  1500:[0.12090,0.14690,0.20150,0.24180,0.28210,0.32240,0.40300]
+};
+const ECO_TOLE = {
+  1000:[0.23270,0.30420,0.39260,0.47320,0.55380,0.63310,0.79300],
+  1250:[0.29250,0.38090,0.49400,0.59410,0.69420,0.79430,0.99580],
+  1500:[0.35230,0.45890,0.59410,0.71500,0.83590,0.95550,1.19730]
 };
 
 // codes de référence
@@ -517,7 +544,7 @@ function nomenclature(c){
   const lignes = [];
 
   // poteaux : nombre inchangé, indépendant des longueurs (poteaux communs partagés)
-  lignes.push({lib:`Poteau galvanisé ${c.H} mm`, ref:POTEAU[c.H].ref, qte:nbPoteaux, pu:POTEAU[c.H].pu});
+  lignes.push({lib:`Poteau galvanisé ${c.H} mm`, ref:POTEAU[c.H].ref, qte:nbPoteaux, pu:POTEAU[c.H].pu, eco:ECO_POTEAU[c.H]});
 
   // tablettes regroupées par longueur de travée
   const parLong = {};
@@ -526,27 +553,28 @@ function nomenclature(c){
 
   longsTriees.forEach(L=>{
     const q = parLong[L];
-    lignes.push({lib:`Tablette tubulaire ${L}×${c.P}`, ref:refTablette(L,c.P), qte:q, pu:PU_TAB[L][iP]});
+    lignes.push({lib:`Tablette tubulaire ${L}×${c.P}`, ref:refTablette(L,c.P), qte:q, pu:PU_TAB[L][iP], eco:ECO_TAB[L][iP]});
   });
   if(c.rec==='iso') longsTriees.forEach(L=>
-    lignes.push({lib:`Dessus isobois naturel ${L}×${c.P}`, ref:refIso(L,c.P), qte:parLong[L], pu:PU_ISO[L][iP]}));
+    lignes.push({lib:`Dessus isobois naturel ${L}×${c.P}`, ref:refIso(L,c.P), qte:parLong[L], pu:PU_ISO[L][iP], eco:ECO_ISO[L][iP]}));
   if(c.rec==='tole') longsTriees.forEach(L=>
-    lignes.push({lib:`Dessus tôle galvanisée ${L}×${c.P}`, ref:refTole(L,c.P), qte:parLong[L], pu:PU_TOLE[L][iP]}));
+    lignes.push({lib:`Dessus tôle galvanisée ${L}×${c.P}`, ref:refTole(L,c.P), qte:parLong[L], pu:PU_TOLE[L][iP], eco:ECO_TOLE[L][iP]}));
 
   if(c.pd!=='aucun'){
     const a = ACCESSOIRE[c.pd];
-    lignes.push({lib:a.lib, ref:a.ref, qte:nbPoteaux, pu:a.pu});
+    lignes.push({lib:a.lib, ref:a.ref, qte:nbPoteaux, pu:a.pu, eco:a.eco||0});
   }
   // cales de niveau : cumulables, une par poteau (sauf appui = aucun)
   if(c.calage && c.pd!=='aucun'){
     const cal = ACCESSOIRE.calage;
-    lignes.push({lib:cal.lib, ref:cal.ref, qte:nbPoteaux, pu:cal.pu});
+    lignes.push({lib:cal.lib, ref:cal.ref, qte:nbPoteaux, pu:cal.pu, eco:cal.eco||0});
   }
-  lignes.forEach(l => l.total = l.qte * l.pu);
+  lignes.forEach(l => { l.total = l.qte * l.pu; l.ecoTotal = l.qte * (l.eco||0); });
   return lignes;
 }
 
 const totalLignes = l => l.reduce((s,x)=>s+x.total,0);
+const ecoLignes = l => l.reduce((s,x)=>s+(x.ecoTotal||0),0);
 
 // formate les longueurs façon "2x1000+1250+1500" (ordre 1000,1250,1500)
 function fmtLongs(longs){
@@ -800,6 +828,7 @@ function rendreDevis(){
   }
 
   const marchandise = devis.reduce((s,d)=>s+d.total,0);
+  const ecoTotal = devis.reduce((s,d)=>s+(d.eco||0),0);
   const dep = departement;
   const t = calculTransport(marchandise, dep);
 
@@ -823,16 +852,21 @@ function rendreDevis(){
     let ligneTransport, htLabel, totalHT, payable = false;
     if(!dep){
       ligneTransport = `<span>Transport ${selDep}</span><span class="warn">choisir un département</span>`;
-      htLabel = 'Total HT'; totalHT = marchandiseNette;
+      htLabel = 'Total HT'; totalHT = marchandiseNette + ecoTotal;
     } else if(t.consult){
       ligneTransport = `<span>Transport ${selDep}</span><span class="warn">sur consultation</span>`;
-      htLabel = 'Total HT hors transport'; totalHT = marchandiseNette;
+      htLabel = 'Total HT hors transport'; totalHT = marchandiseNette + ecoTotal;
     } else {
       ligneTransport = `<span class="txp"><span>Transport <span class="sub">${t.txt}</span></span>${selDep}</span><span>${eur(t.val)}</span>`;
-      htLabel = 'Total HT rendu'; totalHT = marchandiseNette + t.val; payable = true;
+      htLabel = 'Total HT rendu'; totalHT = marchandiseNette + ecoTotal + t.val; payable = true;
     }
     const tva = totalHT * 0.20;
     const ttc = totalHT + tva;
+
+    // ligne éco-contribution (toujours affichée si > 0), entre marchandise et transport
+    const ligneEco = ecoTotal > 0
+      ? `<div class="recap-l"><span>Éco-contribution</span><span>${eur(ecoTotal)}</span></div>`
+      : '';
 
     // ligne remise (affichée seulement si un taux est actif)
     const ligneRemise = remise > 0
@@ -883,6 +917,7 @@ function rendreDevis(){
       <div class="recap">
         <div class="recap-l"><span>Marchandise HT</span><span>${eur(marchandise)}</span></div>
         ${ligneRemise}
+        ${ligneEco}
         <div class="recap-l">${ligneTransport}</div>
         <div class="recap-l sub-ht"><span>${htLabel}</span><span>${eur(totalHT)}</span></div>
         <div class="recap-l"><span>TVA 20 %</span><span>${eur(tva)}</span></div>
@@ -928,7 +963,7 @@ function rendreDevis(){
     }
     if(peutPayer || payable) $('pay').onclick = () => {
       if($('pay').disabled) return;
-      payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise}, {email:clientEmail.trim(), tel:clientTel.trim()});
+      payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise, eco:ecoTotal}, {email:clientEmail.trim(), tel:clientTel.trim()});
     };
   }
 }
@@ -958,6 +993,7 @@ function chargerPourEdition(i){
   editIndex = i;
   $('editbar').classList.add('on');
   $('add').textContent = 'Mettre à jour le rayonnage';
+  if($('add2')) $('add2').textContent = 'Mettre à jour';
   rendre(); rendreDevis();
   document.querySelector('.grid').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -965,6 +1001,7 @@ function sortirEdition(){
   editIndex = -1;
   $('editbar').classList.remove('on');
   $('add').textContent = 'Ajouter au devis';
+  if($('add2')) $('add2').textContent = 'Ajouter au devis';
 }
 
 /* ==========================================================
@@ -972,10 +1009,10 @@ function sortirEdition(){
    ========================================================== */
 function entree(c){
   const lignes = nomenclature(c);
-  return {lib:libelle(c), q:c.q, cfg:c, lignes, total: totalLignes(lignes)*c.q};
+  return {lib:libelle(c), q:c.q, cfg:c, lignes, total: totalLignes(lignes)*c.q, eco: ecoLignes(lignes)*c.q};
 }
 
-$('add').onclick = ()=>{
+function ajouterAuDevis(){
   const c = lire();
   if(editIndex >= 0){
     devis[editIndex] = entree(c);
@@ -987,7 +1024,9 @@ $('add').onclick = ()=>{
     rendreDevis();
     $('devis').scrollIntoView({behavior:'smooth',block:'center'});
   }
-};
+}
+$('add').onclick = ajouterAuDevis;
+if($('add2')) $('add2').onclick = ajouterAuDevis;
 
 $('cancelEdit').onclick = ()=>{ sortirEdition(); rendreDevis(); };
 
@@ -996,6 +1035,7 @@ $('clear').onclick = ()=>{ devis = []; sortirEdition(); rendreDevis(); };
 $('copy').onclick = ()=>{
   if(!devis.length) return;
   const marchandise = devis.reduce((s,d)=>s+d.total,0);
+  const ecoTotalTxt = devis.reduce((s,d)=>s+(d.eco||0),0);
   const dep = departement, t = calculTransport(marchandise, dep);
   const l = ['DEVIS RAYONNAGES EPSILINE — tarif au 01/09/2026 (prix HT)',''];
   devis.forEach(d=>{
@@ -1004,11 +1044,12 @@ $('copy').onclick = ()=>{
     l.push('');
   });
   l.push(`Marchandise HT : ${eur(marchandise)}`);
+  if(ecoTotalTxt > 0) l.push(`Éco-contribution : ${eur(ecoTotalTxt)}`);
   if(!dep) l.push('Transport : département non renseigné');
   else if(t.consult) l.push(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep}) : sur consultation`);
   else {
     l.push(`Transport dépt ${dep} (${t.txt}) : ${eur(t.val)}`);
-    l.push(`TOTAL HT RENDU : ${eur(marchandise + t.val)}`);
+    l.push(`TOTAL HT RENDU : ${eur(marchandise + ecoTotalTxt + t.val)}`);
   }
   navigator.clipboard.writeText(l.join('\n'));
   $('copy').textContent = 'Devis copié';
@@ -1130,18 +1171,20 @@ async function construirePDF(){
     doc.setDrawColor(61,71,83); doc.setLineWidth(0.4); doc.line(lx, y, rx, y); y += 5;
     const remiseValPdf = marchandise * (remise/100);
     const marchandiseNettePdf = marchandise - remiseValPdf;
+    const ecoTotalPdf = devis.reduce((s,d)=>s+(d.eco||0),0);
     ligne('Marchandise HT', eurPdf(marchandise));
     if(remise > 0){
       doc.setTextColor(26,122,76);
       ligne(`Remise ${remise} % (${codeRemise})`, '− '+eurPdf(remiseValPdf));
       doc.setTextColor(90);
     }
+    if(ecoTotalPdf > 0) ligne('Éco-contribution', eurPdf(ecoTotalPdf));
     if(!dep) ligne('Transport', 'département non renseigné');
     else if(t.consult) ligne(`Transport (${dep==='AUTRE'?'autres dépts':'dépt '+dep})`, 'sur consultation');
     else {
       ligne(`Transport dépt ${dep} (${t.txt})`, eurPdf(t.val));
       doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(lx, y-1, rx, y-1); y += 1;
-      ligne('TOTAL HT RENDU', eurPdf(marchandiseNettePdf + t.val), true);
+      ligne('TOTAL HT RENDU', eurPdf(marchandiseNettePdf + ecoTotalPdf + t.val), true);
     }
 
     // ---- pied de page
@@ -1206,7 +1249,7 @@ async function verifierCode(){
     const data = await rep.json();
     const taux = Number(data && data.taux) || 0;
     if(taux > 0){
-      remise = taux; codeRemise = code.toUpperCase(); rendreDevis();
+      remise = taux; codeRemise = code; rendreDevis();
     } else {
       if(btn){ btn.disabled=false; btn.textContent='Appliquer'; }
       const m = $('code-msg');
@@ -1277,6 +1320,7 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
       remise_taux: remiseInfo?.remise_taux || 0,
       remise_ht: +(remiseInfo?.remise_val || 0).toFixed(2),
       code_remise: remiseInfo?.code || '',
+      eco_contribution: +(remiseInfo?.eco || 0).toFixed(2),
       transport_ht: +transport.toFixed(2),
       total_ht: +ht.toFixed(2),
       tva: +tva.toFixed(2),
