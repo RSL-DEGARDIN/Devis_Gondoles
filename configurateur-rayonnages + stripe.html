@@ -1379,6 +1379,15 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
     try { const j = JSON.parse(txt); url = j.url || j.checkout_url || j.URL || txt; } catch(_){}
 
     if(url && /^https:\/\//.test(url)){
+      // sauvegarde ciblée du panier avant de partir sur Stripe (restauré si retour annulé)
+      try{
+        localStorage.setItem('rsl_panier', JSON.stringify({
+          configs: devis.map(d=>d.cfg),
+          departement: departement,
+          email: (coord?.email)||'',
+          tel: (coord?.tel)||''
+        }));
+      }catch(_){}
       window.location.href = url;               // redirection vers Stripe Checkout
     } else {
       throw new Error('Réponse inattendue : '+txt.slice(0,120));
@@ -1493,11 +1502,29 @@ rendreDevis();
 (function retourPaiement(){
   const p = new URLSearchParams(location.search).get('paiement');
   if(!p) return;
+
+  if(p === 'ok'){
+    // paiement réussi : la commande est passée, on efface le panier sauvegardé
+    try{ localStorage.removeItem('rsl_panier'); }catch(_){}
+  } else {
+    // retour annulé (flèche retour Stripe) : on restaure le panier sauvegardé
+    try{
+      const sauv = JSON.parse(localStorage.getItem('rsl_panier')||'null');
+      if(sauv && Array.isArray(sauv.configs) && sauv.configs.length){
+        devis = sauv.configs.map(cfg => entree(cfg));
+        if(sauv.departement) departement = sauv.departement;
+        if(sauv.email) clientEmail = sauv.email;
+        if(sauv.tel) clientTel = sauv.tel;
+        rendreDevis();
+      }
+    }catch(_){}
+  }
+
   const banniere = document.createElement('div');
   banniere.className = 'bandeau-paiement ' + (p==='ok' ? 'ok' : 'annule');
   banniere.innerHTML = p==='ok'
     ? '✓ Votre paiement a bien été enregistré. Un reçu vous a été envoyé par email. Merci !'
-    : 'Paiement annulé — votre commande n\'a pas été validée. Vous pouvez réessayer.';
+    : 'Paiement annulé — votre panier a été conservé, vous pouvez réessayer.';
   const fermer = document.createElement('button');
   fermer.textContent = '×'; fermer.className = 'bandeau-close';
   fermer.onclick = () => banniere.remove();
