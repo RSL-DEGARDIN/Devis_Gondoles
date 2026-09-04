@@ -162,17 +162,26 @@ tfoot td{font-weight:700;border-top:2px solid var(--acier);border-bottom:none;pa
 .recap-l.grand{border-top:1px solid var(--trait);margin-top:6px;padding-top:8px;font-weight:700}
 .recap-l.sub-ht{border-top:1px solid var(--trait);margin-top:5px;padding-top:7px;font-weight:600}
 .payzone{margin-top:12px}
+.payrow{display:flex;gap:8px}
+.payrow>button{flex:1 1 50%}
 .btn-pay{
   width:100%;padding:13px;border:none;border-radius:4px;background:#635bff;color:#fff;
   font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em
 }
 .btn-pay:hover:not(:disabled){background:#5249e0}
 .btn-pay:disabled{background:#c9d2db;cursor:not-allowed}
+.btn-demande{
+  width:100%;padding:13px;border:1px solid var(--acier);border-radius:4px;background:#fff;color:var(--acier);
+  font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em;transition:background .15s,color .15s
+}
+.btn-demande:hover:not(:disabled){background:var(--acier);color:#fff}
+.btn-demande:disabled{border-color:#c9d2db;color:#c9d2db;cursor:not-allowed}
 .paynote{font-size:11.5px;color:#8b98a6;text-align:center;margin-top:6px}
 .recap-l.grand b{font-size:20px}
 .recap-l .sub{font-size:11px;color:#8b98a6;margin-left:6px}
 .recap-l .txp{display:flex;align-items:center;gap:8px;flex:1;margin-right:14px}
 .recap-l .txp>span:first-child{white-space:nowrap}
+.dep-hint{font-size:10.5px;color:#8b98a6;margin-left:7px;font-style:italic}
 .recap-l .txp select{margin:0 auto;width:130px;flex:0 0 auto}
 .recap-l .txp .sub{margin-left:0}
 .recap .warn{font-size:12px;color:#7c2f14}
@@ -501,7 +510,7 @@ const setAppui = (pd, calage) => {
   });
 };
 let editIndex = -1;   // -1 = ajout ; sinon index du rayonnage en cours d'édition
-let departement = ''; // département de livraison (donnée globale du devis)
+let departement = '54'; // département de livraison par défaut (Meurthe-et-Moselle / Nancy)
 
 // nombre de travées par longueur (ordre d'affichage = 1000 puis 1250 puis 1500)
 let nbTravees = {1000:3, 1250:0, 1500:0};
@@ -838,7 +847,7 @@ function rendreDevis(){
       deps.map(d=>`<option value="${d}"${d===dep?' selected':''}>${d}</option>`).join('') +
       `<option value="AUTRE"${dep==='AUTRE'?' selected':''}>Autres</option>`;
   };
-  const selDep = `<select id="dep">${optsDep()}</select>`;
+  const selDep = `<select id="dep">${optsDep()}</select><span class="dep-hint">(à modifier selon le lieu de livraison)</span>`;
 
   if(!devis.length){
     remise = 0; codeRemise = ''; codeSaisi = '';
@@ -890,6 +899,9 @@ function rendreDevis(){
     const telOk = clientTel.trim().length >= 6;
     const coordOk = emailOk && telOk;
     const peutPayer = payable && coordOk;
+    // pour une demande : il suffit qu'un département soit choisi (même 'sur consultation') + coordonnées
+    const depChoisi = !!dep;
+    const peutDemander = depChoisi && coordOk;
 
     // bloc coordonnées client (obligatoire pour payer)
     const zoneCoord = `
@@ -901,14 +913,14 @@ function rendreDevis(){
         </div>
       </div>`;
 
-    // message d'incitation si paiement bloqué par coordonnées
+    // message d'incitation
     let payLabel, payNote = '';
     if(!payable){
       payLabel = 'Choisissez un département pour payer';
-      payNote = '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé.</div>';
+      payNote = '<div class="paynote">Le paiement en ligne nécessite un montant de transport calculé. Vous pouvez aussi envoyer votre demande sans payer.</div>';
     } else if(!coordOk){
       payLabel = 'Payer '+eur(ttc)+' en ligne';
-      payNote = '<div class="paynote">Renseignez votre email et votre téléphone pour valider la commande.</div>';
+      payNote = '<div class="paynote">Renseignez votre email et votre téléphone pour valider.</div>';
     } else {
       payLabel = 'Payer '+eur(ttc)+' en ligne';
     }
@@ -926,8 +938,12 @@ function rendreDevis(){
       ${zoneCode}
       ${zoneCoord}
       <div class="payzone">
-        <button class="btn-pay" id="pay"${peutPayer?'':' disabled'}>${payLabel}</button>
+        <div class="payrow">
+          <button class="btn-pay" id="pay"${peutPayer?'':' disabled'}>${payLabel}</button>
+          <button class="btn-demande" id="demande"${coordOk?'':' disabled'}>Envoyer ma demande</button>
+        </div>
         ${payNote}
+        <div class="paynote" id="demande-msg" style="display:none"></div>
       </div>`;
     $('dep').onchange = e => { departement = e.target.value; rendreDevis(); };
     // coordonnées : mise à jour sans re-render à chaque frappe (pour ne pas perdre le focus)
@@ -936,17 +952,17 @@ function rendreDevis(){
     const majBtnPay = () => {
       const eOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
       const tOk = clientTel.trim().length >= 6;
-      const btn = $('pay');
-      if(!btn) return;
-      const ok = payable && eOk && tOk;
-      btn.disabled = !ok;
+      const coordsOk = eOk && tOk;
+      const btn = $('pay'), btnD = $('demande');
+      if(btn) btn.disabled = !(payable && coordsOk);
+      if(btnD) btnD.disabled = !coordsOk;
       const note = document.querySelector('.payzone .paynote');
-      if(payable && !(eOk && tOk)){
+      if(payable && !coordsOk){
         if(!note){
           const d = document.createElement('div');
           d.className = 'paynote';
-          d.textContent = 'Renseignez votre email et votre téléphone pour valider la commande.';
-          $('pay').after(d);
+          d.textContent = 'Renseignez votre email et votre téléphone pour valider.';
+          $('pay').parentElement.after(d);
         }
       } else if(note && payable){ note.remove(); }
     };
@@ -964,6 +980,10 @@ function rendreDevis(){
     if(peutPayer || payable) $('pay').onclick = () => {
       if($('pay').disabled) return;
       payer(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise, eco:ecoTotal}, {email:clientEmail.trim(), tel:clientTel.trim()});
+    };
+    $('demande').onclick = () => {
+      if($('demande').disabled) return;
+      envoyerDemande(ttc, totalHT, tva, t.val, dep, {marchandise_brute:marchandise, remise_taux:remise, remise_val:remiseVal, code:codeRemise, eco:ecoTotal}, {email:clientEmail.trim(), tel:clientTel.trim()});
     };
   }
 }
@@ -1264,6 +1284,75 @@ async function verifierCode(){
 }
 
 /* ==========================================================
+   Construit le payload commun (paiement OU demande)
+   ========================================================== */
+function construirePayload(ttc, ht, tva, transport, dep, remiseInfo, coord, flux){
+  const lignesNomen = consolide();
+
+  // CSV nomenclature : ordre des colonnes garanti, séparateur ; pour Excel FR
+  const csvSep = ';';
+  const csvCell = v => {
+    const s = String(v).replace(/"/g,'""');
+    return /[";\n]/.test(s) ? `"${s}"` : s;
+  };
+  const csvNum = v => String(v).replace('.', ',');
+  const csvHeader = ['Reference','Designation','Quantite','PU HT','Total HT'];
+  const csvRows = lignesNomen.map(l => [
+    l.ref, l.lib, l.qte, csvNum(l.pu.toFixed(5)), csvNum(l.total.toFixed(2))
+  ]);
+  const csvNomenclature = [csvHeader, ...csvRows]
+    .map(r => r.map(csvCell).join(csvSep)).join('\r\n');
+
+  let resumeRayonnages = devis
+    .map(d => `${d.q>1?d.q+'x ':''}${d.lib} — ${eur(d.total)}`)
+    .join(' | ');
+  if(resumeRayonnages.length > 480) resumeRayonnages = resumeRayonnages.slice(0,477) + '…';
+
+  const now = new Date();
+  const jj = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const aa = String(now.getFullYear()).slice(-2);
+  const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
+  const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
+
+  return {
+    reference: reference,
+    flux: flux,                                  // 'paiement' ou 'demande' (routage Make)
+    paiement: flux === 'paiement',
+    date: `${aa.length===2?'20'+aa:aa}-${mm}-${jj}`,
+    date_iso: now.toISOString(),
+    departement: dep || '',
+    client: {
+      email: coord?.email || '',
+      telephone: coord?.tel || ''
+    },
+    resume_rayonnages: resumeRayonnages,
+    transport_sur_consultation: (transport == null),   // dépt 20 / autres : transport non chiffré
+    montants: {
+      marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
+      remise_taux: remiseInfo?.remise_taux || 0,
+      remise_ht: +(remiseInfo?.remise_val || 0).toFixed(2),
+      code_remise: remiseInfo?.code || '',
+      eco_contribution: +(remiseInfo?.eco || 0).toFixed(2),
+      transport_ht: +((transport ?? 0)).toFixed(2),
+      total_ht: +((ht ?? 0)).toFixed(2),
+      tva: +((tva ?? 0)).toFixed(2),
+      total_ttc: +((ttc ?? 0)).toFixed(2),
+      montant_stripe_centimes: Math.round((ttc ?? 0)*100),
+      devise: 'eur'
+    },
+    rayonnages: devis.map(d=>({
+      designation: d.lib, quantite: d.q, prix_ht: +d.total.toFixed(2)
+    })),
+    nomenclature: lignesNomen.map(l=>({
+      reference: l.ref, designation: l.lib,
+      quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
+    })),
+    csv_nomenclature: csvNomenclature
+  };
+}
+
+/* ==========================================================
    PAIEMENT STRIPE via webhook Make
    ========================================================== */
 async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
@@ -1274,73 +1363,7 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   const btn = $('pay'); const label = btn.textContent;
   btn.textContent = 'Redirection vers le paiement…'; btn.disabled = true;
 
-  // charge utile : détail complet du devis pour Make/Stripe
-  const lignesNomen = consolide();
-
-  // CSV nomenclature construit ici : ordre des colonnes garanti, séparateur ; pour Excel FR
-  const csvSep = ';';
-  const csvCell = v => {
-    const s = String(v).replace(/"/g,'""');
-    return /[";\n]/.test(s) ? `"${s}"` : s;
-  };
-  const csvNum = v => String(v).replace('.', ',');   // virgule décimale FR
-  const csvHeader = ['Reference','Designation','Quantite','PU HT','Total HT'];
-  const csvRows = lignesNomen.map(l => [
-    l.ref, l.lib, l.qte, csvNum(l.pu.toFixed(5)), csvNum(l.total.toFixed(2))
-  ]);
-  const csvNomenclature = [csvHeader, ...csvRows]
-    .map(r => r.map(csvCell).join(csvSep)).join('\r\n');
-
-  // résumé compact des rayonnages pour les metadata Stripe (limite 500 caractères/valeur)
-  let resumeRayonnages = devis
-    .map(d => `${d.q>1?d.q+'x ':''}${d.lib} — ${eur(d.total)}`)
-    .join(' | ');
-  if(resumeRayonnages.length > 480) resumeRayonnages = resumeRayonnages.slice(0,477) + '…';
-
-  // référence commande RAY-jjmmaa-XXXX (lien entre la commande et le paiement Stripe)
-  const now = new Date();
-  const jj = String(now.getDate()).padStart(2,'0');
-  const mm = String(now.getMonth()+1).padStart(2,'0');
-  const aa = String(now.getFullYear()).slice(-2);
-  const rnd = String(Math.floor(Math.random()*10000)).padStart(4,'0');
-  const reference = `RAY-${jj}${mm}${aa}-${rnd}`;
-
-  const payload = {
-    reference: reference,
-    date: `${aa.length===2?'20'+aa:aa}-${mm}-${jj}`,   // AAAA-MM-JJ (champ Airtable date sans heure)
-    date_iso: new Date().toISOString(),                // horodatage complet si besoin
-    departement: dep,
-    client: {
-      email: coord?.email || '',
-      telephone: coord?.tel || ''
-    },
-    resume_rayonnages: resumeRayonnages,
-    montants: {
-      marchandise_ht: +(remiseInfo?.marchandise_brute ?? devis.reduce((s,d)=>s+d.total,0)).toFixed(2),
-      remise_taux: remiseInfo?.remise_taux || 0,
-      remise_ht: +(remiseInfo?.remise_val || 0).toFixed(2),
-      code_remise: remiseInfo?.code || '',
-      eco_contribution: +(remiseInfo?.eco || 0).toFixed(2),
-      transport_ht: +transport.toFixed(2),
-      total_ht: +ht.toFixed(2),
-      tva: +tva.toFixed(2),
-      total_ttc: +ttc.toFixed(2),
-      // Stripe attend un entier en centimes
-      montant_stripe_centimes: Math.round(ttc*100),
-      devise: 'eur'
-    },
-    rayonnages: devis.map(d=>({
-      designation: d.lib,
-      quantite: d.q,
-      prix_ht: +d.total.toFixed(2)
-    })),
-    nomenclature: lignesNomen.map(l=>({
-      reference: l.ref, designation: l.lib,
-      quantite: l.qte, pu_ht: +l.pu.toFixed(5), total_ht: +l.total.toFixed(2)
-    })),
-    // CSV prêt à l'emploi (ordre des colonnes garanti)
-    csv_nomenclature: csvNomenclature
-  };
+  const payload = construirePayload(ttc, ht, tva, transport, dep, remiseInfo, coord, 'paiement');
 
   try{
     const rep = await fetch(MAKE_WEBHOOK_URL, {
@@ -1363,6 +1386,49 @@ async function payer(ttc, ht, tva, transport, dep, remiseInfo, coord){
   } catch(err){
     console.error(err);
     alert("Le paiement n'a pas pu démarrer.\n\nVérifiez que le scénario Make est actif et qu'il répond bien l'URL Stripe.\n\nDétail : "+err.message);
+    btn.textContent = label; btn.disabled = false;
+  }
+}
+
+/* ==========================================================
+   ENVOI DE DEMANDE (sans paiement) via le même webhook Make
+   Même payload que payer(), mais flux='demande' et pas de redirection.
+   ========================================================== */
+async function envoyerDemande(ttc, ht, tva, transport, dep, remiseInfo, coord){
+  if(!MAKE_WEBHOOK_URL){
+    alert("L'envoi de demande n'est pas encore activé : l'URL du webhook Make n'a pas été renseignée.");
+    return;
+  }
+  const btn = $('demande'); const label = btn.textContent;
+  btn.textContent = 'Envoi…'; btn.disabled = true;
+
+  const payload = construirePayload(ttc, ht, tva, transport, dep, remiseInfo, coord, 'demande');
+
+  try{
+    const rep = await fetch(MAKE_WEBHOOK_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!rep.ok) throw new Error('HTTP '+rep.status);
+
+    // succès : message de confirmation, pas de redirection
+    const msg = $('demande-msg');
+    if(msg){
+      msg.textContent = '✓ Demande envoyée. Nous vous rappelons rapidement.';
+      msg.style.display = 'block';
+      msg.style.color = '#166534';
+    }
+    btn.textContent = 'Demande envoyée ✓';
+    // laisse le bouton désactivé pour éviter les doubles envois
+  } catch(err){
+    console.error(err);
+    const msg = $('demande-msg');
+    if(msg){
+      msg.textContent = "L'envoi a échoué. Réessayez ou contactez-nous directement.";
+      msg.style.display = 'block';
+      msg.style.color = '#c0392b';
+    }
     btn.textContent = label; btn.disabled = false;
   }
 }
