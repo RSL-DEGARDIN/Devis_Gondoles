@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demande de prix plateforme / mezzanine — RSL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bleu:#123A5E; --bleu2:#1B5B92; --bleu-pale:#E7EFF6;
+  --orange:#E8701A; --orange-pale:#FDF0E6;
+  --graphite:#4A4E55; --graphite2:#6B7079;
+  --fond:#F2F4F6; --blanc:#fff; --texte:#1A222C; --gris:#7C858F; --trait:#D8DEE4;
+  --rouge:#B3261E; --vert:#1F7A4D;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--texte);font-family:'Barlow',system-ui,sans-serif;font-size:15px;line-height:1.5}
+h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
+a{color:var(--bleu2)}
+
+header{background:var(--bleu);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+header .t{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1}
+header .s{font-size:13px;color:#A9C4DA;margin-top:2px}
+header .back{margin-left:auto;font-size:13px;color:#A9C4DA;text-decoration:none;border:1px solid #2C5F8C;padding:6px 12px;border-radius:3px}
+header .back:hover{background:#1B4A73;color:#fff}
+
+.wrap{max-width:1240px;margin:0 auto;padding:22px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:start}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--blanc);border:1px solid var(--trait);border-radius:4px;margin-bottom:18px}
+.card>h2{margin:0;font-size:19px;font-weight:600;padding:12px 18px;border-bottom:1px solid var(--trait);
+  background:linear-gradient(to right,var(--bleu-pale),#fff);color:var(--bleu)}
+.card>h2 .n{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;background:var(--bleu);
+  color:#fff;border-radius:50%;font-size:13px;margin-right:8px;vertical-align:1px}
+.body{padding:18px}
+
+label{display:block;font-size:13px;font-weight:600;color:var(--graphite2);margin-bottom:5px}
+.hint{font-size:12.5px;color:var(--gris);margin-top:4px;line-height:1.4}
+select,input[type=number],input[type=text],input[type=email],input[type=tel],textarea{
+  width:100%;padding:9px 10px;border:1px solid var(--trait);border-radius:3px;font-family:inherit;font-size:15px;background:#fff;color:var(--texte)}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-offset:-1px;border-color:var(--bleu2)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:14px}
+.f{margin-bottom:16px}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+
+.seg{display:flex;border:1px solid var(--trait);border-radius:3px;overflow:hidden}
+.seg button{flex:1;padding:10px 6px;border:0;background:#fff;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;
+  cursor:pointer;color:var(--graphite2);border-right:1px solid var(--trait)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--bleu);color:#fff}
+.seg button:hover:not([aria-pressed=true]){background:var(--bleu-pale)}
+.seg.oui button[aria-pressed=true][data-v="1"]{background:var(--vert)}
+.seg.oui button[aria-pressed=true][data-v="0"]{background:var(--graphite2)}
+
+/* questions oui/non alignées comme sur le document papier */
+.q{display:grid;grid-template-columns:1fr 210px;gap:14px;align-items:center;
+   padding:11px 0;border-bottom:1px solid #EDF0F3}
+.q:last-of-type{border-bottom:0}
+.q .lib{font-size:14.5px;font-weight:600;color:var(--texte)}
+.q .lib em{display:block;font-style:normal;font-size:12.5px;font-weight:400;color:var(--gris);margin-top:2px;line-height:1.35}
+@media(max-width:520px){.q{grid-template-columns:1fr}}
+.sous{background:var(--fond);border:1px solid var(--trait);border-radius:3px;padding:12px 13px 2px;margin:2px 0 12px}
+.sous.off{display:none}
+
+.viz{background:#fff;border:1px solid var(--trait);border-radius:4px;padding:14px;position:sticky;top:14px}
+.viz svg{width:100%;height:auto;display:block}
+.vtabs{display:flex;gap:6px;margin-bottom:10px}
+.vtabs button{padding:6px 13px;border:1px solid var(--trait);background:#fff;border-radius:3px;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;color:var(--graphite2)}
+.vtabs button[aria-pressed=true]{background:var(--graphite);color:#fff;border-color:var(--graphite)}
+
+.cotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:1px;
+  background:var(--trait);border:1px solid var(--trait);margin:12px 0 0}
+.cotes div{background:#fff;padding:9px 11px;display:flex;flex-direction:column}
+.cotes dt{font-size:11.5px;color:var(--gris);font-weight:500;line-height:1.3}
+.cotes dd{margin:0;margin-top:auto;padding-top:6px;font-family:'Barlow Condensed',sans-serif;
+  font-size:21px;font-weight:600;color:var(--bleu);line-height:1}
+
+table.recap{width:100%;border-collapse:collapse;font-size:14px}
+table.recap th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:var(--graphite2);
+  border-bottom:2px solid var(--trait);padding:7px 9px}
+table.recap td{border-bottom:1px solid #EDF0F3;padding:8px 9px;vertical-align:top}
+table.recap td.v{text-align:right;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.recap td.v.non{color:var(--gris);font-weight:400}
+table.recap td.v.oui{color:var(--vert)}
+
+.btn{display:inline-block;padding:12px 22px;border:0;border-radius:3px;font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:600;cursor:pointer;background:var(--orange);color:#fff}
+.btn:hover{background:#CF5F0E}
+.btn:disabled{background:#C4CAD1;cursor:not-allowed}
+.btn.sec{background:#fff;color:var(--bleu);border:1px solid var(--bleu2)}
+.btn.sec:hover{background:var(--bleu-pale)}
+.tools{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.check{display:flex;gap:9px;align-items:flex-start;margin-bottom:10px;font-size:14px;cursor:pointer}
+.check input{margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--bleu)}
+.msg{padding:11px 14px;border-radius:3px;font-size:14px;margin-top:12px}
+.msg.ok{background:#E7F4ED;color:var(--vert);border:1px solid #B6DFC8}
+.msg.ko{background:#FCEDEC;color:var(--rouge);border:1px solid #F0C4C1}
+.note{border-left:4px solid var(--bleu2);background:var(--bleu-pale);padding:12px 14px;font-size:14px;border-radius:0 3px 3px 0}
+.note.warn{border-color:var(--orange);background:var(--orange-pale)}
+.small{font-size:12.5px;color:var(--gris)}
+footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
+@media print{header .back,.tools,.vtabs,#btnEnvoi,#envoiMsg{display:none}.viz{position:static}
+  .card{break-inside:avoid}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <svg width="72" height="34" viewBox="0 0 72 34" aria-label="RSL" role="img">
+    <rect x="0" y="0" width="72" height="34" rx="3" fill="#E8701A"/>
+    <text x="36" y="25" text-anchor="middle" font-family="Barlow Condensed,sans-serif"
+          font-size="23" font-weight="700" fill="#fff" letter-spacing="1">RSL</text>
+  </svg>
+  <div>
+    <div class="t">Demande de prix — Plateforme / Mezzanine</div>
+    <div class="s">Renseignez le questionnaire, nous étudions et chiffrons votre plateforme</div>
+  </div>
+  <a class="back" href="https://rsl.eu/choisissez-que-produit-a-chiffrer/">← Autres produits</a>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ COLONNE GAUCHE ============ -->
+  <div>
+
+    <div class="card">
+      <h2><span class="n">1</span>Dimensions et charge</h2>
+      <div class="body">
+
+        <div class="row3">
+          <div class="f">
+            <label for="L">Longueur (mm)</label>
+            <input type="number" id="L" min="1000" max="40000" step="100" value="6000">
+          </div>
+          <div class="f">
+            <label for="P">Profondeur (mm)</label>
+            <input type="number" id="P" min="1000" max="25000" step="100" value="4000">
+          </div>
+          <div class="f">
+            <label for="Q">Charge répartie (kg/m²)</label>
+            <input type="number" id="Q" min="100" max="2000" step="50" value="500">
+          </div>
+        </div>
+        <div class="hint" style="margin:-8px 0 16px">
+          Charge uniformément répartie : 250 kg/m² archivage léger · 500 kg/m² stockage courant ·
+          750 à 1000 kg/m² charges lourdes.
+        </div>
+
+        <div class="f">
+          <label>La hauteur que vous indiquez est&nbsp;:</label>
+          <div class="seg" data-k="Ht">
+            <button type="button" data-v="libre" aria-pressed="true">Hauteur libre (sous poutre)</button>
+            <button type="button" data-v="plancher" aria-pressed="false">Hauteur sur plancher</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="f">
+            <label for="H">Hauteur (mm)</label>
+            <input type="number" id="H" min="2000" max="8000" step="50" value="2500">
+            <div class="hint" id="hHint"></div>
+          </div>
+          <div class="f">
+            <label for="Hbat">Hauteur du bâtiment sous obstacle (mm)</label>
+            <input type="number" id="Hbat" min="0" max="20000" step="100" value="0" placeholder="facultatif">
+            <div class="hint">Facultatif — sablière, charpente, éclairage, sprinklage.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">2</span>Équipements</h2>
+      <div class="body">
+
+        <div class="q">
+          <div class="lib">Plancher aggloméré<em>Panneaux bois hydrofuge. Sinon : tôle larmée ou caillebotis, à préciser plus bas.</em></div>
+          <div class="seg oui" data-k="plancher">
+            <button type="button" data-v="1" aria-pressed="true">Oui</button>
+            <button type="button" data-v="0" aria-pressed="false">Non</button>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="lib">Escalier<em>Escalier droit métallique avec main courante.</em></div>
+          <div class="seg oui" data-k="escalier">
+            <button type="button" data-v="1" aria-pressed="true">Oui</button>
+            <button type="button" data-v="0" aria-pressed="false">Non</button>
+          </div>
+        </div>
+        <div class="sous" id="sousEsc">
+          <div class="row3">
+            <div class="f">
+              <label for="escN">Nombre d'escaliers</label>
+              <input type="number" id="escN" min="1" max="6" step="1" value="1">
+            </div>
+            <div class="f">
+              <label for="escW">Largeur de volée</label>
+              <select id="escW">
+                <option value="800">800 mm</option>
+                <option value="1000" selected>1000 mm</option>
+                <option value="1200">1200 mm</option>
+              </select>
+            </div>
+            <div class="f">
+              <label for="escPos">Implantation</label>
+              <select id="escPos">
+                <option value="G" selected>Façade avant, à gauche</option>
+                <option value="D">Façade avant, à droite</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="lib">Palier<em>Palier de repos intermédiaire dans la volée d'escalier.</em></div>
+          <div class="seg oui" data-k="palier">
+            <button type="button" data-v="1" aria-pressed="false">Oui</button>
+            <button type="button" data-v="0" aria-pressed="true">Non</button>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="lib">Rambardes<em>Garde-corps périphérique, lisse haute, lisse intermédiaire et plinthe.</em></div>
+          <div class="seg oui" data-k="rambardes">
+            <button type="button" data-v="1" aria-pressed="true">Oui</button>
+            <button type="button" data-v="0" aria-pressed="false">Non</button>
+          </div>
+        </div>
+        <div class="sous" id="sousRamb">
+          <div class="row">
+            <div class="f">
+              <label for="rambML">Longueur de garde-corps (ml)</label>
+              <input type="number" id="rambML" min="0" max="400" step="0.5" value="0">
+              <div class="hint" id="rambHint"></div>
+            </div>
+            <div class="f">
+              <label>&nbsp;</label>
+              <button type="button" class="btn sec" id="btnRambAuto" style="width:100%;padding:9px">Reprendre le périmètre calculé</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="lib">Sas de sécurité<em>Portillon pivotant pour le chargement des palettes à l'étage, sans jamais ouvrir le vide.</em></div>
+          <div class="seg oui" data-k="sas">
+            <button type="button" data-v="1" aria-pressed="false">Oui</button>
+            <button type="button" data-v="0" aria-pressed="true">Non</button>
+          </div>
+        </div>
+        <div class="sous" id="sousSas">
+          <div class="row">
+            <div class="f">
+              <label for="sasN">Nombre de sas</label>
+              <input type="number" id="sasN" min="1" max="6" step="1" value="1">
+            </div>
+            <div class="f">
+              <label for="sasL">Largeur utile de passage (mm)</label>
+              <select id="sasL">
+                <option value="1200">1200 mm</option>
+                <option value="1500" selected>1500 mm</option>
+                <option value="2000">2000 mm</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">3</span>Votre projet en quelques mots</h2>
+      <div class="body">
+        <div class="f">
+          <label for="cUsage">Ce que vous stockez ou installez sur la plateforme</label>
+          <input type="text" id="cUsage" placeholder="Ex. : archives, pièces détachées en bacs, bureaux…">
+        </div>
+        <div class="f" style="margin-bottom:0">
+          <label for="cMsg">Précisions utiles au chiffrage</label>
+          <textarea id="cMsg" rows="4" placeholder="Contraintes du bâtiment, nature du sol, délai souhaité, montage par RSL ou non, revêtement de plancher si autre qu'aggloméré…"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ COLONNE DROITE ============ -->
+  <div>
+    <div class="viz">
+      <div class="vtabs">
+        <button type="button" id="tab3d" aria-pressed="true">Vue 3D</button>
+        <button type="button" id="tabPlan" aria-pressed="false">Vue en plan</button>
+      </div>
+      <div id="dessin"></div>
+      <dl class="cotes" id="cotes"></dl>
+      <div class="small" style="margin-top:10px">
+        Schéma de principe reprenant vos réponses. Il ne remplace ni l'étude, ni le plan de montage.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Récapitulatif de votre demande</h2>
+      <div class="body" style="padding-top:8px">
+        <table class="recap"><tbody id="tRecap"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COORDONNÉES ============ -->
+<div class="card" id="formDevis">
+  <h2><span class="n">4</span>Recevoir le chiffrage par e-mail</h2>
+  <div class="body">
+    <div class="note" style="margin-bottom:16px">
+      Une plateforme se chiffre après étude : dimensionnement des poteaux, des poutres et des ancrages
+      selon la charge annoncée. Vous ne verrez donc pas de prix en ligne — nous revenons vers vous
+      avec un chiffrage complet sous 48 h ouvrées.
+    </div>
+    <div class="row">
+      <div class="f"><label for="cNom">Nom et prénom *</label><input type="text" id="cNom" autocomplete="name"></div>
+      <div class="f"><label for="cSoc">Société *</label><input type="text" id="cSoc" autocomplete="organization"></div>
+    </div>
+    <div class="row">
+      <div class="f"><label for="cMail">E-mail *</label><input type="email" id="cMail" autocomplete="email"></div>
+      <div class="f"><label for="cTel">Téléphone</label><input type="tel" id="cTel" autocomplete="tel"></div>
+    </div>
+    <div class="row">
+      <div class="f"><label for="cCp">Code postal du site</label><input type="text" id="cCp" inputmode="numeric" maxlength="5"></div>
+      <div class="f"><label for="cVille">Ville</label><input type="text" id="cVille"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="cRgpd">
+      <span>J'accepte que RSL utilise ces informations pour traiter ma demande.
+      <a href="https://rsl.eu/politique-de-confidentialite/" target="_blank" rel="noopener">Politique de confidentialité</a>.</span></label>
+
+    <button class="btn" type="button" id="btnEnvoi" style="margin-top:8px">Envoyer ma demande</button>
+    <div id="envoiMsg"></div>
+
+    <div class="tools">
+      <button class="btn sec" type="button" id="btnPdf">Télécharger le questionnaire en PDF</button>
+      <button class="btn sec" type="button" id="btnImpr">Imprimer</button>
+      <button class="btn sec" type="button" id="btnLien">Copier le lien de ma demande</button>
+    </div>
+    <div class="small" id="lienMsg" style="margin-top:8px"></div>
+    <div class="small" style="margin-top:10px">
+      Le PDF reprend l'ensemble du questionnaire et le schéma. Vous pouvez l'imprimer, le faire valider
+      en interne, ou nous le retourner par e-mail à
+      <a href="mailto:s.degardin@rsl.eu">s.degardin@rsl.eu</a> ou par fax au 03 83 55 55 12.
+    </div>
+  </div>
+</div>
+
+<footer>
+  RSL — Rayonnages Services Lorraine · Plateformes et mezzanines de stockage · Étude et chiffrage sur mesure<br>
+  Le schéma est un principe d'implantation, pas un plan d'exécution.
+</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== RÉGLAGES ===================== */
+const WEBHOOK_DEVIS = "https://hook.eu2.make.com/vrtmhmhtxy5cu7s1wvvk3s48zt6slm4z";
+const SOURCE        = "configurateur-mezzanine";
+
+/* Hauteur de la structure porteuse (poutre + solive) retenue pour le schéma. */
+const H_STRUCT = 250;
+
+const $ = id => document.getElementById(id);
+const nb = n => new Intl.NumberFormat("fr-FR").format(n);
+const nb1 = n => new Intl.NumberFormat("fr-FR",{maximumFractionDigits:1}).format(n);
+
+/* ===================== ÉTAT ===================== */
+const S = {
+  L:6000, P:4000, H:2500, Ht:"libre", Q:500, Hbat:0,
+  plancher:true, escalier:true, escN:1, escW:1000, escPos:"G",
+  palier:false, rambardes:true, rambML:0, sas:false, sasN:1, sasL:1500,
+  usage:"", msg:""
+};
+let VUE = "3d";
+
+/* ===================== CALCULS ===================== */
+function calc(){
+  const surface = S.L * S.P / 1e6;
+  const zDeck   = S.Ht === "libre" ? S.H + H_STRUCT : S.H;      // dessus de plancher
+  const hLibre  = zDeck - H_STRUCT;
+  const perim   = 2 * (S.L + S.P) / 1000;
+  const ouvert  = (S.escalier ? S.escN * S.escW : 0) / 1000 + (S.sas ? S.sasN * S.sasL : 0) / 1000;
+  return {
+    surface,
+    zDeck, hLibre, hPlancher: zDeck,
+    chargeTotale: Math.round(surface * S.Q),
+    perimetre: perim,
+    rambEstim: Math.max(0, perim - ouvert)
+  };
+}
+
+/* ===================== SCHÉMA 3D ===================== */
+/* Axonométrie : x = longueur (vers la droite en descendant),
+   y = profondeur (vers la droite en montant), z = vertical.        */
+function pr(x,y,z){ return [x + 0.66*y, 0.30*x - 0.40*y - z]; }
+
+/* Texte avec halo blanc. Le doublon est volontaire : paint-order n'est pas
+   interprété par tous les moteurs de rendu, deux textes superposés le sont. */
+function txt(x, y, s, taille, couleur, gras){
+  const a = `x="${x}" y="${y}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" ` +
+            `font-size="${taille}"${gras ? ' font-weight="bold"' : ""}`;
+  return `<text ${a} fill="none" stroke="#fff" stroke-width="4.5" stroke-linejoin="round">${s}</text>` +
+         `<text ${a} fill="${couleur}">${s}</text>`;
+}
+
+
+function svg3d(largeur, hauteur){
+  const c = calc();
+  const L = S.L, P = S.P, zD = c.zDeck;
+  const hRam = 1100;                        // hauteur garde-corps
+  const escW = S.escalier ? S.escW : 0;
+  const escX = S.escPos === "D" ? Math.max(0, L - escW) : 0;
+
+  /* --- géométrie de l'escalier (volée droite, descend vers l'avant) --- */
+  const marches = [];
+  let escRun = 0;
+  if(S.escalier){
+    const giron = 250, contreM = 180;
+    const n = Math.max(3, Math.round(zD / contreM));
+    const h = zD / n;
+    const nA = S.palier ? Math.ceil(n/2) : n;
+    let y = 0, z = zD;
+    for(let i=0;i<n;i++){
+      if(i === nA && S.palier){                     // palier de repos
+        marches.push({y0:y, y1:y-1000, z:z, palier:true});
+        y -= 1000;
+      }
+      z -= h;
+      marches.push({y0:y, y1:y-giron, z:z, palier:false});
+      y -= giron;
+    }
+    escRun = -y;
+  }
+
+  /* --- cadrage --- */
+  const cand = [];
+  for(const x of [0,L]) for(const y of [0,P]) for(const z of [0, zD + (S.rambardes?hRam:0)]) cand.push(pr(x,y,z));
+  if(S.escalier){ cand.push(pr(escX, -escRun, 0), pr(escX+escW, -escRun, 0), pr(escX, -escRun, 1000)); }
+  const dCote = Math.max(900, L*0.09);
+  cand.push(pr(L, 0, -900), pr(0, 0, -900), pr(L, P, zD),
+            pr(L + dCote, 0, -900), pr(L + dCote, P, -500));          // place pour les cotes
+  const xs = cand.map(p=>p[0]), ys = cand.map(p=>p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const mg = 46;
+  const k = Math.min((largeur-2*mg)/(x1-x0), (hauteur-2*mg)/(y1-y0));
+  const tx = mg + (largeur-2*mg - (x1-x0)*k)/2 - x0*k;
+  const ty = mg + (hauteur-2*mg - (y1-y0)*k)/2 - y0*k;
+  const p = (x,y,z) => { const q = pr(x,y,z); return [q[0]*k+tx, q[1]*k+ty]; };
+  const pt = (x,y,z) => { const q = p(x,y,z); return q[0].toFixed(1)+","+q[1].toFixed(1); };
+  const quad = (a,b,c2,d,fill,stroke,sw) =>
+    `<polygon points="${a} ${b} ${c2} ${d}" fill="${fill}" stroke="${stroke||"none"}" stroke-width="${sw||1}" stroke-linejoin="round"/>`;
+
+  const COUL = { struct:"#1B5B92", structF:"#D7E4EF", pied:"#123A5E",
+                 deck:"#E4DCCB", deckNu:"#EEF2F5", trait:"#123A5E",
+                 rail:"#4A4E55", esc:"#4A4E55", sas:"#E8701A", cote:"#6B7079" };
+  let o = "";
+
+  /* sol */
+  o += quad(pt(0,0,0), pt(L,0,0), pt(L,P,0), pt(0,P,0), "#EDF0F3", "#C9D2DA", 1);
+
+  /* poteaux : trame ~3,5 m x 5 m */
+  const trame = (dim, pas) => {
+    const n = Math.max(1, Math.ceil(dim / pas));
+    return Array.from({length:n+1}, (_,i) => Math.round(dim*i/n));
+  };
+  const gx = trame(L, 3500), gy = trame(P, 5000);
+  const sPot = 100, zPot = zD - H_STRUCT;
+  const poteaux = [];
+  gx.forEach(x => gy.forEach(y => poteaux.push([Math.min(x, L-sPot), Math.min(y, P-sPot)])));
+  poteaux.sort((a,b) => b[1]-a[1] || a[0]-b[0]);
+  poteaux.forEach(([x,y]) => {
+    o += quad(pt(x,y,0), pt(x+sPot,y,0), pt(x+sPot,y,zPot), pt(x,y,zPot), COUL.structF, COUL.pied, 1);
+    o += quad(pt(x+sPot,y,0), pt(x+sPot,y+sPot,0), pt(x+sPot,y+sPot,zPot), pt(x+sPot,y,zPot), "#B9CBDA", COUL.pied, 1);
+  });
+
+  /* bandeaux de rive (poutres) */
+  const rive = (ax,ay,bx,by) =>
+    quad(pt(ax,ay,zD), pt(bx,by,zD), pt(bx,by,zD-H_STRUCT), pt(ax,ay,zD-H_STRUCT), "#C2D4E3", COUL.struct, 1);
+  o += rive(0,P,L,P);
+  o += rive(0,0,0,P);
+  o += rive(L,0,L,P);
+  o += rive(0,0,L,0);
+
+  /* plancher */
+  o += quad(pt(0,0,zD), pt(L,0,zD), pt(L,P,zD), pt(0,P,zD),
+            S.plancher ? COUL.deck : COUL.deckNu, COUL.struct, 1.4);
+  /* solives / joints de panneaux */
+  const pas = S.plancher ? 1200 : 900;
+  for(let y = pas; y < P; y += pas)
+    o += `<line x1="${p(0,y,zD)[0]}" y1="${p(0,y,zD)[1]}" x2="${p(L,y,zD)[0]}" y2="${p(L,y,zD)[1]}"
+           stroke="${S.plancher?"#C9BFA8":"#9FB4C6"}" stroke-width="1" ${S.plancher?"":'stroke-dasharray="4 3"'}/>`;
+  if(!S.plancher)
+    for(let x = 1000; x < L; x += 1000)
+      o += `<line x1="${p(x,0,zD)[0]}" y1="${p(x,0,zD)[1]}" x2="${p(x,P,zD)[0]}" y2="${p(x,P,zD)[1]}"
+             stroke="#9FB4C6" stroke-width="1" stroke-dasharray="4 3"/>`;
+
+  /* trémie de l'escalier */
+  if(S.escalier)
+    o += quad(pt(escX,0,zD), pt(escX+escW,0,zD), pt(escX+escW,1200,zD), pt(escX,1200,zD), "#FFFFFF", COUL.struct, 1.2);
+
+  /* garde-corps */
+  const sasX = S.sas ? (S.escPos === "D" ? L*0.22 : L*0.62) : -1;
+  function garde(ax,ay,bx,by){
+    const dx = bx-ax, dy = by-ay, lg = Math.hypot(dx,dy);
+    if(lg < 200) return "";
+    let s = "";
+    const nPot = Math.max(1, Math.round(lg/1500));
+    for(let i=0;i<=nPot;i++){
+      const t = i/nPot, x = ax+dx*t, y = ay+dy*t;
+      s += `<line x1="${p(x,y,zD)[0]}" y1="${p(x,y,zD)[1]}" x2="${p(x,y,zD+hRam)[0]}" y2="${p(x,y,zD+hRam)[1]}"
+             stroke="${COUL.rail}" stroke-width="2"/>`;
+    }
+    [hRam, hRam*0.52, 120].forEach((h,i) => {
+      s += `<line x1="${p(ax,ay,zD+h)[0]}" y1="${p(ax,ay,zD+h)[1]}" x2="${p(bx,by,zD+h)[0]}" y2="${p(bx,by,zD+h)[1]}"
+             stroke="${COUL.rail}" stroke-width="${i===0?2.4:i===1?1.6:3}"/>`;
+    });
+    return s;
+  }
+  if(S.rambardes){
+    /* façade avant : segments hors trémie d'escalier et hors sas */
+    const coupes = [];
+    if(S.escalier) coupes.push([escX, escX+escW]);
+    if(S.sas)      coupes.push([sasX, sasX + S.sasL]);
+    coupes.sort((a,b)=>a[0]-b[0]);
+    let cur = 0;
+    coupes.forEach(([a,b]) => { if(a > cur) o += garde(cur,0,Math.min(a,L),0); cur = Math.max(cur,b); });
+    if(cur < L) o += garde(cur,0,L,0);
+    o += garde(0,P,L,P);
+    o += garde(0,0,0,P);
+    o += garde(L,0,L,P);
+  }
+
+  /* sas de sécurité */
+  if(S.sas){
+    const a = sasX, b = Math.min(L, sasX + S.sasL);
+    o += quad(pt(a,0,zD), pt(b,0,zD), pt(b,1400,zD), pt(a,1400,zD), "rgba(232,112,26,.13)", COUL.sas, 1.2);
+    [[a,0,a,1400],[b,0,b,1400]].forEach(([x1,y1,x2,y2]) => {
+      o += `<polygon points="${pt(x1,y1,zD)} ${pt(x2,y2,zD)} ${pt(x2,y2,zD+hRam)} ${pt(x1,y1,zD+hRam)}"
+             fill="rgba(232,112,26,.10)" stroke="${COUL.sas}" stroke-width="2"/>`;
+    });
+    o += `<line x1="${p(a,1400,zD+hRam)[0]}" y1="${p(a,1400,zD+hRam)[1]}"
+                x2="${p(b,1400,zD+hRam)[0]}" y2="${p(b,1400,zD+hRam)[1]}" stroke="${COUL.sas}" stroke-width="2.4"/>`;
+    o += txt(p((a+b)/2, 700, zD+hRam)[0], p((a+b)/2, 700, zD+hRam)[1]-10,
+             "SAS" + (S.sasN > 1 ? " x" + S.sasN : ""), 13, "#B85A12", true);
+  }
+
+  /* escalier */
+  if(S.escalier){
+    marches.forEach(m => {
+      o += quad(pt(escX,m.y0,m.z), pt(escX+escW,m.y0,m.z), pt(escX+escW,m.y1,m.z), pt(escX,m.y1,m.z),
+                m.palier ? "#C6CCD4" : "#DDE3E9", COUL.esc, 1);
+    });
+    /* limons */
+    const limon = x => {
+      const d = [pt(x,0,zD)];
+      marches.forEach(m => { d.push(pt(x,m.y1,m.z), pt(x,m.y1,m.z-160)); });
+      return `<polyline points="${d.join(" ")}" fill="none" stroke="${COUL.esc}" stroke-width="1.6"/>`;
+    };
+    o += limon(escX); o += limon(escX+escW);
+    if(S.rambardes){
+      [escX, escX+escW].forEach(x => {
+        const main = [pt(x,0,zD+1000)];
+        marches.forEach(m => main.push(pt(x,m.y1,m.z+1000)));
+        o += `<polyline points="${main.join(" ")}" fill="none" stroke="${COUL.rail}" stroke-width="2.4"/>`;
+        marches.forEach((m,i) => {                       // balustres, un pas sur trois
+          if(i % 3) return;
+          o += `<line x1="${p(x,m.y1,m.z)[0]}" y1="${p(x,m.y1,m.z)[1]}"
+                      x2="${p(x,m.y1,m.z+1000)[0]}" y2="${p(x,m.y1,m.z+1000)[1]}"
+                  stroke="${COUL.rail}" stroke-width="1.6"/>`;
+        });
+      });
+    }
+  }
+
+  /* ---- cotes ---- */
+  const fleche = (A,B,lib,dec) => {
+    const a = p(A[0],A[1],A[2]), b = p(B[0],B[1],B[2]);
+    const mx = (a[0]+b[0])/2 + (dec?dec[0]:0), my = (a[1]+b[1])/2 + (dec?dec[1]:0);
+    return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${COUL.cote}" stroke-width="1.3"
+              marker-start="url(#fl)" marker-end="url(#fl)"/>` + txt(mx, my, lib, 15, "#123A5E", true);
+  };
+  const dx = Math.max(900, L*0.09);                 // décalage des lignes de cote
+  o += fleche([0,0,-500],[L,0,-500], nb(S.L)+" mm", [0,-9]);
+  o += fleche([L+dx,0,-500],[L+dx,P,-500], nb(S.P)+" mm", [30,-12]);
+  o += fleche([L+300,0,0],[L+300,0,c.zDeck], (S.Ht==="libre"?nb(c.hLibre):nb(c.zDeck))+" mm", [40,-4]);
+  o += txt(p(L+300,0,c.zDeck/2)[0]+40, p(L+300,0,c.zDeck/2)[1]+12,
+           S.Ht==="libre" ? "hauteur libre" : "sur plancher", 12, "#6B7079", false);
+
+  /* étiquette charge */
+  const e = p(L*0.5, P*0.5, zD);
+  o += `<rect x="${e[0]-74}" y="${e[1]-30}" width="148" height="34" rx="3" fill="#fff" stroke="#123A5E" stroke-width="1.2"/>`
+     + txt(e[0], e[1]-8, nb(S.Q) + " kg/m&#178;", 15, "#123A5E", true);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}">
+  <defs><marker id="fl" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+    <path d="M1,1 L8,4.5 L1,8" fill="none" stroke="${COUL.cote}" stroke-width="1.3"/></marker></defs>
+  <rect width="${largeur}" height="${hauteur}" fill="#fff"/>${o}</svg>`;
+}
+
+/* ===================== VUE EN PLAN ===================== */
+function svgPlan(largeur, hauteur){
+  const c = calc();
+  const escW = S.escalier ? S.escW : 0;
+  const escX = S.escPos === "D" ? Math.max(0, S.L - escW) : 0;
+  const escRun = S.escalier ? Math.round(c.zDeck / 180) * 250 + (S.palier ? 1000 : 0) : 0;
+  const mg = 62, basPage = 34;                      // marges : cotes en haut, légendes en bas
+  const totH = S.P + escRun;
+  const k = Math.min((largeur-2*mg)/S.L, (hauteur-mg-basPage-24)/totH);
+  const ox = (largeur - S.L*k)/2;
+  const oy = mg + S.P*k + (hauteur-mg-basPage-24 - totH*k)/2;   // Y(P) = haut du dessin
+  const X = x => ox + x*k, Y = y => oy - y*k;      // y=0 en façade avant, vers le bas
+  let o = "";
+
+  o += `<rect x="${X(0)}" y="${Y(S.P)}" width="${S.L*k}" height="${S.P*k}"
+          fill="${S.plancher?"#EFE9DC":"#EEF2F5"}" stroke="#123A5E" stroke-width="1.6"/>`;
+  for(let y = 1200; y < S.P; y += 1200)
+    o += `<line x1="${X(0)}" y1="${Y(y)}" x2="${X(S.L)}" y2="${Y(y)}" stroke="#C9D2DA" stroke-width="1"/>`;
+  for(let x = 3500; x < S.L; x += 3500)
+    o += `<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(S.P)}" stroke="#C9D2DA" stroke-width="1" stroke-dasharray="5 4"/>`;
+
+  /* poteaux */
+  const trame = (dim, pas) => { const n = Math.max(1, Math.ceil(dim/pas));
+    return Array.from({length:n+1},(_,i)=>Math.round(dim*i/n)); };
+  trame(S.L,3500).forEach(x => trame(S.P,5000).forEach(y =>
+    o += `<rect x="${X(Math.min(x,S.L-100))-0}" y="${Y(Math.min(y,S.P-100))-6}" width="7" height="7" fill="#123A5E"/>`));
+
+  /* garde-corps */
+  if(S.rambardes){
+    o += `<rect x="${X(0)}" y="${Y(S.P)}" width="${S.L*k}" height="${S.P*k}" fill="none" stroke="#4A4E55" stroke-width="4"/>`;
+  }
+  /* escalier */
+  if(S.escalier){
+    o += `<rect x="${X(escX)}" y="${Y(0)}" width="${escW*k}" height="${escRun*k}" fill="#F2F4F6" stroke="#4A4E55" stroke-width="1.6"/>`;
+    for(let y = -escRun+250; y < 0; y += 250)
+      o += `<line x1="${X(escX)}" y1="${Y(y)}" x2="${X(escX+escW)}" y2="${Y(y)}" stroke="#8D959E" stroke-width="1"/>`;
+    o += txt(X(escX+escW/2), Y(-escRun)+18, "escalier" + (S.palier ? " + palier" : ""), 13, "#4A4E55", false);
+  }
+  /* sas */
+  if(S.sas){
+    const a = S.escPos === "D" ? S.L*0.22 : S.L*0.62;
+    o += `<rect x="${X(a)}" y="${Y(1400)}" width="${S.sasL*k}" height="${1400*k}"
+            fill="rgba(232,112,26,.14)" stroke="#E8701A" stroke-width="2"/>
+`
+      + txt(X(a + S.sasL/2), Y(700)+5, "SAS", 12, "#B85A12", true);
+  }
+
+  /* cotes */
+  const cote = (x1,y1,x2,y2,lib,dx,dy) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#6B7079" stroke-width="1.3"
+       marker-start="url(#fp)" marker-end="url(#fp)"/>`
+    + txt((x1+x2)/2+(dx||0), (y1+y2)/2+(dy||0), lib, 15, "#123A5E", true);
+  o += cote(X(0), Y(S.P)-24, X(S.L), Y(S.P)-24, nb(S.L)+" mm", 0, -7);
+  o += cote(X(S.L)+26, Y(0), X(S.L)+26, Y(S.P), nb(S.P)+" mm", 0, -7);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}">
+  <defs><marker id="fp" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+    <path d="M1,1 L8,4.5 L1,8" fill="none" stroke="#6B7079" stroke-width="1.3"/></marker></defs>
+  <rect width="${largeur}" height="${hauteur}" fill="#fff"/>${o}
+  <text x="${largeur/2}" y="${hauteur-8}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
+    font-size="12" fill="#7C858F">Vue en plan — façade d'accès en bas</text></svg>`;
+}
+
+/* ===================== RÉCAPITULATIF ===================== */
+function lignesRecap(){
+  const c = calc();
+  const on = b => b ? "Oui" : "Non";
+  const l = [
+    ["Longueur", nb(S.L) + " mm"],
+    ["Profondeur", nb(S.P) + " mm"],
+    ["Surface de plancher", nb1(c.surface) + " m²"],
+    ["Hauteur libre sous poutre", nb(c.hLibre) + " mm"],
+    ["Hauteur sur plancher", nb(c.hPlancher) + " mm"],
+    ["Charge uniformément répartie", nb(S.Q) + " kg/m²"],
+    ["Charge totale sur plancher", nb(c.chargeTotale) + " kg"]
+  ];
+  if(S.Hbat > 0) l.push(["Hauteur du bâtiment sous obstacle", nb(S.Hbat) + " mm"]);
+  l.push(["Plancher aggloméré", on(S.plancher)]);
+  l.push(["Escalier", S.escalier
+    ? S.escN + " escalier" + (S.escN>1?"s":"") + " — largeur " + nb(S.escW) + " mm — " +
+      (S.escPos === "D" ? "façade avant, à droite" : "façade avant, à gauche")
+    : "Non"]);
+  l.push(["Palier", on(S.palier)]);
+  l.push(["Rambardes", S.rambardes
+    ? (S.rambML > 0 ? nb1(S.rambML) + " ml" : "Oui — environ " + nb1(c.rambEstim) + " ml")
+    : "Non"]);
+  l.push(["Sas de sécurité", S.sas
+    ? S.sasN + " sas — passage " + nb(S.sasL) + " mm" : "Non"]);
+  if(S.usage) l.push(["Usage prévu", S.usage]);
+  if(S.msg)   l.push(["Précisions", S.msg]);
+  return l;
+}
+
+function afficherRecap(){
+  const c = calc();
+  $("cotes").innerHTML = [
+    ["Surface", nb1(c.surface) + " m²"],
+    ["Charge totale", nb(c.chargeTotale) + " kg"],
+    ["Hauteur libre", nb(c.hLibre) + " mm"],
+    ["Périmètre", nb1(c.perimetre) + " ml"]
+  ].map(([t,v]) => `<div><dt>${t}</dt><dd>${v}</dd></div>`).join("");
+
+  $("tRecap").innerHTML = lignesRecap().map(([t,v]) => {
+    const cl = v === "Non" ? " non" : (v === "Oui" || /^\d+ (escalier|sas)/.test(v) || /ml$/.test(v)) ? " oui" : "";
+    return `<tr><td>${t}</td><td class="v${cl}">${v}</td></tr>`;
+  }).join("");
+}
+
+/* ===================== MISE À JOUR ===================== */
+function maj(){
+  $("sousEsc").className  = "sous" + (S.escalier ? "" : " off");
+  $("sousSas").className  = "sous" + (S.sas ? "" : " off");
+  $("sousRamb").className = "sous" + (S.rambardes ? "" : " off");
+  const c = calc();
+  $("hHint").textContent = S.Ht === "libre"
+    ? "Dessus de plancher à " + nb(c.hPlancher) + " mm (structure de " + H_STRUCT + " mm comprise)."
+    : "Hauteur libre sous poutre : environ " + nb(c.hLibre) + " mm.";
+  $("rambHint").textContent = "Périmètre calculé, ouvertures déduites : environ " + nb1(c.rambEstim) + " ml. Laissez 0 pour utiliser cette estimation.";
+  $("dessin").innerHTML = VUE === "3d" ? svg3d(700, 470) : svgPlan(700, 470);
+  afficherRecap();
+  majUrl();
+}
+
+/* ===================== LIEN PARTAGEABLE ===================== */
+function majUrl(){
+  const d = {L:S.L,P:S.P,H:S.H,Ht:S.Ht,Q:S.Q,Hbat:S.Hbat,pl:S.plancher?1:0,es:S.escalier?1:0,
+             eN:S.escN,eW:S.escW,eP:S.escPos,pa:S.palier?1:0,ra:S.rambardes?1:0,rM:S.rambML,
+             sa:S.sas?1:0,sN:S.sasN,sL:S.sasL};
+  try{
+    const t = btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+    history.replaceState(null, "", location.pathname + "?q=" + t);
+  }catch(e){}
+}
+function lireUrl(){
+  const q = new URLSearchParams(location.search).get("q");
+  if(!q) return;
+  try{
+    const d = JSON.parse(decodeURIComponent(escape(atob(q))));
+    S.L=+d.L||S.L; S.P=+d.P||S.P; S.H=+d.H||S.H; S.Ht=d.Ht==="plancher"?"plancher":"libre";
+    S.Q=+d.Q||S.Q; S.Hbat=+d.Hbat||0;
+    S.plancher=!!d.pl; S.escalier=!!d.es; S.escN=+d.eN||1; S.escW=+d.eW||1000; S.escPos=d.eP==="D"?"D":"G";
+    S.palier=!!d.pa; S.rambardes=!!d.ra; S.rambML=+d.rM||0;
+    S.sas=!!d.sa; S.sasN=+d.sN||1; S.sasL=+d.sL||1500;
+  }catch(e){}
+}
+function syncUI(){
+  $("L").value=S.L; $("P").value=S.P; $("H").value=S.H; $("Q").value=S.Q; $("Hbat").value=S.Hbat;
+  $("escN").value=S.escN; $("escW").value=S.escW; $("escPos").value=S.escPos;
+  $("rambML").value=S.rambML; $("sasN").value=S.sasN; $("sasL").value=S.sasL;
+  document.querySelectorAll(".seg[data-k]").forEach(seg => {
+    const v = S[seg.dataset.k];
+    seg.querySelectorAll("button").forEach(b => {
+      const bv = b.dataset.v;
+      const act = (bv === "1" || bv === "0") ? (v === (bv === "1")) : (v === bv);
+      b.setAttribute("aria-pressed", act ? "true" : "false");
+    });
+  });
+}
+
+/* ===================== PDF ===================== */
+function svgVersPng(svg, largeurPx){
+  return new Promise((res, rej) => {
+    const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+    const w = parseFloat(vb[1]), hh = parseFloat(vb[2]);
+    const url = URL.createObjectURL(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}));
+    const img = new Image();
+    const minuteur = setTimeout(() => { URL.revokeObjectURL(url); rej(new Error("délai dépassé")); }, 6000);
+    img.onload = () => {
+      clearTimeout(minuteur);
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(largeurPx); cv.height = Math.round(largeurPx*hh/w);
+      const cx = cv.getContext("2d");
+      cx.fillStyle = "#fff"; cx.fillRect(0,0,cv.width,cv.height);
+      cx.drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      res({data: cv.toDataURL("image/png"), ratio: hh/w});
+    };
+    img.onerror = e => { clearTimeout(minuteur); URL.revokeObjectURL(url); rej(e); };
+    img.src = url;
+  });
+}
+
+function reference(){
+  const d = new Date(), p = n => String(n).padStart(2,"0");
+  return `MEZ-${p(d.getDate())}${p(d.getMonth()+1)}${String(d.getFullYear()).slice(2)}-` +
+         String(Math.floor(Math.random()*10000)).padStart(4,"0");
+}
+let REF = reference();
+
+async function genererPdf(){
+  const m = $("lienMsg");
+  if(!(window.jspdf && window.jspdf.jsPDF)){
+    m.textContent = "La librairie PDF n'a pas pu être chargée. Vérifiez votre connexion."; return; }
+  const btn = $("btnPdf"); btn.disabled = true; btn.textContent = "Génération…";
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({unit:"mm", format:"a4"});
+    // jsPDF encode en WinAnsi : on assainit les caractères typographiques.
+    const propre = t => String(t).replace(/[\u202F\u2009\u00A0]/g," ")
+                                 .replace(/\u20AC/g,"EUR")
+                                 .replace(/[\u2018\u2019]/g,"'")
+                                 .replace(/[\u201C\u201D]/g,'"')
+                                 .replace(/[\u2013\u2014]/g,"-");
+    const brutText = doc.text.bind(doc), brutSplit = doc.splitTextToSize.bind(doc);
+    doc.text = (t,x,y,o) => brutText(Array.isArray(t) ? t.map(propre) : propre(t), x, y, o);
+    doc.splitTextToSize = (t,w,o) => brutSplit(propre(t), w, o);
+
+    const PG_L = 210, PG_H = 297, MG = 15, LARG = PG_L - 2*MG;
+    let y = 0;
+    const entete = titre => {
+      doc.setFillColor(18,58,94); doc.rect(0,0,PG_L,20,"F");
+      doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(15);
+      doc.text("RSL", MG, 13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(11);
+      doc.text(titre, MG+18, 13);
+      doc.setFontSize(8.5); doc.setTextColor(200,215,230);
+      doc.text(REF, PG_L-MG, 13, {align:"right"});
+      doc.setTextColor(26,34,44); y = 29;
+    };
+    const titreBloc = t => {
+      doc.setFillColor(231,239,246); doc.rect(MG, y, LARG, 7, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(18,58,94);
+      doc.text(t, MG+2, y+4.9); y += 10; doc.setTextColor(26,34,44); doc.setFont("helvetica","normal");
+    };
+
+    entete("Demande de prix - Plateforme de stockage");
+    doc.setFontSize(9); doc.setTextColor(110,118,128);
+    doc.text("Etabli le " + new Date().toLocaleDateString("fr-FR"), MG, y); y += 8;
+    doc.setTextColor(26,34,44);
+
+    /* coordonnées */
+    titreBloc("Demandeur");
+    const cli = [
+      ["Société", $("cSoc").value.trim()],
+      ["Nom", $("cNom").value.trim()],
+      ["E-mail", $("cMail").value.trim()],
+      ["Téléphone", $("cTel").value.trim()],
+      ["Site", [$("cCp").value.trim(), $("cVille").value.trim()].filter(Boolean).join(" ")]
+    ];
+    doc.setFontSize(9.5);
+    cli.forEach(([k,v]) => {
+      doc.setTextColor(120,128,138); doc.text(k, MG+2, y+3.6);
+      doc.setTextColor(26,34,44);
+      doc.text(v || ".................................................", MG+34, y+3.6);
+      y += 6;
+    });
+    y += 4;
+
+    /* questionnaire */
+    titreBloc("Le projet");
+    doc.setFontSize(9.5);
+    lignesRecap().forEach(([k,v]) => {
+      const txt = doc.splitTextToSize(String(v), LARG-70);
+      const h = Math.max(6, txt.length*4.4 + 1.6);
+      if(y + h > PG_H - 24){ doc.addPage(); entete("Demande de prix (suite)"); }
+      doc.setTextColor(120,128,138); doc.text(k, MG+2, y+3.6);
+      doc.setTextColor(26,34,44); doc.setFont("helvetica","bold");
+      doc.text(txt, MG+68, y+3.6);
+      doc.setFont("helvetica","normal");
+      y += h;
+      doc.setDrawColor(232,236,240); doc.line(MG, y-1.4, MG+LARG, y-1.4);
+    });
+    y += 6;
+
+    /* schéma */
+    try{
+      const png = await svgVersPng(svg3d(900, 600), 1500);
+      const hImg = LARG * png.ratio;
+      if(y + hImg > PG_H - 34){ doc.addPage(); entete("Demande de prix (suite)"); }
+      titreBloc("Schéma de principe");
+      doc.addImage(png.data, "PNG", MG, y, LARG, hImg);
+      doc.setDrawColor(216,222,228); doc.rect(MG, y, LARG, hImg);
+      y += hImg + 8;
+
+      const lp = LARG * 0.66, plan = await svgVersPng(svgPlan(900, 600), 1200);
+      const hPlan = lp * plan.ratio;
+      if(y + hPlan > PG_H - 34){ doc.addPage(); entete("Demande de prix (suite)"); }
+      titreBloc("Vue en plan");
+      const xp = MG + (LARG - lp)/2;
+      doc.addImage(plan.data, "PNG", xp, y, lp, hPlan);
+      doc.setDrawColor(216,222,228); doc.rect(xp, y, lp, hPlan);
+      y += hPlan + 8;
+    }catch(e){}
+
+    /* retour */
+    if(y > PG_H - 40){ doc.addPage(); entete("Demande de prix (suite)"); }
+    doc.setDrawColor(232,112,26); doc.setFillColor(253,240,230);
+    doc.rect(MG, y, LARG, 22, "FD");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(18,58,94);
+    doc.text("A retourner a RSL pour chiffrage", MG+4, y+7);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(74,78,85);
+    doc.text("Par e-mail : s.degardin@rsl.eu   -   Par fax : 03 83 55 55 12", MG+4, y+13);
+    doc.text("RSL - Rayonnages Services Lorraine - Heillecourt (54) - rsl.eu", MG+4, y+18);
+
+    const n = doc.getNumberOfPages();
+    for(let i=1;i<=n;i++){
+      doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(140,148,158);
+      doc.text("RSL - Rayonnages Services Lorraine - plateforme sur etude, chiffrage apres analyse", MG, PG_H-9);
+      doc.text(i + " / " + n, PG_L-MG, PG_H-9, {align:"right"});
+    }
+    doc.save("demande-plateforme-" + REF + ".pdf");
+    m.textContent = "PDF généré sous la référence " + REF + ".";
+  }catch(e){
+    m.textContent = "La génération du PDF a échoué. Réessayez ou utilisez le bouton Imprimer.";
+  }finally{ btn.disabled = false; btn.textContent = "Télécharger le questionnaire en PDF"; }
+}
+
+/* ===================== EXPORTS TEXTE ===================== */
+function csvRecap(){
+  const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
+  return ["Rubrique;Reponse"].concat(lignesRecap().map(([k,v]) => esc(k)+";"+esc(v))).join("\r\n");
+}
+function htmlRecap(){
+  const l = lignesRecap().map(([k,v]) =>
+    `<tr><td style="padding:6px 10px;border-bottom:1px solid #e6eaee;color:#6b7079">${k}</td>` +
+    `<td style="padding:6px 10px;border-bottom:1px solid #e6eaee;font-weight:600;text-align:right">${v}</td></tr>`).join("");
+  return `<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px">${l}</table>`;
+}
+
+/* ===================== ENVOI ===================== */
+async function envoyer(){
+  const msg = $("envoiMsg");
+  const req = {cNom:"votre nom", cSoc:"votre société", cMail:"votre e-mail"};
+  for(const [id,lib] of Object.entries(req))
+    if(!$(id).value.trim()){ msg.className="msg ko"; msg.textContent="Merci d'indiquer "+lib+"."; $(id).focus(); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($("cMail").value)){
+    msg.className="msg ko"; msg.textContent="L'adresse e-mail n'est pas valide."; return; }
+  if(!$("cRgpd").checked){ msg.className="msg ko"; msg.textContent="Merci d'accepter l'utilisation de vos informations."; return; }
+
+  const c = calc();
+  const payload = {
+    source: SOURCE, flux: "demande_devis", reference: REF,
+    date: new Date().toISOString(),
+    paiement: false, chiffrage: "sur etude",
+    client: { nom:$("cNom").value.trim(), societe:$("cSoc").value.trim(), email:$("cMail").value.trim(),
+              telephone:$("cTel").value.trim(), code_postal:$("cCp").value.trim(), ville:$("cVille").value.trim(),
+              message:$("cMsg").value.trim(), usage:$("cUsage").value.trim() },
+    lien_devis: location.href,
+    plateforme: {
+      longueur_mm: S.L, profondeur_mm: S.P, surface_m2: +c.surface.toFixed(2),
+      hauteur_saisie: S.Ht === "libre" ? "hauteur libre" : "hauteur sur plancher",
+      hauteur_libre_mm: c.hLibre, hauteur_sur_plancher_mm: c.hPlancher,
+      hauteur_batiment_mm: S.Hbat || null,
+      charge_kg_m2: S.Q, charge_totale_kg: c.chargeTotale,
+      plancher_agglomere: S.plancher,
+      escalier: S.escalier, escalier_nombre: S.escalier ? S.escN : 0,
+      escalier_largeur_mm: S.escalier ? S.escW : null,
+      escalier_implantation: S.escalier ? (S.escPos === "D" ? "avant droite" : "avant gauche") : null,
+      palier: S.palier,
+      rambardes: S.rambardes,
+      rambardes_ml: S.rambardes ? (S.rambML > 0 ? S.rambML : +c.rambEstim.toFixed(1)) : 0,
+      sas_securite: S.sas, sas_nombre: S.sas ? S.sasN : 0, sas_passage_mm: S.sas ? S.sasL : null
+    },
+    questionnaire: lignesRecap().map(([rubrique, valeur]) => ({rubrique, valeur})),
+    nomenclature: lignesRecap().map(([rubrique, valeur]) => ({designation: rubrique, valeur})),
+    csv_nomenclature: csvRecap(),
+    html_nomenclature: htmlRecap()
+  };
+
+  const b = $("btnEnvoi"); b.disabled = true; b.textContent = "Envoi en cours…";
+  msg.className=""; msg.textContent="";
+  try{
+    const res = await fetch(WEBHOOK_DEVIS, {method:"POST", headers:{"Content-Type":"application/json"},
+                                            body: JSON.stringify(payload)});
+    if(!res.ok) throw new Error(res.status);
+    msg.className="msg ok";
+    msg.textContent = `Demande envoyée sous la référence ${REF}. Un technicien RSL étudie votre plateforme et revient vers vous sous 48 h ouvrées.`;
+  }catch(e){
+    msg.className="msg ko";
+    msg.textContent = "L'envoi a échoué. Réessayez, ou écrivez-nous à s.degardin@rsl.eu en joignant le PDF de votre demande.";
+  }finally{ b.disabled = false; b.textContent = "Envoyer ma demande"; }
+}
+
+/* ===================== INITIALISATION ===================== */
+function bind(){
+  const num = (id, key, min, max) => {
+    $(id).addEventListener("input", () => {
+      const v = parseFloat($(id).value);
+      if(isNaN(v) || v <= 0) return;
+      S[key] = Math.min(max, v); maj();
+    });
+    $(id).addEventListener("blur", () => {
+      S[key] = Math.min(max, Math.max(min, parseFloat($(id).value) || min));
+      $(id).value = S[key]; maj();
+    });
+  };
+  num("L","L",1000,40000); num("P","P",1000,25000); num("H","H",2000,8000);
+  num("Q","Q",100,2000);   num("Hbat","Hbat",0,20000);
+  num("escN","escN",1,6);  num("sasN","sasN",1,6); num("rambML","rambML",0,400);
+  ["escW","escPos","sasL"].forEach(id =>
+    $(id).addEventListener("change", () => {
+      S[id] = id === "escPos" ? $(id).value : +$(id).value; maj(); }));
+  ["cUsage","cMsg"].forEach(id =>
+    $(id).addEventListener("input", () => { S[id === "cUsage" ? "usage" : "msg"] = $(id).value.trim(); afficherRecap(); }));
+
+  document.querySelectorAll(".seg[data-k]").forEach(seg => {
+    seg.querySelectorAll("button").forEach(b => {
+      b.addEventListener("click", () => {
+        const v = b.dataset.v;
+        S[seg.dataset.k] = (v === "1" || v === "0") ? v === "1" : v;
+        seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+        maj();
+      });
+    });
+  });
+
+  $("btnRambAuto").addEventListener("click", () => {
+    S.rambML = +calc().rambEstim.toFixed(1); $("rambML").value = S.rambML; maj(); });
+
+  $("tab3d").addEventListener("click", () => { VUE="3d";
+    $("tab3d").setAttribute("aria-pressed","true"); $("tabPlan").setAttribute("aria-pressed","false"); maj(); });
+  $("tabPlan").addEventListener("click", () => { VUE="plan";
+    $("tabPlan").setAttribute("aria-pressed","true"); $("tab3d").setAttribute("aria-pressed","false"); maj(); });
+
+  $("btnEnvoi").addEventListener("click", envoyer);
+  $("btnPdf").addEventListener("click", genererPdf);
+  $("btnImpr").addEventListener("click", () => window.print());
+  $("btnLien").addEventListener("click", () => {
+    navigator.clipboard.writeText(location.href).then(
+      () => $("lienMsg").textContent = "Lien copié. Il rouvre le questionnaire pré-rempli.",
+      () => $("lienMsg").textContent = location.href);
+  });
+}
+
+lireUrl();
+syncUI();
+bind();
+maj();
+</script>
+</body>
+</html>
