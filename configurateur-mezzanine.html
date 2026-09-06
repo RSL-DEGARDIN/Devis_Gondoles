@@ -343,7 +343,7 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
     <div class="small" style="margin-top:10px">
       Le PDF reprend l'ensemble du questionnaire et le schéma. Vous pouvez l'imprimer, le faire valider
       en interne, ou nous le retourner par e-mail à
-      <a href="mailto:s.degardin@rsl.eu">s.degardin@rsl.eu</a> ou par fax au 03 83 55 55 12.
+      <a href="mailto:s.degardin@rsl.eu">s.degardin@rsl.eu</a>.
     </div>
   </div>
 </div>
@@ -911,6 +911,7 @@ async function genererPdf(){
 
     const PG_L = 210, PG_H = 297, MG = 15, LARG = PG_L - 2*MG;
     let y = 0;
+    let numPage = 1;
     const entete = titre => {
       doc.setFillColor(18,58,94); doc.rect(0,0,PG_L,20,"F");
       doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(15);
@@ -921,6 +922,9 @@ async function genererPdf(){
       doc.text(REF, PG_L-MG, 13, {align:"right"});
       doc.setTextColor(26,34,44); y = 29;
     };
+    /* Le cartouche de retour est réservé en pied de page 1 : le contenu s'arrête plus haut. */
+    const sautPage = () => { doc.addPage(); numPage++; entete("Demande de prix (suite)"); };
+    const basUtile = () => numPage === 1 ? PG_H - 48 : PG_H - 18;
     const titreBloc = t => {
       doc.setFillColor(231,239,246); doc.rect(MG, y, LARG, 7, "F");
       doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(18,58,94);
@@ -956,7 +960,7 @@ async function genererPdf(){
     lignesRecap().forEach(([k,v]) => {
       const txt = doc.splitTextToSize(String(v), LARG-70);
       const h = Math.max(6, txt.length*4.4 + 1.6);
-      if(y + h > PG_H - 24){ doc.addPage(); entete("Demande de prix (suite)"); }
+      if(y + h > basUtile()) sautPage();
       doc.setTextColor(120,128,138); doc.text(k, MG+2, y+3.6);
       doc.setTextColor(26,34,44); doc.setFont("helvetica","bold");
       doc.text(txt, MG+68, y+3.6);
@@ -970,7 +974,7 @@ async function genererPdf(){
     try{
       const png = await svgVersPng(svg3d(900, 600), 1500);
       const hImg = LARG * png.ratio;
-      if(y + hImg > PG_H - 34){ doc.addPage(); entete("Demande de prix (suite)"); }
+      if(y + hImg > basUtile()) sautPage();
       titreBloc("Schéma de principe");
       doc.addImage(png.data, "PNG", MG, y, LARG, hImg);
       doc.setDrawColor(216,222,228); doc.rect(MG, y, LARG, hImg);
@@ -978,7 +982,7 @@ async function genererPdf(){
 
       const lp = LARG * 0.66, plan = await svgVersPng(svgPlan(900, 600), 1200);
       const hPlan = lp * plan.ratio;
-      if(y + hPlan > PG_H - 34){ doc.addPage(); entete("Demande de prix (suite)"); }
+      if(y + hPlan > basUtile()) sautPage();
       titreBloc("Vue en plan");
       const xp = MG + (LARG - lp)/2;
       doc.addImage(plan.data, "PNG", xp, y, lp, hPlan);
@@ -986,15 +990,24 @@ async function genererPdf(){
       y += hPlan + 8;
     }catch(e){}
 
-    /* retour */
-    if(y > PG_H - 40){ doc.addPage(); entete("Demande de prix (suite)"); }
+    /* Cartouche de retour, ancré en pied de la première page : une page d'impression en moins. */
+    doc.setPage(1);
+    const yR = PG_H - 42;
     doc.setDrawColor(232,112,26); doc.setFillColor(253,240,230);
-    doc.rect(MG, y, LARG, 22, "FD");
+    doc.rect(MG, yR, LARG, 25, "FD");
     doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(18,58,94);
-    doc.text("A retourner a RSL pour chiffrage", MG+4, y+7);
+    doc.text("A retourner a RSL pour chiffrage", MG+4, yR+7);
     doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(74,78,85);
-    doc.text("Par e-mail : s.degardin@rsl.eu   -   Par fax : 03 83 55 55 12", MG+4, y+13);
-    doc.text("RSL - Rayonnages Services Lorraine - Heillecourt (54) - rsl.eu", MG+4, y+18);
+    doc.text("Par e-mail : ", MG+4, yR+13.5);
+    doc.setTextColor(27,91,146);
+    doc.textWithLink("s.degardin@rsl.eu", MG+4+doc.getTextWidth("Par e-mail : "), yR+13.5,
+                     {url:"mailto:s.degardin@rsl.eu"});
+    doc.setTextColor(74,78,85);
+    const pied = "RSL - Rayonnages Services Lorraine - Heillecourt (54) - ";
+    doc.text(pied, MG+4, yR+19.5);
+    doc.setTextColor(27,91,146);
+    doc.textWithLink("https://rsl.eu/", MG+4+doc.getTextWidth(pied), yR+19.5, {url:"https://rsl.eu/"});
+    doc.setTextColor(26,34,44);
 
     const n = doc.getNumberOfPages();
     for(let i=1;i<=n;i++){
