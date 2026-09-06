@@ -55,6 +55,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-o
 .seg button:hover:not([aria-pressed=true]){background:var(--bleu-pale)}
 .seg.oui button[aria-pressed=true][data-v="1"]{background:var(--vert)}
 .seg.oui button[aria-pressed=true][data-v="0"]{background:var(--graphite2)}
+.radios{display:flex;flex-direction:column;gap:7px;padding-top:9px}
+.radios button{display:flex;align-items:center;gap:9px;border:0;background:none;padding:0;cursor:pointer;
+  font-family:inherit;font-size:14.5px;color:var(--graphite2);text-align:left}
+.radios button::before{content:"";width:15px;height:15px;border-radius:50%;border:2px solid var(--trait);
+  background:#fff;flex:none;transition:background .12s}
+.radios button:hover::before{border-color:var(--bleu2)}
+.radios button[aria-pressed=true]{color:var(--texte);font-weight:600}
+.radios button[aria-pressed=true]::before{border-color:var(--bleu);background:var(--bleu);box-shadow:inset 0 0 0 2.5px #fff}
+.seg.multi button[aria-pressed=false]{color:var(--gris);background:#F7F9FA;text-decoration:line-through}
+.viz svg [data-cote]{cursor:pointer}
 
 /* questions oui/non alignées comme sur le document papier */
 .q{display:grid;grid-template-columns:1fr 210px;gap:14px;align-items:center;
@@ -72,6 +82,8 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-o
 .vtabs button{padding:6px 13px;border:1px solid var(--trait);background:#fff;border-radius:3px;cursor:pointer;
   font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;color:var(--graphite2)}
 .vtabs button[aria-pressed=true]{background:var(--graphite);color:#fff;border-color:var(--graphite)}
+.vtabs .charge{margin-left:auto;padding:6px 14px;border:1px solid var(--bleu);border-radius:3px;
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;color:var(--bleu);background:#fff;white-space:nowrap}
 
 .cotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:1px;
   background:var(--trait);border:1px solid var(--trait);margin:12px 0 0}
@@ -145,32 +157,24 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
           </div>
           <div class="f">
             <label for="Q">Charge répartie (kg/m²)</label>
-            <input type="number" id="Q" min="100" max="2000" step="50" value="500">
+            <input type="number" id="Q" min="100" max="2000" step="50" value="250">
           </div>
         </div>
-        <div class="hint" style="margin:-8px 0 16px">
-          Charge uniformément répartie : 250 kg/m² archivage léger · 500 kg/m² stockage courant ·
-          750 à 1000 kg/m² charges lourdes.
-        </div>
-
-        <div class="f">
-          <label>La hauteur que vous indiquez est&nbsp;:</label>
-          <div class="seg" data-k="Ht">
-            <button type="button" data-v="libre" aria-pressed="true">Hauteur libre (sous poutre)</button>
-            <button type="button" data-v="plancher" aria-pressed="false">Hauteur sur plancher</button>
-          </div>
-        </div>
-
-        <div class="row">
+        <div class="row3">
           <div class="f">
             <label for="H">Hauteur (mm)</label>
             <input type="number" id="H" min="2000" max="8000" step="50" value="2500">
-            <div class="hint" id="hHint"></div>
           </div>
           <div class="f">
-            <label for="Hbat">Hauteur du bâtiment sous obstacle (mm)</label>
+            <label>Cette hauteur est</label>
+            <div class="radios" data-k="Ht">
+              <button type="button" data-v="libre" aria-pressed="true">libre, sous poutre</button>
+              <button type="button" data-v="plancher" aria-pressed="false">sur plancher</button>
+            </div>
+          </div>
+          <div class="f">
+            <label for="Hbat">Bâtiment sous obstacle (mm)</label>
             <input type="number" id="Hbat" min="0" max="20000" step="100" value="0" placeholder="facultatif">
-            <div class="hint">Facultatif — sablière, charpente, éclairage, sprinklage.</div>
           </div>
         </div>
 
@@ -221,7 +225,7 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
         </div>
 
         <div class="q">
-          <div class="lib">Palier<em>Palier de repos intermédiaire dans la volée d'escalier.</em></div>
+          <div class="lib">Palier<em>Palier d'arrivée en tête d'escalier, devant la plateforme.</em></div>
           <div class="seg oui" data-k="palier">
             <button type="button" data-v="1" aria-pressed="false">Oui</button>
             <button type="button" data-v="0" aria-pressed="true">Non</button>
@@ -236,40 +240,28 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
           </div>
         </div>
         <div class="sous" id="sousRamb">
-          <div class="row">
-            <div class="f">
-              <label for="rambML">Longueur de garde-corps (ml)</label>
-              <input type="number" id="rambML" min="0" max="400" step="0.5" value="0">
-              <div class="hint" id="rambHint"></div>
-            </div>
-            <div class="f">
-              <label>&nbsp;</label>
-              <button type="button" class="btn sec" id="btnRambAuto" style="width:100%;padding:9px">Reprendre le périmètre calculé</button>
+          <div class="f" style="margin-bottom:12px">
+            <label>Côtés à équiper — retirez les côtés contre un mur ou en angle de bâtiment</label>
+            <div class="seg multi" id="segCotes">
+              <button type="button" data-cote="avant" aria-pressed="true">Avant</button>
+              <button type="button" data-cote="fond" aria-pressed="true">Fond</button>
+              <button type="button" data-cote="gauche" aria-pressed="true">Gauche</button>
+              <button type="button" data-cote="droite" aria-pressed="true">Droite</button>
             </div>
           </div>
         </div>
-
-        <div class="q">
-          <div class="lib">Sas de sécurité<em>Portillon pivotant pour le chargement des palettes à l'étage, sans jamais ouvrir le vide.</em></div>
-          <div class="seg oui" data-k="sas">
-            <button type="button" data-v="1" aria-pressed="false">Oui</button>
-            <button type="button" data-v="0" aria-pressed="true">Non</button>
+        <div class="f" style="margin:14px 0 0">
+          <label>Équipement de chargement à l'étage</label>
+          <div class="seg" data-k="sasType">
+            <button type="button" data-v="sans" aria-pressed="true">Sans</button>
+            <button type="button" data-v="sas" aria-pressed="false">Sas de sécurité</button>
+            <button type="button" data-v="portillon" aria-pressed="false">Double-portillon</button>
           </div>
         </div>
         <div class="sous" id="sousSas">
-          <div class="row">
-            <div class="f">
-              <label for="sasN">Nombre de sas</label>
-              <input type="number" id="sasN" min="1" max="6" step="1" value="1">
-            </div>
-            <div class="f">
-              <label for="sasL">Largeur utile de passage (mm)</label>
-              <select id="sasL">
-                <option value="1200">1200 mm</option>
-                <option value="1500" selected>1500 mm</option>
-                <option value="2000">2000 mm</option>
-              </select>
-            </div>
+          <div class="f" style="margin-bottom:12px">
+            <label for="sasL">Longueur utile (mm)</label>
+            <select id="sasL"></select>
           </div>
         </div>
 
@@ -298,10 +290,11 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
       <div class="vtabs">
         <button type="button" id="tab3d" aria-pressed="true">Vue 3D</button>
         <button type="button" id="tabPlan" aria-pressed="false">Vue en plan</button>
+        <span class="charge" id="badgeCharge"></span>
       </div>
       <div id="dessin"></div>
       <dl class="cotes" id="cotes"></dl>
-      <div class="small" style="margin-top:10px">
+      <div class="small" style="margin-top:10px" id="aideVue">
         Schéma de principe reprenant vos réponses. Il ne remplace ni l'étude, ni le plan de montage.
       </div>
     </div>
@@ -320,9 +313,8 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
   <h2><span class="n">4</span>Recevoir le chiffrage par e-mail</h2>
   <div class="body">
     <div class="note" style="margin-bottom:16px">
-      Une plateforme se chiffre après étude : dimensionnement des poteaux, des poutres et des ancrages
-      selon la charge annoncée. Vous ne verrez donc pas de prix en ligne — nous revenons vers vous
-      avec un chiffrage complet sous 48 h ouvrées.
+      Nous allons établir le chiffrage de votre mezzanine après étude structurelle.
+      Laissez vos coordonnées pour l'envoi du devis ou demande de précision si besoin.
     </div>
     <div class="row">
       <div class="f"><label for="cNom">Nom et prénom *</label><input type="text" id="cNom" autocomplete="name"></div>
@@ -349,6 +341,15 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
       <button class="btn sec" type="button" id="btnLien">Copier le lien de ma demande</button>
     </div>
     <div class="small" id="lienMsg" style="margin-top:8px"></div>
+
+    <div class="f" style="margin:16px 0 0">
+      <label for="lienRepris">Reprendre une demande déjà établie</label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:9px">
+        <input type="text" id="lienRepris" placeholder="Collez ici le lien de la demande">
+        <button class="btn sec" type="button" id="btnRepris" style="padding:9px 18px">Ouvrir</button>
+      </div>
+      <div class="small" id="reprisMsg" style="margin-top:6px"></div>
+    </div>
     <div class="small" style="margin-top:10px">
       Le PDF reprend l'ensemble du questionnaire et le schéma. Vous pouvez l'imprimer, le faire valider
       en interne, ou nous le retourner par e-mail à
@@ -373,15 +374,26 @@ const SOURCE        = "configurateur-mezzanine";
 /* Hauteur de la structure porteuse (poutre + solive) retenue pour le schéma. */
 const H_STRUCT = 250;
 
+/* Longueurs utiles catalogue : sas pivotant et portillon à vérins n'ont pas la même offre. */
+const SAS_L = { sas:[1500,2300,3000], portillon:[1500,2000] };
+const PALIER_PROF = 1200;                 // profondeur du palier d'arrivée
+
 const $ = id => document.getElementById(id);
+/* Un seul sélecteur porte le choix : sans / sas pivotant / double-portillon. */
+const aSas = () => S.sasType !== "sans";
+const COTES = ["avant","fond","gauche","droite"];
+const LIB_COTE = {avant:"avant", fond:"fond", gauche:"gauche", droite:"droite"};
+/* Un côté n'est équipé que si les rambardes sont demandées ET que ce côté n'est pas contre un mur. */
+const aGc = cote => S.rambardes && S.gc[cote];
 const nb = n => new Intl.NumberFormat("fr-FR").format(n);
 const nb1 = n => new Intl.NumberFormat("fr-FR",{maximumFractionDigits:1}).format(n);
 
 /* ===================== ÉTAT ===================== */
 const S = {
-  L:6000, P:4000, H:2500, Ht:"libre", Q:500, Hbat:0,
+  L:6000, P:4000, H:2500, Ht:"libre", Q:250, Hbat:0,
   plancher:true, escalier:true, escN:1, escW:1000, escPos:"G",
-  palier:false, rambardes:true, rambML:0, sas:false, sasN:1, sasL:1500,
+  palier:false, rambardes:true, gc:{avant:true, fond:true, gauche:true, droite:true},
+  sasType:"sans", sasL:1500,
   usage:"", msg:""
 };
 let VUE = "3d";
@@ -391,14 +403,10 @@ function calc(){
   const surface = S.L * S.P / 1e6;
   const zDeck   = S.Ht === "libre" ? S.H + H_STRUCT : S.H;      // dessus de plancher
   const hLibre  = zDeck - H_STRUCT;
-  const perim   = 2 * (S.L + S.P) / 1000;
-  const ouvert  = (S.escalier ? S.escN * S.escW : 0) / 1000 + (S.sas ? S.sasN * S.sasL : 0) / 1000;
   return {
     surface,
     zDeck, hLibre, hPlancher: zDeck,
-    chargeTotale: Math.round(surface * S.Q),
-    perimetre: perim,
-    rambEstim: Math.max(0, perim - ouvert)
+    chargeTotale: Math.round(surface * S.Q)
   };
 }
 
@@ -426,38 +434,52 @@ function svg3d(largeur, hauteur){
 
   /* --- géométrie de l'escalier (volée droite, descend vers l'avant) --- */
   const marches = [];
-  let escRun = 0;
+  let escRun = 0, yVolee = 0;
   if(S.escalier){
     const giron = 250, contreM = 180;
     const n = Math.max(3, Math.round(zD / contreM));
     const h = zD / n;
-    const nA = S.palier ? Math.ceil(n/2) : n;
-    let y = 0, z = zD;
+    yVolee = S.palier ? -PALIER_PROF : 0;           // le palier d'arrivée décale la volée
+    let y = yVolee, z = zD;
     for(let i=0;i<n;i++){
-      if(i === nA && S.palier){                     // palier de repos
-        marches.push({y0:y, y1:y-1000, z:z, palier:true});
-        y -= 1000;
-      }
       z -= h;
-      marches.push({y0:y, y1:y-giron, z:z, palier:false});
+      marches.push({y0:y, y1:y-giron, z:z});
       y -= giron;
     }
     escRun = -y;
   }
 
+  const sasProf = S.sasType === "portillon" ? 350 : 1500;   // hors tout catalogue
+  const sasHaut = S.sasType === "portillon" ? 1100 : 1800;
+  const sasX = aSas() ? Math.max(0, Math.min(L - S.sasL, S.escPos === "D" ? L*0.22 : L*0.62)) : -1;
+
   /* --- cadrage --- */
   const cand = [];
-  for(const x of [0,L]) for(const y of [0,P]) for(const z of [0, zD + (S.rambardes?hRam:0)]) cand.push(pr(x,y,z));
-  if(S.escalier){ cand.push(pr(escX, -escRun, 0), pr(escX+escW, -escRun, 0), pr(escX, -escRun, 1000)); }
+  const zHaut = zD + (COTES.some(aGc) ? hRam : 0);
+  for(const x of [0,L]) for(const y of [0,P]) for(const z of [0, zHaut]) cand.push(pr(x,y,z));
+  if(S.escalier){ cand.push(pr(escX, -escRun, -200), pr(escX+escW, -escRun, -200), pr(escX, -escRun, 1000)); }
   const dCote = Math.max(900, L*0.09);
   cand.push(pr(L, 0, -900), pr(0, 0, -900), pr(L, P, zD),
-            pr(L + dCote, 0, -900), pr(L + dCote, P, -500));          // place pour les cotes
-  const xs = cand.map(p=>p[0]), ys = cand.map(p=>p[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+            pr(L + dCote, 0, -900), pr(L + dCote, P, -500),
+            pr(L + 400, P, 0), pr(L + 400, P, zD));                   // place pour les cotes
   const mg = 46;
-  const k = Math.min((largeur-2*mg)/(x1-x0), (hauteur-2*mg)/(y1-y0));
-  const tx = mg + (largeur-2*mg - (x1-x0)*k)/2 - x0*k;
-  const ty = mg + (hauteur-2*mg - (y1-y0)*k)/2 - y0*k;
+  const cadrer = extra => {
+    const t = extra ? cand.concat([extra]) : cand;
+    const xs = t.map(q=>q[0]), ys = t.map(q=>q[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const e = Math.min((largeur-2*mg)/(x1-x0), (hauteur-2*mg)/(y1-y0));
+    return { k:e,
+             tx: mg + (largeur-2*mg - (x1-x0)*e)/2 - x0*e,
+             ty: mg + (hauteur-2*mg - (y1-y0)*e)/2 - y0*e };
+  };
+  /* Le sas monte plus haut que la rambarde, mais il reste posé sur la plateforme :
+     il n'entre dans le cadrage que s'il sortait vraiment du dessin. */
+  let C = cadrer();
+  if(aSas()){
+    const sommet = pr(sasX, 0, zD + sasHaut);
+    if(sommet[1]*C.k + C.ty < 10) C = cadrer(sommet);
+  }
+  const k = C.k, tx = C.tx, ty = C.ty;
   const p = (x,y,z) => { const q = pr(x,y,z); return [q[0]*k+tx, q[1]*k+ty]; };
   const pt = (x,y,z) => { const q = p(x,y,z); return q[0].toFixed(1)+","+q[1].toFixed(1); };
   const quad = (a,b,c2,d,fill,stroke,sw) =>
@@ -512,7 +534,6 @@ function svg3d(largeur, hauteur){
     o += quad(pt(escX,0,zD), pt(escX+escW,0,zD), pt(escX+escW,1200,zD), pt(escX,1200,zD), "#FFFFFF", COUL.struct, 1.2);
 
   /* garde-corps */
-  const sasX = S.sas ? (S.escPos === "D" ? L*0.22 : L*0.62) : -1;
   function garde(ax,ay,bx,by){
     const dx = bx-ax, dy = by-ay, lg = Math.hypot(dx,dy);
     if(lg < 200) return "";
@@ -529,60 +550,81 @@ function svg3d(largeur, hauteur){
     });
     return s;
   }
-  if(S.rambardes){
+  if(aGc("avant")){
     /* façade avant : segments hors trémie d'escalier et hors sas */
     const coupes = [];
     if(S.escalier) coupes.push([escX, escX+escW]);
-    if(S.sas)      coupes.push([sasX, sasX + S.sasL]);
+    if(aSas())     coupes.push([sasX, sasX + S.sasL]);
     coupes.sort((a,b)=>a[0]-b[0]);
     let cur = 0;
     coupes.forEach(([a,b]) => { if(a > cur) o += garde(cur,0,Math.min(a,L),0); cur = Math.max(cur,b); });
     if(cur < L) o += garde(cur,0,L,0);
-    o += garde(0,P,L,P);
-    o += garde(0,0,0,P);
-    o += garde(L,0,L,P);
   }
+  if(aGc("fond"))   o += garde(0,P,L,P);
+  if(aGc("gauche")) o += garde(0,0,0,P);
+  if(aGc("droite")) o += garde(L,0,L,P);
 
   /* sas de sécurité */
-  if(S.sas){
+  if(aSas()){
     const a = sasX, b = Math.min(L, sasX + S.sasL);
-    o += quad(pt(a,0,zD), pt(b,0,zD), pt(b,1400,zD), pt(a,1400,zD), "rgba(232,112,26,.13)", COUL.sas, 1.2);
-    [[a,0,a,1400],[b,0,b,1400]].forEach(([x1,y1,x2,y2]) => {
-      o += `<polygon points="${pt(x1,y1,zD)} ${pt(x2,y2,zD)} ${pt(x2,y2,zD+hRam)} ${pt(x1,y1,zD+hRam)}"
-             fill="rgba(232,112,26,.10)" stroke="${COUL.sas}" stroke-width="2"/>`;
-    });
-    o += `<line x1="${p(a,1400,zD+hRam)[0]}" y1="${p(a,1400,zD+hRam)[1]}"
-                x2="${p(b,1400,zD+hRam)[0]}" y2="${p(b,1400,zD+hRam)[1]}" stroke="${COUL.sas}" stroke-width="2.4"/>`;
-    o += txt(p((a+b)/2, 700, zD+hRam)[0], p((a+b)/2, 700, zD+hRam)[1]-10,
-             "SAS" + (S.sasN > 1 ? " x" + S.sasN : ""), 13, "#B85A12", true);
+    if(S.sasType === "portillon"){
+      /* deux vantaux dans le plan de la rive */
+      [[a,(a+b)/2],[(a+b)/2,b]].forEach(([v1,v2]) => {
+        o += `<polygon points="${pt(v1,0,zD)} ${pt(v2,0,zD)} ${pt(v2,0,zD+sasHaut)} ${pt(v1,0,zD+sasHaut)}"
+               fill="rgba(232,112,26,.16)" stroke="${COUL.sas}" stroke-width="2"/>`;
+        o += `<line x1="${p(v1,0,zD+sasHaut*0.55)[0]}" y1="${p(v1,0,zD+sasHaut*0.55)[1]}"
+                    x2="${p(v2,0,zD+sasHaut*0.55)[0]}" y2="${p(v2,0,zD+sasHaut*0.55)[1]}"
+                stroke="${COUL.sas}" stroke-width="1.4"/>`;
+      });
+    }else{
+      /* sas pivotant : plateau, deux joues et bandeau haut */
+      o += quad(pt(a,0,zD), pt(b,0,zD), pt(b,sasProf,zD), pt(a,sasProf,zD), "rgba(232,112,26,.13)", COUL.sas, 1.2);
+      [a,b].forEach(x => {
+        o += `<polygon points="${pt(x,0,zD)} ${pt(x,sasProf,zD)} ${pt(x,sasProf,zD+sasHaut)} ${pt(x,0,zD+sasHaut)}"
+               fill="rgba(232,112,26,.10)" stroke="${COUL.sas}" stroke-width="2"/>`;
+      });
+      o += `<line x1="${p(a,sasProf,zD+sasHaut)[0]}" y1="${p(a,sasProf,zD+sasHaut)[1]}"
+                  x2="${p(b,sasProf,zD+sasHaut)[0]}" y2="${p(b,sasProf,zD+sasHaut)[1]}" stroke="${COUL.sas}" stroke-width="2.4"/>`;
+      o += `<line x1="${p(a,0,zD+sasHaut)[0]}" y1="${p(a,0,zD+sasHaut)[1]}"
+                  x2="${p(b,0,zD+sasHaut)[0]}" y2="${p(b,0,zD+sasHaut)[1]}" stroke="${COUL.sas}" stroke-width="2.4"/>`;
+    }
+    o += txt(p((a+b)/2, sasProf/2, zD+sasHaut)[0], p((a+b)/2, sasProf/2, zD+sasHaut)[1]-10,
+             S.sasType === "portillon" ? "PORTILLON" : "SAS", 13, "#B85A12", true);
   }
 
   /* escalier */
   if(S.escalier){
+    /* Limon : tôle pleine de 200 mm de haut, dans la pente de la volée. Celui du fond
+       passe avant les marches, celui de devant après, pour un recouvrement correct. */
+    const H_LIMON = 200;
+    const der = marches[marches.length-1];
+    const limon = x => quad(pt(x,yVolee,zD), pt(x,der.y1,der.z),
+                            pt(x,der.y1,der.z-H_LIMON), pt(x,yVolee,zD-H_LIMON),
+                            "#CBD2D9", COUL.esc, 1.4);
+    o += limon(escX);
+
+    if(S.palier)                                   // palier d'arrivée, au niveau du plancher
+      o += quad(pt(escX,0,zD), pt(escX+escW,0,zD), pt(escX+escW,yVolee,zD), pt(escX,yVolee,zD),
+                "#C6CCD4", COUL.esc, 1.2);
     marches.forEach(m => {
       o += quad(pt(escX,m.y0,m.z), pt(escX+escW,m.y0,m.z), pt(escX+escW,m.y1,m.z), pt(escX,m.y1,m.z),
-                m.palier ? "#C6CCD4" : "#DDE3E9", COUL.esc, 1);
+                "#DDE3E9", COUL.esc, 1);
     });
-    /* limons */
-    const limon = x => {
-      const d = [pt(x,0,zD)];
-      marches.forEach(m => { d.push(pt(x,m.y1,m.z), pt(x,m.y1,m.z-160)); });
-      return `<polyline points="${d.join(" ")}" fill="none" stroke="${COUL.esc}" stroke-width="1.6"/>`;
-    };
-    o += limon(escX); o += limon(escX+escW);
-    if(S.rambardes){
-      [escX, escX+escW].forEach(x => {
-        const main = [pt(x,0,zD+1000)];
-        marches.forEach(m => main.push(pt(x,m.y1,m.z+1000)));
-        o += `<polyline points="${main.join(" ")}" fill="none" stroke="${COUL.rail}" stroke-width="2.4"/>`;
-        marches.forEach((m,i) => {                       // balustres, un pas sur trois
-          if(i % 3) return;
-          o += `<line x1="${p(x,m.y1,m.z)[0]}" y1="${p(x,m.y1,m.z)[1]}"
-                      x2="${p(x,m.y1,m.z+1000)[0]}" y2="${p(x,m.y1,m.z+1000)[1]}"
-                  stroke="${COUL.rail}" stroke-width="1.6"/>`;
-        });
+    o += limon(escX+escW);
+    /* Main courante : toujours dessinée, elle est obligatoire sur un escalier. */
+    [escX, escX+escW].forEach(x => {
+      const main = [pt(x,0,zD+1000), pt(x,yVolee,zD+1000)];
+      marches.forEach(m => main.push(pt(x,m.y1,m.z+1000)));
+      o += `<polyline points="${main.join(" ")}" fill="none" stroke="${COUL.rail}" stroke-width="2.4"/>`;
+      o += `<line x1="${p(x,0,zD)[0]}" y1="${p(x,0,zD)[1]}"
+                  x2="${p(x,0,zD+1000)[0]}" y2="${p(x,0,zD+1000)[1]}" stroke="${COUL.rail}" stroke-width="1.6"/>`;
+      marches.forEach((m,i) => {                       // balustres, un pas sur trois
+        if(i % 3) return;
+        o += `<line x1="${p(x,m.y1,m.z)[0]}" y1="${p(x,m.y1,m.z)[1]}"
+                    x2="${p(x,m.y1,m.z+1000)[0]}" y2="${p(x,m.y1,m.z+1000)[1]}"
+                stroke="${COUL.rail}" stroke-width="1.6"/>`;
       });
-    }
+    });
   }
 
   /* ---- cotes ---- */
@@ -593,16 +635,12 @@ function svg3d(largeur, hauteur){
               marker-start="url(#fl)" marker-end="url(#fl)"/>` + txt(mx, my, lib, 15, "#123A5E", true);
   };
   const dx = Math.max(900, L*0.09);                 // décalage des lignes de cote
-  o += fleche([0,0,-500],[L,0,-500], nb(S.L)+" mm", [0,-9]);
+  o += fleche([0,0,-500],[L,0,-500], nb(S.L)+" mm", [0,20]);
   o += fleche([L+dx,0,-500],[L+dx,P,-500], nb(S.P)+" mm", [30,-12]);
-  o += fleche([L+300,0,0],[L+300,0,c.zDeck], (S.Ht==="libre"?nb(c.hLibre):nb(c.zDeck))+" mm", [40,-4]);
-  o += txt(p(L+300,0,c.zDeck/2)[0]+40, p(L+300,0,c.zDeck/2)[1]+12,
+  /* la hauteur se relève au poteau arrière droit : hors emprise, elle ne recouvre plus la plateforme */
+  o += fleche([L+400,P,0],[L+400,P,c.zDeck], (S.Ht==="libre"?nb(c.hLibre):nb(c.zDeck))+" mm", [42,-4]);
+  o += txt(p(L+400,P,c.zDeck/2)[0]+42, p(L+400,P,c.zDeck/2)[1]+12,
            S.Ht==="libre" ? "hauteur libre" : "sur plancher", 12, "#6B7079", false);
-
-  /* étiquette charge */
-  const e = p(L*0.5, P*0.5, zD);
-  o += `<rect x="${e[0]-74}" y="${e[1]-30}" width="148" height="34" rx="3" fill="#fff" stroke="#123A5E" stroke-width="1.2"/>`
-     + txt(e[0], e[1]-8, nb(S.Q) + " kg/m&#178;", 15, "#123A5E", true);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largeur} ${hauteur}" width="${largeur}" height="${hauteur}">
   <defs><marker id="fl" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
@@ -615,7 +653,7 @@ function svgPlan(largeur, hauteur){
   const c = calc();
   const escW = S.escalier ? S.escW : 0;
   const escX = S.escPos === "D" ? Math.max(0, S.L - escW) : 0;
-  const escRun = S.escalier ? Math.round(c.zDeck / 180) * 250 + (S.palier ? 1000 : 0) : 0;
+  const escRun = S.escalier ? Math.round(c.zDeck / 180) * 250 + (S.palier ? PALIER_PROF : 0) : 0;
   const mg = 62, basPage = 34;                      // marges : cotes en haut, légendes en bas
   const totH = S.P + escRun;
   const k = Math.min((largeur-2*mg)/S.L, (hauteur-mg-basPage-24)/totH);
@@ -637,24 +675,47 @@ function svgPlan(largeur, hauteur){
   trame(S.L,3500).forEach(x => trame(S.P,5000).forEach(y =>
     o += `<rect x="${X(Math.min(x,S.L-100))-0}" y="${Y(Math.min(y,S.P-100))-6}" width="7" height="7" fill="#123A5E"/>`));
 
-  /* garde-corps */
-  if(S.rambardes){
-    o += `<rect x="${X(0)}" y="${Y(S.P)}" width="${S.L*k}" height="${S.P*k}" fill="none" stroke="#4A4E55" stroke-width="4"/>`;
-  }
+  /* garde-corps : un trait par côté, chacun cliquable pour le retirer ou le remettre */
+  const aretes = {
+    avant:  [0,0,S.L,0],
+    fond:   [0,S.P,S.L,S.P],
+    gauche: [0,0,0,S.P],
+    droite: [S.L,0,S.L,S.P]
+  };
+  COTES.forEach(cote => {
+    const [ax,ay,bx,by] = aretes[cote];
+    const x1 = X(ax), y1 = Y(ay), x2 = X(bx), y2 = Y(by);
+    const pose = aGc(cote);
+    o += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${pose ? "#4A4E55" : "#C0C7CE"}"
+            stroke-width="${pose ? 5 : 2}" ${pose ? "" : 'stroke-dasharray="7 5"'}/>`;
+    if(!pose && S.rambardes){          // côté contre un mur
+      const mx = (x1+x2)/2, my = (y1+y2)/2;
+      /* le repère « mur » se place vers l'intérieur du plancher, à l'écart des cotes */
+      const dep = cote === "avant" ? [0,-11] : cote === "fond" ? [0,17] : cote === "gauche" ? [26,4] : [-26,4];
+      o += txt(mx+dep[0], my+dep[1], "mur", 11, "#8D959E", false);
+    }
+    if(S.rambardes)                    // zone de clic généreuse, invisible
+      o += `<line data-cote="${cote}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+              stroke="transparent" stroke-width="18"><title>${pose ? "Retirer" : "Remettre"} le garde-corps de ce côté</title></line>`;
+  });
   /* escalier */
   if(S.escalier){
     o += `<rect x="${X(escX)}" y="${Y(0)}" width="${escW*k}" height="${escRun*k}" fill="#F2F4F6" stroke="#4A4E55" stroke-width="1.6"/>`;
-    for(let y = -escRun+250; y < 0; y += 250)
+    if(S.palier){
+      o += `<rect x="${X(escX)}" y="${Y(0)}" width="${escW*k}" height="${PALIER_PROF*k}" fill="#DDE3E9" stroke="#4A4E55" stroke-width="1.4"/>`;
+      o += txt(X(escX+escW/2), Y(-PALIER_PROF/2)+4, "palier", 11, "#4A4E55", false);
+    }
+    for(let y = -escRun+250; y < -(S.palier ? PALIER_PROF : 0); y += 250)
       o += `<line x1="${X(escX)}" y1="${Y(y)}" x2="${X(escX+escW)}" y2="${Y(y)}" stroke="#8D959E" stroke-width="1"/>`;
-    o += txt(X(escX+escW/2), Y(-escRun)+18, "escalier" + (S.palier ? " + palier" : ""), 13, "#4A4E55", false);
+    o += txt(X(escX+escW/2), Y(-escRun)+18, "escalier", 13, "#4A4E55", false);
   }
   /* sas */
-  if(S.sas){
-    const a = S.escPos === "D" ? S.L*0.22 : S.L*0.62;
-    o += `<rect x="${X(a)}" y="${Y(1400)}" width="${S.sasL*k}" height="${1400*k}"
-            fill="rgba(232,112,26,.14)" stroke="#E8701A" stroke-width="2"/>
-`
-      + txt(X(a + S.sasL/2), Y(700)+5, "SAS", 12, "#B85A12", true);
+  if(aSas()){
+    const prof = S.sasType === "portillon" ? 350 : 1500;
+    const a = Math.max(0, Math.min(S.L - S.sasL, S.escPos === "D" ? S.L*0.22 : S.L*0.62));
+    o += `<rect x="${X(a)}" y="${Y(prof)}" width="${S.sasL*k}" height="${prof*k}"
+            fill="rgba(232,112,26,.14)" stroke="#E8701A" stroke-width="2"/>`
+      + txt(X(a + S.sasL/2), Y(prof/2)+5, S.sasType === "portillon" ? "PORT." : "SAS", 12, "#B85A12", true);
   }
 
   /* cotes */
@@ -669,8 +730,9 @@ function svgPlan(largeur, hauteur){
   <defs><marker id="fp" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
     <path d="M1,1 L8,4.5 L1,8" fill="none" stroke="#6B7079" stroke-width="1.3"/></marker></defs>
   <rect width="${largeur}" height="${hauteur}" fill="#fff"/>${o}
-  <text x="${largeur/2}" y="${hauteur-8}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
-    font-size="12" fill="#7C858F">Vue en plan — façade d'accès en bas</text></svg>`;
+  ` + txt(largeur/2, hauteur-8,
+       S.rambardes ? "Vue en plan — cliquez sur un côté pour retirer son garde-corps"
+                   : "Vue en plan — façade d'accès en bas", 12, "#7C858F", false) + `</svg>`;
 }
 
 /* ===================== RÉCAPITULATIF ===================== */
@@ -692,12 +754,16 @@ function lignesRecap(){
     ? S.escN + " escalier" + (S.escN>1?"s":"") + " — largeur " + nb(S.escW) + " mm — " +
       (S.escPos === "D" ? "façade avant, à droite" : "façade avant, à gauche")
     : "Non"]);
-  l.push(["Palier", on(S.palier)]);
-  l.push(["Rambardes", S.rambardes
-    ? (S.rambML > 0 ? nb1(S.rambML) + " ml" : "Oui — environ " + nb1(c.rambEstim) + " ml")
+  l.push(["Palier d'arrivée", on(S.palier)]);
+  const poses = COTES.filter(aGc);
+  l.push(["Rambardes", !S.rambardes || poses.length === 0 ? "Non"
+    : poses.length === 4 ? "Oui — sur les 4 côtés"
+    : "Oui — côtés " + poses.map(c => LIB_COTE[c]).join(", ")
+      + " (autres côtés contre un mur)"]);
+  l.push(["Sas de sécurité", aSas()
+    ? (S.sasType === "portillon" ? "Double-portillon à vérins" : "Sas de sécurité pivotant")
+      + " — longueur utile " + nb(S.sasL) + " mm"
     : "Non"]);
-  l.push(["Sas de sécurité", S.sas
-    ? S.sasN + " sas — passage " + nb(S.sasL) + " mm" : "Non"]);
   if(S.usage) l.push(["Usage prévu", S.usage]);
   if(S.msg)   l.push(["Précisions", S.msg]);
   return l;
@@ -709,7 +775,7 @@ function afficherRecap(){
     ["Surface", nb1(c.surface) + " m²"],
     ["Charge totale", nb(c.chargeTotale) + " kg"],
     ["Hauteur libre", nb(c.hLibre) + " mm"],
-    ["Périmètre", nb1(c.perimetre) + " ml"]
+    ["Dessus de plancher", nb(c.hPlancher) + " mm"]
   ].map(([t,v]) => `<div><dt>${t}</dt><dd>${v}</dd></div>`).join("");
 
   $("tRecap").innerHTML = lignesRecap().map(([t,v]) => {
@@ -719,15 +785,27 @@ function afficherRecap(){
 }
 
 /* ===================== MISE À JOUR ===================== */
+/* Les longueurs utiles diffèrent d'un équipement à l'autre : la liste se reconstruit
+   et la valeur courante se recale sur la plus proche du catalogue retenu. */
+function majLongueursSas(){
+  if(!aSas()) return;
+  const liste = SAS_L[S.sasType];
+  if(!liste.includes(S.sasL))
+    S.sasL = liste.reduce((a,b) => Math.abs(b-S.sasL) < Math.abs(a-S.sasL) ? b : a);
+  const sel = $("sasL");
+  sel.innerHTML = liste.map(v => `<option value="${v}">${nb(v)} mm</option>`).join("");
+  sel.value = S.sasL;
+}
+
 function maj(){
   $("sousEsc").className  = "sous" + (S.escalier ? "" : " off");
-  $("sousSas").className  = "sous" + (S.sas ? "" : " off");
+  $("sousSas").className  = "sous" + (aSas() ? "" : " off");
   $("sousRamb").className = "sous" + (S.rambardes ? "" : " off");
-  const c = calc();
-  $("hHint").textContent = S.Ht === "libre"
-    ? "Dessus de plancher à " + nb(c.hPlancher) + " mm (structure de " + H_STRUCT + " mm comprise)."
-    : "Hauteur libre sous poutre : environ " + nb(c.hLibre) + " mm.";
-  $("rambHint").textContent = "Périmètre calculé, ouvertures déduites : environ " + nb1(c.rambEstim) + " ml. Laissez 0 pour utiliser cette estimation.";
+  $("aideVue").textContent = VUE === "plan"
+    ? "Cliquez sur un côté du plan pour retirer son garde-corps : mezzanine contre un mur ou en angle de bâtiment."
+    : "Schéma de principe reprenant vos réponses. Il ne remplace ni l'étude, ni le plan de montage.";
+  majLongueursSas();
+  $("badgeCharge").textContent = nb(S.Q) + " kg/m²";
   $("dessin").innerHTML = VUE === "3d" ? svg3d(700, 470) : svgPlan(700, 470);
   afficherRecap();
   majUrl();
@@ -736,8 +814,11 @@ function maj(){
 /* ===================== LIEN PARTAGEABLE ===================== */
 function majUrl(){
   const d = {L:S.L,P:S.P,H:S.H,Ht:S.Ht,Q:S.Q,Hbat:S.Hbat,pl:S.plancher?1:0,es:S.escalier?1:0,
-             eN:S.escN,eW:S.escW,eP:S.escPos,pa:S.palier?1:0,ra:S.rambardes?1:0,rM:S.rambML,
-             sa:S.sas?1:0,sN:S.sasN,sL:S.sasL};
+             eN:S.escN,eW:S.escW,eP:S.escPos,pa:S.palier?1:0,ra:S.rambardes?1:0,
+             sT:S.sasType,sL:S.sasL};
+  d.gc = COTES.map(c => S.gc[c] ? 1 : 0).join("");
+  if(S.usage) d.u = S.usage.slice(0,300);
+  if(S.msg)   d.m = S.msg.slice(0,600);
   try{
     const t = btoa(unescape(encodeURIComponent(JSON.stringify(d))));
     history.replaceState(null, "", location.pathname + "?q=" + t);
@@ -751,15 +832,21 @@ function lireUrl(){
     S.L=+d.L||S.L; S.P=+d.P||S.P; S.H=+d.H||S.H; S.Ht=d.Ht==="plancher"?"plancher":"libre";
     S.Q=+d.Q||S.Q; S.Hbat=+d.Hbat||0;
     S.plancher=!!d.pl; S.escalier=!!d.es; S.escN=+d.eN||1; S.escW=+d.eW||1000; S.escPos=d.eP==="D"?"D":"G";
-    S.palier=!!d.pa; S.rambardes=!!d.ra; S.rambML=+d.rM||0;
-    S.sas=!!d.sa; S.sasN=+d.sN||1; S.sasL=+d.sL||1500;
+    S.palier=!!d.pa; S.rambardes=!!d.ra;
+     S.sasType=["sas","portillon"].includes(d.sT)?d.sT:"sans";
+    S.sasL=+d.sL||1500;
+    if(typeof d.gc === "string" && d.gc.length === 4)
+      COTES.forEach((c,i) => S.gc[c] = d.gc[i] === "1");
+    S.usage=typeof d.u === "string" ? d.u : ""; S.msg=typeof d.m === "string" ? d.m : "";
   }catch(e){}
 }
 function syncUI(){
   $("L").value=S.L; $("P").value=S.P; $("H").value=S.H; $("Q").value=S.Q; $("Hbat").value=S.Hbat;
   $("escN").value=S.escN; $("escW").value=S.escW; $("escPos").value=S.escPos;
-  $("rambML").value=S.rambML; $("sasN").value=S.sasN; $("sasL").value=S.sasL;
-  document.querySelectorAll(".seg[data-k]").forEach(seg => {
+  $("cUsage").value=S.usage; $("cMsg").value=S.msg;
+  document.querySelectorAll("#segCotes button").forEach(b =>
+    b.setAttribute("aria-pressed", S.gc[b.dataset.cote] ? "true" : "false"));
+  document.querySelectorAll("[data-k]").forEach(seg => {
     const v = S[seg.dataset.k];
     seg.querySelectorAll("button").forEach(b => {
       const bv = b.dataset.v;
@@ -767,6 +854,27 @@ function syncUI(){
       b.setAttribute("aria-pressed", act ? "true" : "false");
     });
   });
+}
+
+/* Reprise d'une demande : tout l'état tient dans le lien, il suffit d'en relire la clé. */
+function reprendreLien(){
+  const m = $("reprisMsg"), brut = $("lienRepris").value.trim();
+  if(!brut){ m.textContent = "Collez d'abord le lien de la demande."; return; }
+  const cle = brut.match(/[?&#]q=([^&#\s]+)/) || brut.match(/^([A-Za-z0-9+/=_-]{20,})$/);
+  if(!cle){ m.textContent = "Ce lien ne contient pas de demande. Vérifiez qu'il comporte bien « ?q= »."; return; }
+  try{
+    const d = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(cle[1])))));
+    if(!d || !d.L) throw new Error("vide");
+    history.replaceState(null, "", location.pathname + "?q=" + cle[1]);
+    lireUrl(); syncUI(); maj();
+    REF = reference();
+    m.textContent = "Demande rechargée. Vous pouvez la modifier puis la renvoyer.";
+    $("lienRepris").value = "";
+  }catch(e){
+    m.textContent = "Le lien n'a pas pu être lu. Recopiez-le en entier, sans coupure de ligne.";
+    return;
+  }
+  try{ $("dessin").scrollIntoView({behavior:"smooth", block:"center"}); }catch(e){}
 }
 
 /* ===================== PDF ===================== */
@@ -958,10 +1066,12 @@ async function envoyer(){
       escalier: S.escalier, escalier_nombre: S.escalier ? S.escN : 0,
       escalier_largeur_mm: S.escalier ? S.escW : null,
       escalier_implantation: S.escalier ? (S.escPos === "D" ? "avant droite" : "avant gauche") : null,
-      palier: S.palier,
-      rambardes: S.rambardes,
-      rambardes_ml: S.rambardes ? (S.rambML > 0 ? S.rambML : +c.rambEstim.toFixed(1)) : 0,
-      sas_securite: S.sas, sas_nombre: S.sas ? S.sasN : 0, sas_passage_mm: S.sas ? S.sasL : null
+      palier_arrivee: S.palier,
+      rambardes: S.rambardes && COTES.some(aGc),
+      rambardes_cotes: COTES.filter(aGc).join(", ") || null,
+      sas_securite: aSas(),
+      sas_type: aSas() ? (S.sasType === "portillon" ? "double-portillon a verins" : "sas de securite pivotant") : null,
+      sas_longueur_utile_mm: aSas() ? S.sasL : null
     },
     questionnaire: lignesRecap().map(([rubrique, valeur]) => ({rubrique, valeur})),
     nomenclature: lignesRecap().map(([rubrique, valeur]) => ({designation: rubrique, valeur})),
@@ -998,14 +1108,15 @@ function bind(){
   };
   num("L","L",1000,40000); num("P","P",1000,25000); num("H","H",2000,8000);
   num("Q","Q",100,2000);   num("Hbat","Hbat",0,20000);
-  num("escN","escN",1,6);  num("sasN","sasN",1,6); num("rambML","rambML",0,400);
+  num("escN","escN",1,6);
   ["escW","escPos","sasL"].forEach(id =>
     $(id).addEventListener("change", () => {
       S[id] = id === "escPos" ? $(id).value : +$(id).value; maj(); }));
   ["cUsage","cMsg"].forEach(id =>
-    $(id).addEventListener("input", () => { S[id === "cUsage" ? "usage" : "msg"] = $(id).value.trim(); afficherRecap(); }));
+    $(id).addEventListener("input", () => {
+      S[id === "cUsage" ? "usage" : "msg"] = $(id).value.trim(); afficherRecap(); majUrl(); }));
 
-  document.querySelectorAll(".seg[data-k]").forEach(seg => {
+  document.querySelectorAll("[data-k]").forEach(seg => {
     seg.querySelectorAll("button").forEach(b => {
       b.addEventListener("click", () => {
         const v = b.dataset.v;
@@ -1016,8 +1127,16 @@ function bind(){
     });
   });
 
-  $("btnRambAuto").addEventListener("click", () => {
-    S.rambML = +calc().rambEstim.toFixed(1); $("rambML").value = S.rambML; maj(); });
+  const basculerCote = cote => { S.gc[cote] = !S.gc[cote]; syncUI(); maj(); };
+  document.querySelectorAll("#segCotes button").forEach(b =>
+    b.addEventListener("click", () => basculerCote(b.dataset.cote)));
+  $("dessin").addEventListener("click", e => {          // le plan est régénéré : délégation
+    const cible = e.target.closest("[data-cote]");
+    if(cible) basculerCote(cible.dataset.cote);
+  });
+
+  $("btnRepris").addEventListener("click", reprendreLien);
+  $("lienRepris").addEventListener("keydown", e => { if(e.key === "Enter") reprendreLien(); });
 
   $("tab3d").addEventListener("click", () => { VUE="3d";
     $("tab3d").setAttribute("aria-pressed","true"); $("tabPlan").setAttribute("aria-pressed","false"); maj(); });
