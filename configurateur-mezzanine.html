@@ -55,6 +55,12 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-o
 .seg button:hover:not([aria-pressed=true]){background:var(--bleu-pale)}
 .seg.oui button[aria-pressed=true][data-v="1"]{background:var(--vert)}
 .seg.oui button[aria-pressed=true][data-v="0"]{background:var(--graphite2)}
+.off{display:none!important}
+.ctrl{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:flex-end}
+select.mini{width:auto;padding:6px 9px;font-size:14px}
+.seg.mini button{padding:6px 11px;font-size:13px}
+.radios.h{flex-direction:row;gap:22px;padding-top:11px}
+.radios.h button{white-space:nowrap}
 .radios{display:flex;flex-direction:column;gap:7px;padding-top:9px}
 .radios button{display:flex;align-items:center;gap:9px;border:0;background:none;padding:0;cursor:pointer;
   font-family:inherit;font-size:14.5px;color:var(--graphite2);text-align:left}
@@ -67,16 +73,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-o
 .viz svg [data-cote]{cursor:pointer}
 
 /* questions oui/non alignées comme sur le document papier */
-.q{display:grid;grid-template-columns:1fr 210px;gap:14px;align-items:center;
+.q{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
    padding:11px 0;border-bottom:1px solid #EDF0F3}
 .q:last-of-type{border-bottom:0}
 .q .lib{font-size:14.5px;font-weight:600;color:var(--texte)}
 .q .lib em{display:block;font-style:normal;font-size:12.5px;font-weight:400;color:var(--gris);margin-top:2px;line-height:1.35}
-@media(max-width:520px){.q{grid-template-columns:1fr}}
+@media(max-width:520px){.q{grid-template-columns:1fr}.ctrl{justify-content:flex-start}}
 .sous{background:var(--fond);border:1px solid var(--trait);border-radius:3px;padding:12px 13px 2px;margin:2px 0 12px}
 .sous.off{display:none}
 
-.viz{background:#fff;border:1px solid var(--trait);border-radius:4px;padding:14px;position:sticky;top:14px}
+.viz{background:#fff;border:1px solid var(--trait);border-radius:4px;padding:14px}
 .viz svg{width:100%;height:auto;display:block}
 .vtabs{display:flex;gap:6px;margin-bottom:10px}
 .vtabs button{padding:6px 13px;border:1px solid var(--trait);background:#fff;border-radius:3px;cursor:pointer;
@@ -116,7 +122,7 @@ table.recap td.v.oui{color:var(--vert)}
 .note.warn{border-color:var(--orange);background:var(--orange-pale)}
 .small{font-size:12.5px;color:var(--gris)}
 footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
-@media print{header .back,.tools,.vtabs,#btnEnvoi,#envoiMsg{display:none}.viz{position:static}
+@media print{header .back,.tools,.vtabs,#btnEnvoi,#envoiMsg{display:none}
   .card{break-inside:avoid}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -165,16 +171,14 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
             <label for="H">Hauteur (mm)</label>
             <input type="number" id="H" min="2000" max="8000" step="50" value="2500">
           </div>
-          <div class="f">
+          <!-- le choix occupe les deux colonnes restantes : le champ Hauteur garde
+               la largeur des trois champs du dessus et les deux pastilles tiennent sur une ligne -->
+          <div class="f" style="grid-column:span 2">
             <label>Cette hauteur est</label>
-            <div class="radios" data-k="Ht">
+            <div class="radios h" data-k="Ht">
               <button type="button" data-v="libre" aria-pressed="true">libre, sous poutre</button>
               <button type="button" data-v="plancher" aria-pressed="false">sur plancher</button>
             </div>
-          </div>
-          <div class="f">
-            <label for="Hbat">Bâtiment sous obstacle (mm)</label>
-            <input type="number" id="Hbat" min="0" max="20000" step="100" value="0" placeholder="facultatif">
           </div>
         </div>
 
@@ -186,63 +190,48 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
       <div class="body">
 
         <div class="q">
-          <div class="lib">Plancher aggloméré<em>Panneaux bois hydrofuge. Sinon : tôle larmée ou caillebotis, à préciser plus bas.</em></div>
-          <div class="seg oui" data-k="plancher">
-            <button type="button" data-v="1" aria-pressed="true">Oui</button>
-            <button type="button" data-v="0" aria-pressed="false">Non</button>
-          </div>
-        </div>
-
-        <div class="q">
-          <div class="lib">Escalier<em>Escalier droit métallique avec main courante.</em></div>
-          <div class="seg oui" data-k="escalier">
-            <button type="button" data-v="1" aria-pressed="true">Oui</button>
-            <button type="button" data-v="0" aria-pressed="false">Non</button>
-          </div>
-        </div>
-        <div class="sous" id="sousEsc">
-          <div class="row3">
-            <div class="f">
-              <label for="escN">Nombre d'escaliers</label>
-              <input type="number" id="escN" min="1" max="6" step="1" value="1">
-            </div>
-            <div class="f">
-              <label for="escW">Largeur de volée</label>
-              <select id="escW">
-                <option value="800">800 mm</option>
-                <option value="1000" selected>1000 mm</option>
-                <option value="1200">1200 mm</option>
-              </select>
-            </div>
-            <div class="f">
-              <label for="escPos">Implantation</label>
-              <select id="escPos">
-                <option value="G" selected>Façade avant, à gauche</option>
-                <option value="D">Façade avant, à droite</option>
-              </select>
+          <div class="lib">Plancher aggloméré<em>Panneaux bois hydrofuge. Sinon tôle larmée ou caillebotis, à préciser plus bas.</em></div>
+          <div class="ctrl">
+            <div class="radios h" data-k="plancher">
+              <button type="button" data-v="1" aria-pressed="true">Oui</button>
+              <button type="button" data-v="0" aria-pressed="false">Non</button>
             </div>
           </div>
         </div>
 
         <div class="q">
-          <div class="lib">Palier<em>Palier d'arrivée en tête d'escalier, devant la plateforme.</em></div>
-          <div class="seg oui" data-k="palier">
-            <button type="button" data-v="1" aria-pressed="false">Oui</button>
-            <button type="button" data-v="0" aria-pressed="true">Non</button>
+          <div class="lib">Escalier<em>Escalier droit métallique avec main courante, en façade avant.</em></div>
+          <div class="ctrl">
+            <div class="radios h" data-k="escalier">
+              <button type="button" data-v="1" aria-pressed="true">Oui</button>
+              <button type="button" data-v="0" aria-pressed="false">Non</button>
+            </div>
+            <select id="escW" class="mini" aria-label="Largeur utile de volée">
+              <option value="800">800 mm</option>
+              <option value="1000" selected>1000 mm</option>
+              <option value="1200">1200 mm</option>
+            </select>
           </div>
         </div>
 
         <div class="q">
-          <div class="lib">Rambardes<em>Garde-corps périphérique, lisse haute, lisse intermédiaire et plinthe.</em></div>
-          <div class="seg oui" data-k="rambardes">
-            <button type="button" data-v="1" aria-pressed="true">Oui</button>
-            <button type="button" data-v="0" aria-pressed="false">Non</button>
+          <div class="lib">Palier d'arrivée<em>En tête d'escalier, devant la plateforme.</em></div>
+          <div class="ctrl">
+            <div class="radios h" data-k="palier">
+              <button type="button" data-v="1" aria-pressed="false">Oui</button>
+              <button type="button" data-v="0" aria-pressed="true">Non</button>
+            </div>
           </div>
         </div>
-        <div class="sous" id="sousRamb">
-          <div class="f" style="margin-bottom:12px">
-            <label>Côtés à équiper — retirez les côtés contre un mur ou en angle de bâtiment</label>
-            <div class="seg multi" id="segCotes">
+
+        <div class="q">
+          <div class="lib">Rambardes<em>Garde-corps périphérique. Retirez les côtés contre un mur.</em></div>
+          <div class="ctrl">
+            <div class="radios h" data-k="rambardes">
+              <button type="button" data-v="1" aria-pressed="true">Oui</button>
+              <button type="button" data-v="0" aria-pressed="false">Non</button>
+            </div>
+            <div class="seg multi mini" id="segCotes">
               <button type="button" data-cote="avant" aria-pressed="true">Avant</button>
               <button type="button" data-cote="fond" aria-pressed="true">Fond</button>
               <button type="button" data-cote="gauche" aria-pressed="true">Gauche</button>
@@ -250,6 +239,7 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
             </div>
           </div>
         </div>
+
         <div class="f" style="margin:14px 0 0">
           <label>Équipement de chargement à l'étage</label>
           <div class="seg" data-k="sasType">
@@ -390,8 +380,8 @@ const nb1 = n => new Intl.NumberFormat("fr-FR",{maximumFractionDigits:1}).format
 
 /* ===================== ÉTAT ===================== */
 const S = {
-  L:6000, P:4000, H:2500, Ht:"libre", Q:250, Hbat:0,
-  plancher:true, escalier:true, escN:1, escW:1000, escPos:"G",
+  L:6000, P:4000, H:2500, Ht:"libre", Q:250,
+  plancher:true, escalier:true, escW:1000,
   palier:false, rambardes:true, gc:{avant:true, fond:true, gauche:true, droite:true},
   sasType:"sans", sasL:1500,
   usage:"", msg:""
@@ -430,7 +420,7 @@ function svg3d(largeur, hauteur){
   const L = S.L, P = S.P, zD = c.zDeck;
   const hRam = 1100;                        // hauteur garde-corps
   const escW = S.escalier ? S.escW : 0;
-  const escX = S.escPos === "D" ? Math.max(0, L - escW) : 0;
+  const escX = 0;                          // implantation fixe : façade avant, à gauche
 
   /* --- géométrie de l'escalier (volée droite, descend vers l'avant) --- */
   const marches = [];
@@ -451,7 +441,7 @@ function svg3d(largeur, hauteur){
 
   const sasProf = S.sasType === "portillon" ? 350 : 1500;   // hors tout catalogue
   const sasHaut = S.sasType === "portillon" ? 1100 : 1800;
-  const sasX = aSas() ? Math.max(0, Math.min(L - S.sasL, S.escPos === "D" ? L*0.22 : L*0.62)) : -1;
+  const sasX = aSas() ? Math.max(0, Math.min(L - S.sasL, L*0.62)) : -1;   // à l'écart de l'escalier
 
   /* --- cadrage --- */
   const cand = [];
@@ -462,14 +452,14 @@ function svg3d(largeur, hauteur){
   cand.push(pr(L, 0, -900), pr(0, 0, -900), pr(L, P, zD),
             pr(L + dCote, 0, -900), pr(L + dCote, P, -500),
             pr(L + 400, P, 0), pr(L + 400, P, zD));                   // place pour les cotes
-  const mg = 46;
+  const mg = 46, mgD = 118;                 // marge droite élargie : place du texte de la cote de hauteur
   const cadrer = extra => {
     const t = extra ? cand.concat([extra]) : cand;
     const xs = t.map(q=>q[0]), ys = t.map(q=>q[1]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const e = Math.min((largeur-2*mg)/(x1-x0), (hauteur-2*mg)/(y1-y0));
+    const e = Math.min((largeur-mg-mgD)/(x1-x0), (hauteur-2*mg)/(y1-y0));
     return { k:e,
-             tx: mg + (largeur-2*mg - (x1-x0)*e)/2 - x0*e,
+             tx: mg + (largeur-mg-mgD - (x1-x0)*e)/2 - x0*e,
              ty: mg + (hauteur-2*mg - (y1-y0)*e)/2 - y0*e };
   };
   /* Le sas monte plus haut que la rambarde, mais il reste posé sur la plateforme :
@@ -528,10 +518,6 @@ function svg3d(largeur, hauteur){
     for(let x = 1000; x < L; x += 1000)
       o += `<line x1="${p(x,0,zD)[0]}" y1="${p(x,0,zD)[1]}" x2="${p(x,P,zD)[0]}" y2="${p(x,P,zD)[1]}"
              stroke="#9FB4C6" stroke-width="1" stroke-dasharray="4 3"/>`;
-
-  /* trémie de l'escalier */
-  if(S.escalier)
-    o += quad(pt(escX,0,zD), pt(escX+escW,0,zD), pt(escX+escW,1200,zD), pt(escX,1200,zD), "#FFFFFF", COUL.struct, 1.2);
 
   /* garde-corps */
   function garde(ax,ay,bx,by){
@@ -652,7 +638,7 @@ function svg3d(largeur, hauteur){
 function svgPlan(largeur, hauteur){
   const c = calc();
   const escW = S.escalier ? S.escW : 0;
-  const escX = S.escPos === "D" ? Math.max(0, S.L - escW) : 0;
+  const escX = 0;
   const escRun = S.escalier ? Math.round(c.zDeck / 180) * 250 + (S.palier ? PALIER_PROF : 0) : 0;
   const mg = 62, basPage = 34;                      // marges : cotes en haut, légendes en bas
   const totH = S.P + escRun;
@@ -712,7 +698,7 @@ function svgPlan(largeur, hauteur){
   /* sas */
   if(aSas()){
     const prof = S.sasType === "portillon" ? 350 : 1500;
-    const a = Math.max(0, Math.min(S.L - S.sasL, S.escPos === "D" ? S.L*0.22 : S.L*0.62));
+    const a = Math.max(0, Math.min(S.L - S.sasL, S.L*0.62));
     o += `<rect x="${X(a)}" y="${Y(prof)}" width="${S.sasL*k}" height="${prof*k}"
             fill="rgba(232,112,26,.14)" stroke="#E8701A" stroke-width="2"/>`
       + txt(X(a + S.sasL/2), Y(prof/2)+5, S.sasType === "portillon" ? "PORT." : "SAS", 12, "#B85A12", true);
@@ -748,11 +734,9 @@ function lignesRecap(){
     ["Charge uniformément répartie", nb(S.Q) + " kg/m²"],
     ["Charge totale sur plancher", nb(c.chargeTotale) + " kg"]
   ];
-  if(S.Hbat > 0) l.push(["Hauteur du bâtiment sous obstacle", nb(S.Hbat) + " mm"]);
   l.push(["Plancher aggloméré", on(S.plancher)]);
   l.push(["Escalier", S.escalier
-    ? S.escN + " escalier" + (S.escN>1?"s":"") + " — largeur " + nb(S.escW) + " mm — " +
-      (S.escPos === "D" ? "façade avant, à droite" : "façade avant, à gauche")
+    ? "Oui — largeur utile de volée " + nb(S.escW) + " mm"
     : "Non"]);
   l.push(["Palier d'arrivée", on(S.palier)]);
   const poses = COTES.filter(aGc);
@@ -798,9 +782,9 @@ function majLongueursSas(){
 }
 
 function maj(){
-  $("sousEsc").className  = "sous" + (S.escalier ? "" : " off");
+  $("escW").classList.toggle("off", !S.escalier);
+  $("segCotes").classList.toggle("off", !S.rambardes);
   $("sousSas").className  = "sous" + (aSas() ? "" : " off");
-  $("sousRamb").className = "sous" + (S.rambardes ? "" : " off");
   $("aideVue").textContent = VUE === "plan"
     ? "Cliquez sur un côté du plan pour retirer son garde-corps : mezzanine contre un mur ou en angle de bâtiment."
     : "Schéma de principe reprenant vos réponses. Il ne remplace ni l'étude, ni le plan de montage.";
@@ -813,8 +797,8 @@ function maj(){
 
 /* ===================== LIEN PARTAGEABLE ===================== */
 function majUrl(){
-  const d = {L:S.L,P:S.P,H:S.H,Ht:S.Ht,Q:S.Q,Hbat:S.Hbat,pl:S.plancher?1:0,es:S.escalier?1:0,
-             eN:S.escN,eW:S.escW,eP:S.escPos,pa:S.palier?1:0,ra:S.rambardes?1:0,
+  const d = {L:S.L,P:S.P,H:S.H,Ht:S.Ht,Q:S.Q,pl:S.plancher?1:0,es:S.escalier?1:0,
+             eW:S.escW,pa:S.palier?1:0,ra:S.rambardes?1:0,
              sT:S.sasType,sL:S.sasL};
   d.gc = COTES.map(c => S.gc[c] ? 1 : 0).join("");
   if(S.usage) d.u = S.usage.slice(0,300);
@@ -830,8 +814,8 @@ function lireUrl(){
   try{
     const d = JSON.parse(decodeURIComponent(escape(atob(q))));
     S.L=+d.L||S.L; S.P=+d.P||S.P; S.H=+d.H||S.H; S.Ht=d.Ht==="plancher"?"plancher":"libre";
-    S.Q=+d.Q||S.Q; S.Hbat=+d.Hbat||0;
-    S.plancher=!!d.pl; S.escalier=!!d.es; S.escN=+d.eN||1; S.escW=+d.eW||1000; S.escPos=d.eP==="D"?"D":"G";
+    S.Q=+d.Q||S.Q;
+    S.plancher=!!d.pl; S.escalier=!!d.es; S.escW=+d.eW||1000;
     S.palier=!!d.pa; S.rambardes=!!d.ra;
      S.sasType=["sas","portillon"].includes(d.sT)?d.sT:"sans";
     S.sasL=+d.sL||1500;
@@ -841,8 +825,8 @@ function lireUrl(){
   }catch(e){}
 }
 function syncUI(){
-  $("L").value=S.L; $("P").value=S.P; $("H").value=S.H; $("Q").value=S.Q; $("Hbat").value=S.Hbat;
-  $("escN").value=S.escN; $("escW").value=S.escW; $("escPos").value=S.escPos;
+  $("L").value=S.L; $("P").value=S.P; $("H").value=S.H; $("Q").value=S.Q;
+  $("escW").value=S.escW;
   $("cUsage").value=S.usage; $("cMsg").value=S.msg;
   document.querySelectorAll("#segCotes button").forEach(b =>
     b.setAttribute("aria-pressed", S.gc[b.dataset.cote] ? "true" : "false"));
@@ -1060,12 +1044,11 @@ async function envoyer(){
       longueur_mm: S.L, profondeur_mm: S.P, surface_m2: +c.surface.toFixed(2),
       hauteur_saisie: S.Ht === "libre" ? "hauteur libre" : "hauteur sur plancher",
       hauteur_libre_mm: c.hLibre, hauteur_sur_plancher_mm: c.hPlancher,
-      hauteur_batiment_mm: S.Hbat || null,
       charge_kg_m2: S.Q, charge_totale_kg: c.chargeTotale,
       plancher_agglomere: S.plancher,
-      escalier: S.escalier, escalier_nombre: S.escalier ? S.escN : 0,
+      escalier: S.escalier,
       escalier_largeur_mm: S.escalier ? S.escW : null,
-      escalier_implantation: S.escalier ? (S.escPos === "D" ? "avant droite" : "avant gauche") : null,
+      escalier_implantation: S.escalier ? "facade avant, a gauche" : null,
       palier_arrivee: S.palier,
       rambardes: S.rambardes && COTES.some(aGc),
       rambardes_cotes: COTES.filter(aGc).join(", ") || null,
@@ -1107,11 +1090,9 @@ function bind(){
     });
   };
   num("L","L",1000,40000); num("P","P",1000,25000); num("H","H",2000,8000);
-  num("Q","Q",100,2000);   num("Hbat","Hbat",0,20000);
-  num("escN","escN",1,6);
-  ["escW","escPos","sasL"].forEach(id =>
-    $(id).addEventListener("change", () => {
-      S[id] = id === "escPos" ? $(id).value : +$(id).value; maj(); }));
+  num("Q","Q",100,2000);
+  ["escW","sasL"].forEach(id =>
+    $(id).addEventListener("change", () => { S[id] = +$(id).value; maj(); }));
   ["cUsage","cMsg"].forEach(id =>
     $(id).addEventListener("input", () => {
       S[id === "cUsage" ? "usage" : "msg"] = $(id).value.trim(); afficherRecap(); majUrl(); }));
