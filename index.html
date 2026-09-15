@@ -373,6 +373,7 @@
     </div>
     <div class="send-actions">
       <a href="#" class="btn-send" id="btnEmail">✉ Envoyer ma demande par email</a>
+      <button type="button" class="btn-copy" id="btnPdf">⭳ Télécharger le devis (PDF)</button>
       <button type="button" class="btn-copy" id="btnCopy">Copier ma demande</button>
     </div>
     <p class="send-note">Le bouton email ouvre votre messagerie pré-remplie, adressée à RSL. Sinon, « Copier ma demande » et collez dans un email à s.degardin@rsl.eu.</p>
@@ -473,7 +474,8 @@
 </div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <!-- POPUP 3D -->
 <div class="d3-modal" id="d3Modal">
   <div class="d3-inner">
@@ -506,7 +508,9 @@ const REF={
   console:{370:["S4253D","Console 370 - 2C (la paire)"],470:["S4254D","Console 470 - 2C (la paire)"],570:["S4258D","Console 570 - 3C renforcée (la paire)"]},
   pe:["S5738","Porte-étiquettes 2 positions L1000 H40"],
   plinthe:["S4286D","Plinthe 1000x160 - Blanc"],
-  chapiteau:["S4248D","Chapiteau 1000x80 (col.60)"]
+  chapiteau:["S4248D","Chapiteau 1000x80 (col.60)"],
+  embout:["S5958","Embout fileté pour montant 30x30"],
+  verin:["S5959","Vérin de pied H70"]
 };
 const COLORIS={
   blanc:{label:"Blanc",ral:"RAL 9001",ink:"#1c2430",base:"#fdf4e3",light:"#fffdf6",mid:"#f6ecd9",dark:"#ece0c8",edge:"#dccfb2",metal:"#efe6d2",metalDk:"#cbbd9f",planFill:"#f6ecd9",planEdge:"#dccfb2",planBand:"#a08a5e",swatch:"#fdf4e3"},
@@ -540,31 +544,51 @@ function designationText(g){
   return t;
 }
 
-// ===== Nomenclature (par référence + coloris) =====
+// Nomenclature d'UNE gondole -> liste [{code,des,ral,qty}]
+function buildBomForGondole(g){
+  const map=new Map();
+  const ral=(COLORIS[g.color]||COLORIS.blanc).ral;
+  const add=(ref,qty,ralForce)=>{ if(!ref||qty<=0)return; const rr=ralForce||ral; const key=ref[0]+"|"+rr; const c=map.get(key)||{code:ref[0],des:ref[1],ral:rr,qty:0}; c.qty+=qty; map.set(key,c); };
+  const df=g.face==="DF"?2:1;
+  const nbMontants=g.len+1;
+  add(REF.montant[g.h],nbMontants);
+  add(REF.pietement[g.p],nbMontants*df);
+  // Simple-face = à fixer au mur : embouts filetés + vérins de pied (1 par montant)
+  if(g.face==="SF"){ add(REF.embout,nbMontants,"Alu"); add(REF.verin,nbMontants,"Alu"); }
+  const elems=g.len*df;
+  const rep=FONDS_H[g.h];
+  add(REF.fond[100],rep[100]*elems);
+  add(REF.fond[300],rep[300]*elems);
+  add(g.f==="FP"?REF.perfo:REF.fond[400],rep[400]*elems);
+  add(REF.tablette[g.p],elems);       // tablette de base (posée sur piétement, sans console)
+  add(REF.pe,elems);
+  if(g.tabProfs&&g.tabProfs.length){
+    const counts={}; g.tabProfs.forEach(p=>counts[p]=(counts[p]||0)+1);
+    Object.keys(counts).forEach(pf=>{ const q=counts[pf]*elems; add(REF.tablette[pf],q); add(REF.console[pf],q); add(REF.pe,q); });
+  }
+  if(g.plinthes) add(REF.plinthe,plinthesParGondole(g.face,g.len));
+  if(g.chapiteau&&chapiteauPossible(g.face,g.h)) add(REF.chapiteau,g.len);
+  const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S5958","S5959","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
+  return [...map.values()].sort((a,b)=>{ const d=ordre.indexOf(a.code)-ordre.indexOf(b.code); return d!==0?d:a.ral.localeCompare(b.ral); });
+}
+// Description "7 niveaux de pose" comme dans le devis
+function niveauxDePose(g){
+  const rep=FONDS_H[g.h]; const nbFonds=(rep[100]?1:0)+(rep[300]?1:0)+rep[400];
+  const nbTab=1+(g.tabProfs?g.tabProfs.length:0);   // base + intermédiaires
+  return {nbFonds, nbTab, niveaux:nbTab};
+}
+
+// ===== Nomenclature cumulée (toutes gondoles) =====
 function buildBom(){
   const map=new Map();
   gondoles.forEach(g=>{
-    const ral=(COLORIS[g.color]||COLORIS.blanc).ral;
-    const add=(ref,qty)=>{ if(!ref||qty<=0)return; const key=ref[0]+"|"+ral; const c=map.get(key)||{code:ref[0],des:ref[1],ral,qty:0}; c.qty+=qty; map.set(key,c); };
-    const df=g.face==="DF"?2:1;
-    const nbMontants=g.len+1;
-    add(REF.montant[g.h],nbMontants);
-    add(REF.pietement[g.p],nbMontants*df);
-    const elems=g.len*df;
-    const rep=FONDS_H[g.h];
-    add(REF.fond[100],rep[100]*elems);
-    add(REF.fond[300],rep[300]*elems);
-    add(g.f==="FP"?REF.perfo:REF.fond[400],rep[400]*elems);
-    add(REF.tablette[g.p],elems);
-    add(REF.pe,elems);
-    if(g.tabProfs&&g.tabProfs.length){
-      const counts={}; g.tabProfs.forEach(p=>counts[p]=(counts[p]||0)+1);
-      Object.keys(counts).forEach(pf=>{ const q=counts[pf]*elems; add(REF.tablette[pf],q); add(REF.console[pf],q); add(REF.pe,q); });
-    }
-    if(g.plinthes) add(REF.plinthe,plinthesParGondole(g.face,g.len));
-    if(g.chapiteau&&chapiteauPossible(g.face,g.h)) add(REF.chapiteau,g.len);
+    buildBomForGondole(g).forEach(it=>{
+      const key=it.code+"|"+it.ral;
+      const c=map.get(key)||{code:it.code,des:it.des,ral:it.ral,qty:0};
+      c.qty+=it.qty; map.set(key,c);
+    });
   });
-  const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
+  const ordre=["S4273D","S4274D","S4275D","S6500D","S4276D","S4277D","S4278D","S1642D","S4282D","S4283D","S4284D","S5958","S5959","S4267D","S4269D","S4270D","S4281D","S4290D","S4291D","S4292D","S4253D","S4254D","S4258D","S5738","S4286D","S4248D"];
   return [...map.values()].sort((a,b)=>{ const d=ordre.indexOf(a.code)-ordre.indexOf(b.code); return d!==0?d:a.ral.localeCompare(b.ral); });
 }
 
@@ -1257,6 +1281,142 @@ document.getElementById("btnEmail").addEventListener("click",e=>{
   const soc=val("cSociete");const subject="Demande de devis gondoles"+(soc?" — "+soc:"");
   window.location.href=`mailto:${DEST_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildRequestText())}`;
 });
+
+// ===================== Génération du devis PDF =====================
+document.getElementById("btnPdf").addEventListener("click",()=>{
+  if(gondoles.length===0){ alert("Ajoutez au moins une gondole."); return; }
+  if(!window.jspdf||!window.jspdf.jsPDF){ alert("Le module PDF n'a pas pu se charger. Vérifiez votre connexion internet et réessayez."); return; }
+  try{ genererDevisPDF(); }
+  catch(err){ alert("Erreur lors de la génération du PDF : "+(err&&err.message?err.message:err)); }
+});
+
+function genererDevisPDF(){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({unit:"mm",format:"a4"});
+  const PW=210, M=14; let y=16;
+  const accent=[230,63,30], ink=[28,36,48], grey=[110,120,135];
+  const c=(id)=>document.getElementById(id).value.trim();
+  const client={nom:c("cNom"),soc:c("cSociete"),mail:c("cEmail"),tel:c("cTel"),msg:c("cMsg")};
+
+  // -- En-tête --
+  doc.setFillColor(...accent); doc.rect(0,0,PW,3,"F");
+  doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(18);
+  doc.text("Demande de devis — Gondoles",M,y); y+=6;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...grey);
+  doc.text("RSL — Rayonnages Services Lorraine",M,y); y+=4;
+  const dateStr=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  doc.text("Date : "+dateStr,M,y);
+  // bloc client à droite
+  let yc=16; doc.setTextColor(...ink); doc.setFontSize(9);
+  const cl=[]; if(client.soc)cl.push(client.soc); if(client.nom)cl.push(client.nom); if(client.mail)cl.push(client.mail); if(client.tel)cl.push("Tél : "+client.tel);
+  if(cl.length){ doc.setFont("helvetica","bold"); doc.text("Client",PW-M,yc,{align:"right"}); yc+=5; doc.setFont("helvetica","normal");
+    cl.forEach(l=>{ doc.text(l,PW-M,yc,{align:"right"}); yc+=4.5; }); }
+  y=Math.max(y,yc)+6;
+  doc.setDrawColor(220,226,232); doc.line(M,y,PW-M,y); y+=7;
+
+  // -- Un poste par gondole --
+  gondoles.forEach((g,idx)=>{
+    const rep=repere(idx);
+    const col=COLORIS[g.color]||COLORIS.blanc;
+    const nd=niveauxDePose(g);
+    const dev=g.face==="DF"?g.len*2:g.len;
+    const profTxt=g.face==="DF"?("P.2x"+g.p):("P."+g.p);
+    const bom=buildBomForGondole(g);
+
+    // hauteur estimée du bloc pour éviter les coupures : titre + lignes + marge
+    const estH=18+bom.length*5.6+10;
+    if(y+estH>282){ doc.addPage(); y=16; }
+
+    // bandeau titre du poste
+    doc.setFillColor(245,247,249); doc.roundedRect(M,y,PW-2*M,7,1.2,1.2,"F");
+    doc.setTextColor(...accent); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+    doc.text(rep,M+3,y+4.8);
+    doc.setTextColor(...ink); doc.setFontSize(10);
+    doc.text(`1 gondole ${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000  —  ${dev} ml développé`,M+9,y+4.8);
+    y+=10;
+    // sous-titre descriptif
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
+    const nbInter=nd.nbTab-1;
+    const tabTxt = nbInter>0 ? ` + ${nbInter} tablette${nbInter>1?"s":""}` : "";
+    let desc=`Coloris ${col.label} (${col.ral}) · ${nd.nbFonds} fonds ${fondsLabel(g.f)} / base${tabTxt} soit ${nd.niveaux} niveau${nd.niveaux>1?"x":""} de pose`;
+    if(g.plinthes)desc+=" · avec plinthes";
+    if(g.chapiteau&&chapiteauPossible(g.face,g.h))desc+=" · avec chapiteaux";
+    doc.text(desc,M+1,y); y+=3;
+
+    // tableau détaillé
+    doc.autoTable({
+      startY:y, margin:{left:M,right:M},
+      head:[["Code","Désignation","Coloris","Qté"]],
+      body:bom.map(i=>[i.code,i.des,i.ral,String(i.qty)]),
+      theme:"grid",
+      styles:{fontSize:8,cellPadding:1.6,lineColor:[224,229,234],textColor:ink},
+      headStyles:{fillColor:[46,58,74],textColor:[255,255,255],fontStyle:"bold",fontSize:8},
+      columnStyles:{0:{cellWidth:22,font:"courier"},2:{cellWidth:26},3:{cellWidth:14,halign:"center"}},
+      alternateRowStyles:{fillColor:[250,251,252]}
+    });
+    y=doc.lastAutoTable.finalY+8;
+  });
+
+  // -- Récapitulatif : sur une nouvelle page --
+  doc.addPage(); y=16;
+  doc.setDrawColor(...accent); doc.setLineWidth(0.5); doc.line(M,y,PW-M,y); doc.setLineWidth(0.2); y+=6;
+  doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(13);
+  doc.text("Récapitulatif",M,y); y+=6;
+  let totalDev=0,totalSF=0,totalDF=0;
+  const recapRows=gondoles.map((g,idx)=>{
+    const dev=g.face==="DF"?g.len*2:g.len; totalDev+=dev;
+    if(g.face==="SF")totalSF+=g.len; else totalDF+=g.len;
+    const profTxt=g.face==="DF"?("P.2x"+g.p):("P."+g.p);
+    return [repere(idx), `${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000`, (COLORIS[g.color]||COLORIS.blanc).ral, dev+" ml"];
+  });
+  doc.autoTable({
+    startY:y, margin:{left:M,right:M},
+    head:[["Repère","Gondole","Coloris","Métrage dév."]],
+    body:recapRows,
+    foot:[["","Total développé","",totalDev+" ml"]],
+    theme:"grid",
+    styles:{fontSize:8.5,cellPadding:1.8,lineColor:[224,229,234],textColor:ink},
+    headStyles:{fillColor:[46,58,74],textColor:[255,255,255],fontStyle:"bold"},
+    footStyles:{fillColor:[245,247,249],textColor:ink,fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:18,halign:"center",fontStyle:"bold"},3:{cellWidth:26,halign:"right"}}
+  });
+  y=doc.lastAutoTable.finalY+4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
+  doc.text(`Simple-face : ${totalSF} ml   ·   Double-face : ${totalDF} ml   ·   Métrage linéaire développé : ${totalDev} ml`,M,y);
+  y+=8;
+
+  // -- Récapitulatif : liste cumulée des articles --
+  const bomTot=buildBom();
+  if(y+30>282){ doc.addPage(); y=16; }
+  doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(12);
+  doc.text("Liste des articles nécessaires",M,y); y+=2;
+  doc.autoTable({
+    startY:y+3, margin:{left:M,right:M},
+    head:[["Code","Désignation","Coloris","Qté"]],
+    body:bomTot.map(i=>[i.code,i.des,i.ral,String(i.qty)]),
+    theme:"grid",
+    styles:{fontSize:8,cellPadding:1.6,lineColor:[224,229,234],textColor:ink},
+    headStyles:{fillColor:[46,58,74],textColor:[255,255,255],fontStyle:"bold",fontSize:8},
+    columnStyles:{0:{cellWidth:22,font:"courier"},2:{cellWidth:26},3:{cellWidth:14,halign:"center"}},
+    alternateRowStyles:{fillColor:[250,251,252]}
+  });
+
+  // -- Pied de page sur chaque page --
+  const pages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setDrawColor(224,229,234); doc.setLineWidth(0.2); doc.line(M,286,PW-M,286);
+    doc.setFontSize(7); doc.setTextColor(...grey);
+    doc.text("Document sans engagement de prix — demande de devis",PW/2,290,{align:"center"});
+    doc.setFontSize(7); doc.setTextColor(...grey);
+    doc.text("RSL — Rayonnages Services Lorraine · Heillecourt (54) · s.degardin@rsl.eu",M,294);
+    doc.text("Page "+p+" / "+pages,PW-M,294,{align:"right"});
+  }
+
+  const nomFichier="Demande_devis_gondoles"+(client.soc?"_"+client.soc.replace(/[^a-zA-Z0-9]+/g,"_"):"")+".pdf";
+  doc.save(nomFichier);
+  flashMsg("Devis PDF téléchargé");
+}
 
 
 // ===================== Démarrage =====================
