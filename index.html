@@ -1286,9 +1286,35 @@ document.getElementById("btnEmail").addEventListener("click",e=>{
 document.getElementById("btnPdf").addEventListener("click",()=>{
   if(gondoles.length===0){ alert("Ajoutez au moins une gondole."); return; }
   if(!window.jspdf||!window.jspdf.jsPDF){ alert("Le module PDF n'a pas pu se charger. Vérifiez votre connexion internet et réessayez."); return; }
-  try{ genererDevisPDF(); }
-  catch(err){ alert("Erreur lors de la génération du PDF : "+(err&&err.message?err.message:err)); }
+  const btn=document.getElementById("btnPdf"); const old=btn.textContent;
+  btn.textContent="Génération…"; btn.disabled=true;
+  genererDevisPDF().then(()=>{ btn.textContent=old; btn.disabled=false; })
+    .catch(err=>{ btn.textContent=old; btn.disabled=false; alert("Erreur lors de la génération du PDF : "+(err&&err.message?err.message:err)); });
 });
+
+// Rendu du schéma (face + coupe) d'une gondole en image PNG (pour le PDF)
+function schemaGondolePng(g){
+  return new Promise((resolve)=>{
+    // SVG hors-écran dédié, mêmes dimensions que l'aperçu
+    const NS="http://www.w3.org/2000/svg";
+    const tmp=document.createElementNS(NS,"svg");
+    tmp.setAttribute("viewBox","0 0 560 460");
+    tmp.setAttribute("width","560"); tmp.setAttribute("height","460");
+    tmp.setAttribute("xmlns",NS);
+    // on réutilise draw() en le faisant écrire dans notre svg temporaire
+    const prevSel=selId;
+    drawInto(tmp,g);
+    // fond blanc
+    const bg=document.createElementNS(NS,"rect"); bg.setAttribute("x","0");bg.setAttribute("y","0");bg.setAttribute("width","560");bg.setAttribute("height","460");bg.setAttribute("fill","#ffffff");
+    tmp.insertBefore(bg,tmp.firstChild);
+    const xml=new XMLSerializer().serializeToString(tmp);
+    const svg64="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(xml)));
+    const img=new Image();
+    img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=1120; cv.height=920; const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.drawImage(img,0,0,cv.width,cv.height); resolve(cv.toDataURL("image/png")); };
+    img.onerror=()=>resolve(null);
+    img.src=svg64;
+  });
+}
 
 function genererDevisPDF(){
   const { jsPDF }=window.jspdf;
@@ -1586,13 +1612,14 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
       }
     }
 
-    // tablettes : base + niveaux. Chaque tablette fait 1000 mm et va d'axe de montant
-    // à axe de montant (elle démarre à la moitié d'un piétement et finit à la moitié du suivant).
-    const niveaux=[pietH]; const nb=(g.tabProfs?g.tabProfs.length:0);
-    for(let i=0;i<nb;i++){ niveaux.push(pietH+(Ht-pietH)*(0.35+i*0.22)); }
-    niveaux.forEach((y,idx)=>{
+    // tablettes : base + niveaux intermédiaires répartis régulièrement sur la hauteur utile.
+    // Chaque tablette fait 1000 mm et va d'axe de montant à axe de montant.
+    const nb=(g.tabProfs?g.tabProfs.length:0);
+    const niveaux=[pietH];                                  // niveau 0 = base (sur le piétement)
+    const hautUtile=Ht-0.1;                                 // on laisse ~100 mm sous le sommet
+    for(let i=0;i<nb;i++){ niveaux.push(pietH+(hautUtile-pietH)*((i+1)/(nb+1))); }
+    niveaux.forEach((yy,idx)=>{
       const prof = (idx===0 ? g.p : (g.tabProfs[idx-1]||g.p))/1000;
-      const yy=Math.min(y,Ht-0.1);
       for(let m=0;m<L;m++){
         const xc=x0+m+0.5;                            // centre de la travée (1000 mm)
         if(isDF){
