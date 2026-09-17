@@ -426,6 +426,9 @@
         <div class="field"><label>Longueur (× 1000 mm)</label>
           <div class="len-ctrl"><button id="lenM">−</button><input type="number" id="lenI" min="1" max="30" value="4"><button id="lenP">+</button><span class="u" id="lenU"></span></div>
         </div>
+        <div class="field field-qty"><label>Quantité (gondoles identiques)</label>
+          <div class="len-ctrl"><button id="qtyM">−</button><input type="number" id="qtyI" min="1" max="50" value="1"><button id="qtyP">+</button><span class="u" id="qtyU"></span></div>
+        </div>
         <div class="field"><label>Hauteur (mm)</label><div class="seg g3" id="dH"></div></div>
         <div class="field"><label>Profondeur (mm)</label><div class="seg g3" id="dP"></div></div>
         <div class="field"><label>Fonds</label><div class="seg g3" id="dF"></div></div>
@@ -821,9 +824,9 @@ function draw(g) {
 }
 
 // ===================== État =====================
-let gondoles=[]; let nextId=1; let selId=null;
+let gondoles=[]; let nextId=1; let selId=null; let nextGrp=1;
 function sel(){ return gondoles.find(g=>g.id===selId); }
-function newGondole(x,y){ return {id:nextId++,x,y,rot:0,face:"SF",h:2100,p:470,f:"FL",len:1,plinthes:false,chapiteau:false,color:planColor||"blanc",tabProfs:[]}; }
+function newGondole(x,y){ return {id:nextId++,x,y,rot:0,face:"SF",h:2100,p:470,f:"FL",len:1,plinthes:false,chapiteau:false,color:planColor||"blanc",tabProfs:[],grp:0}; }
 const chapOn=g=>g&&g.chapiteau&&chapiteauPossible(g.face,g.h);
 
 // ===================== Vue SVG plan =====================
@@ -882,9 +885,45 @@ function renderPlan(){
 }
 
 // ===================== Rendu global =====================
-function renderAll(){ renderPlan(); renderDetail(); renderTotals(); renderList(); renderBom(); syncGlobPlinthe(); }
+function syncGroupe(g){
+  // propage les caractéristiques de g aux autres gondoles du même groupe (sauf id/position/groupe)
+  if(!g||g.grp===0) return;
+  gondoles.forEach(x=>{
+    if(x.grp===g.grp && x.id!==g.id){
+      x.face=g.face; x.h=g.h; x.p=g.p; x.f=g.f; x.len=g.len;
+      x.plinthes=g.plinthes; x.chapiteau=g.chapiteau; x.color=g.color;
+      x.tabProfs=(g.tabProfs||[]).slice();
+    }
+  });
+}
+function renderAll(){ if(selId!=null)syncGroupe(sel()); renderPlan(); renderDetail(); renderTotals(); renderList(); renderBom(); syncGlobPlinthe(); }
 function repere(idx){ let s="",n=idx; do{ s=String.fromCharCode(65+(n%26))+s; n=Math.floor(n/26)-1; }while(n>=0); return s; }
-function repereOf(g){ const i=gondoles.indexOf(g); return i<0?"":repere(i); }
+// Groupes : chaque grp>0 partage un repère ; les gondoles sans groupe (grp=0) sont individuelles.
+// L'ordre des repères suit la première apparition de chaque groupe dans le tableau.
+function groupOrder(){
+  const order=[]; const seen=new Set();
+  gondoles.forEach(g=>{
+    const key = g.grp>0 ? ("g"+g.grp) : ("i"+g.id);   // clé unique par groupe ou par gondole isolée
+    if(!seen.has(key)){ seen.add(key); order.push(key); }
+  });
+  return order;
+}
+function repereOf(g){
+  const key = g.grp>0 ? ("g"+g.grp) : ("i"+g.id);
+  const idx = groupOrder().indexOf(key);
+  return idx<0?"":repere(idx);
+}
+// Représentants : une entrée par groupe (pour la liste et le PDF), avec le compte
+function gondolesGroupees(){
+  const map=new Map();
+  gondoles.forEach(g=>{
+    const key = g.grp>0 ? ("g"+g.grp) : ("i"+g.id);
+    if(!map.has(key)) map.set(key,{rep:g, count:0, ids:[]});
+    const e=map.get(key); e.count++; e.ids.push(g.id);
+  });
+  // conserver l'ordre d'apparition
+  return groupOrder().map(k=>map.get(k));
+}
 
 // ===================== Interaction plan =====================
 let drag=null,pan=null,snapEnabled=true,snapGuides=[];const SNAP_M=0.18;
@@ -1024,6 +1063,38 @@ buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>g.f=v);
 document.getElementById("lenM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.max(1,g.len-1);renderAll();}});
 document.getElementById("lenP").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.min(30,g.len+1);renderAll();}});
 document.getElementById("lenI").addEventListener("input",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10);g.len=(isNaN(v)||v<1)?1:Math.min(30,v);renderAll();}});
+// Nombre d'exemplaires du groupe de g (gondoles identiques)
+function countGroupe(g){
+  if(g.grp>0) return gondoles.filter(x=>x.grp===g.grp).length;
+  return 1;
+}
+// Ajuste le nombre d'exemplaires du groupe de g à n (crée des copies séparées, ou en retire)
+function setQuantiteGroupe(g,n){
+  n=Math.max(1,Math.min(50,n));
+  // si g n'a pas de groupe et n>1, on crée un groupe
+  if(g.grp===0 && n>1){ g.grp=nextGrp++; }
+  const membres=g.grp>0 ? gondoles.filter(x=>x.grp===g.grp) : [g];
+  const cur=membres.length;
+  if(n>cur){
+    // ajouter des exemplaires décalés d'un demi-pas à partir du dernier
+    let base=membres[membres.length-1];
+    for(let k=cur;k<n;k++){
+      const c={...g, id:nextId++, grp:g.grp, x:base.x+0.5, y:base.y+0.5, tabProfs:(g.tabProfs||[]).slice()};
+      gondoles.push(c); base=c;
+    }
+  } else if(n<cur){
+    // retirer les derniers exemplaires (jamais celui sélectionné)
+    const aRetirer=membres.filter(x=>x.id!==selId).slice(-(cur-n));
+    const ids=new Set(aRetirer.map(x=>x.id));
+    gondoles=gondoles.filter(x=>!ids.has(x.id));
+  }
+  // si le groupe retombe à 1 membre, on le dissout (grp=0)
+  if(g.grp>0 && gondoles.filter(x=>x.grp===g.grp).length===1){ const only=gondoles.find(x=>x.grp===g.grp); if(only)only.grp=0; }
+  renderAll();
+}
+document.getElementById("qtyM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setQuantiteGroupe(g,countGroupe(g)-1);});
+document.getElementById("qtyP").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setQuantiteGroupe(g,countGroupe(g)+1);});
+document.getElementById("qtyI").addEventListener("change",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10);setQuantiteGroupe(g,isNaN(v)?1:v);}});
 // plinthes / chapiteaux
 document.getElementById("dPlinthe").addEventListener("change",e=>{const g=sel();if(g){g.plinthes=e.target.checked;renderAll();}});
 document.getElementById("dChap").addEventListener("change",e=>{const g=sel();if(g){g.chapiteau=e.target.checked;renderAll();}});
@@ -1070,6 +1141,9 @@ function renderDetail(){
   mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);mark("dF",g.f);
   document.querySelectorAll("#dSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===(g.color||"blanc")));
   document.getElementById("lenI").value=g.len;
+  const qg=countGroupe(g);
+  document.getElementById("qtyI").value=qg;
+  document.getElementById("qtyU").textContent=qg>1?("= "+qg+" gondoles «"+repereOf(g)+"»"):"";
   document.getElementById("lenU").textContent="= "+g.len.toLocaleString("fr-FR")+" ml";
   document.getElementById("dPlinthe").checked=g.plinthes;
   document.getElementById("plintheInfo").textContent="("+plinthesParGondole(g.face,g.len)+" plinthes)";
@@ -1143,8 +1217,8 @@ window.addEventListener("keydown",e=>{
 
 // ===================== Récapitulatif =====================
 function renderTotals(){
-  const n=gondoles.length;let sf=0,df=0;
-  gondoles.forEach(g=>{if(g.face==="SF")sf+=g.len;else df+=g.len;});
+  let n=0,sf=0,df=0;
+  gondoles.forEach(g=>{n++;if(g.face==="SF")sf+=g.len;else df+=g.len;});
   const f=v=>v.toLocaleString("fr-FR")+" ml";
   document.getElementById("tGond").textContent=n;
   document.getElementById("tSF").textContent=f(sf);
@@ -1189,14 +1263,23 @@ function renderList(){
   body.innerHTML="";
   if(gondoles.length===0){table.style.display="none";empty.style.display="";return;}
   table.style.display="";empty.style.display="none";
-  gondoles.forEach((g,idx)=>{
+  const groupes=gondolesGroupees();
+  groupes.forEach(e=>{
+    const g=e.rep, n=e.count;
     const tr=document.createElement("tr");tr.dataset.id=g.id;tr.style.cursor="pointer";
-    if(g.id===selId)tr.style.background="#fef1ec";
-    tr.innerHTML=`<td class="qty">${repere(idx)}</td><td>${designationText(g)}</td><td><button type="button" class="btn-del-row" data-id="${g.id}" style="width:26px;height:26px;border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;color:var(--steel-500);cursor:pointer">✕</button></td>`;
+    if(e.ids.includes(selId))tr.style.background="#fef1ec";
+    const qb=n>1?`<b style="color:var(--accent)">${n}×</b> `:"";
+    tr.innerHTML=`<td class="qty">${repereOf(g)}</td><td>${qb}${designationText(g)}</td><td><button type="button" class="btn-del-row" data-id="${g.id}" style="width:26px;height:26px;border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;color:var(--steel-500);cursor:pointer">✕</button></td>`;
     body.appendChild(tr);
   });
   body.querySelectorAll("tr").forEach(tr=>tr.addEventListener("click",e=>{if(e.target.closest(".btn-del-row"))return;selId=Number(tr.dataset.id);renderAll();openDetModal();}));
-  body.querySelectorAll(".btn-del-row").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();const id=Number(b.dataset.id);gondoles=gondoles.filter(g=>g.id!==id);if(selId===id)selId=null;renderAll();}));
+  // ✕ supprime tout le groupe
+  body.querySelectorAll(".btn-del-row").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();
+    const id=Number(b.dataset.id); const g=gondoles.find(x=>x.id===id); if(!g)return;
+    const ids = g.grp>0 ? new Set(gondoles.filter(x=>x.grp===g.grp).map(x=>x.id)) : new Set([id]);
+    gondoles=gondoles.filter(x=>!ids.has(x.id));
+    if(ids.has(selId))selId=null; renderAll();
+  }));
 }
 
 // ===================== Nomenclature =====================
@@ -1210,7 +1293,7 @@ function renderBom(){
 
 // ===================== Envoi / copie =====================
 function buildRequestText(){
-  const lignes=gondoles.map((g,i)=>`${repere(i)}. ${designationText(g)}`);
+  const lignes=gondolesGroupees().map(e=>`${repereOf(e.rep)}. ${e.count>1?(e.count+"× "):""}${designationText(e.rep)}`);
   const c={nom:val("cNom"),soc:val("cSociete"),mail:val("cEmail"),tel:val("cTel"),msg:val("cMsg")};
   let t="DEMANDE DE DEVIS — GONDOLES RSL\n\nClient :\n";
   t+=`  Nom : ${c.nom||"-"}\n  Société : ${c.soc||"-"}\n  Email : ${c.mail||"-"}\n  Téléphone : ${c.tel||"-"}\n`;
@@ -1229,7 +1312,7 @@ function buildBomTable(){
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function buildRequestHTML(){
   const c={nom:val("cNom"),soc:val("cSociete"),mail:val("cEmail"),tel:val("cTel"),msg:val("cMsg")};
-  const lignes=gondoles.map((g,i)=>`${repere(i)}. ${designationText(g)}`);const bom=buildBom();
+  const lignes=gondolesGroupees().map(e=>`${repereOf(e.rep)}. ${e.count>1?(e.count+"× "):""}${designationText(e.rep)}`);const bom=buildBom();
   let h=`<div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#1c2430">`;
   h+=`<h2 style="margin:0 0 8px">DEMANDE DE DEVIS — GONDOLES RSL</h2>`;
   h+=`<p style="margin:0 0 4px"><b>Client :</b><br>Nom : ${esc(c.nom||"-")}<br>Société : ${esc(c.soc||"-")}<br>Email : ${esc(c.mail||"-")}<br>Téléphone : ${esc(c.tel||"-")}`;
@@ -1341,15 +1424,16 @@ function genererDevisPDF(){
   doc.setDrawColor(220,226,232); doc.line(M,y,PW-M,y); y+=7;
 
   // -- Un poste par gondole --
-  gondoles.forEach((g,idx)=>{
-    const rep=repere(idx);
+  gondolesGroupees().forEach(e=>{
+    const g=e.rep, Q=e.count;
+    const rep=repereOf(g);
     const col=COLORIS[g.color]||COLORIS.blanc;
     const nd=niveauxDePose(g);
-    const dev=g.face==="DF"?g.len*2:g.len;
+    const dev=(g.face==="DF"?g.len*2:g.len)*Q;
     const profTxt=g.face==="DF"?("P.2x"+g.p):("P."+g.p);
-    const bom=buildBomForGondole(g);
+    // nomenclature du groupe = nomenclature unitaire × Q
+    const bom=buildBomForGondole(g).map(i=>({...i, qty:i.qty*Q}));
 
-    // hauteur estimée du bloc pour éviter les coupures : titre + lignes + marge
     const estH=18+bom.length*5.6+10;
     if(y+estH>282){ doc.addPage(); y=16; }
 
@@ -1358,7 +1442,7 @@ function genererDevisPDF(){
     doc.setTextColor(...accent); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
     doc.text(rep,M+3,y+4.8);
     doc.setTextColor(...ink); doc.setFontSize(10);
-    doc.text(`1 gondole ${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000  —  ${dev} ml développé`,M+9,y+4.8);
+    doc.text(`${Q} gondole${Q>1?"s":""} ${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000  —  ${dev} ml développé`,M+9,y+4.8);
     y+=10;
     // sous-titre descriptif
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
@@ -1389,22 +1473,23 @@ function genererDevisPDF(){
   doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(13);
   doc.text("Récapitulatif",M,y); y+=6;
   let totalDev=0,totalSF=0,totalDF=0;
-  const recapRows=gondoles.map((g,idx)=>{
-    const dev=g.face==="DF"?g.len*2:g.len; totalDev+=dev;
-    if(g.face==="SF")totalSF+=g.len; else totalDF+=g.len;
+  const recapRows=gondolesGroupees().map(e=>{
+    const g=e.rep, Q=e.count;
+    const dev=(g.face==="DF"?g.len*2:g.len)*Q; totalDev+=dev;
+    if(g.face==="SF")totalSF+=g.len*Q; else totalDF+=g.len*Q;
     const profTxt=g.face==="DF"?("P.2x"+g.p):("P."+g.p);
-    return [repere(idx), `${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000`, (COLORIS[g.color]||COLORIS.blanc).ral, dev+" ml"];
+    return [repereOf(g), String(Q), `${faceLabel(g.face)} H.${g.h} ${profTxt} L.${g.len}x1000`, (COLORIS[g.color]||COLORIS.blanc).ral, dev+" ml"];
   });
   doc.autoTable({
     startY:y, margin:{left:M,right:M},
-    head:[["Repère","Gondole","Coloris","Métrage dév."]],
+    head:[["Repère","Qté","Gondole","Coloris","Métrage dév."]],
     body:recapRows,
-    foot:[["","Total développé","",totalDev+" ml"]],
+    foot:[["","","Total développé","",totalDev+" ml"]],
     theme:"grid",
     styles:{fontSize:8.5,cellPadding:1.8,lineColor:[224,229,234],textColor:ink},
     headStyles:{fillColor:[46,58,74],textColor:[255,255,255],fontStyle:"bold"},
     footStyles:{fillColor:[245,247,249],textColor:ink,fontStyle:"bold"},
-    columnStyles:{0:{cellWidth:18,halign:"center",fontStyle:"bold"},3:{cellWidth:26,halign:"right"}}
+    columnStyles:{0:{cellWidth:16,halign:"center",fontStyle:"bold"},1:{cellWidth:12,halign:"center"},4:{cellWidth:26,halign:"right"}}
   });
   y=doc.lastAutoTable.finalY+4;
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
