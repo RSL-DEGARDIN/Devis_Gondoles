@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devis RSL — Mini-Rack</title>
+<style>
+:root{
+  --ink:#1d2a31;          /* RAL 7024 anthracite */
+  --ink-2:#2c3d46;
+  --paper:#ffffff;
+  --canvas:#eceff0;
+  --line:#d2d8da;
+  --grey:#b7bfc3;         /* RAL 7035 lisses */
+  --jaune:#f4c300;        /* RAL 1028 */
+  --galva:#c8ced1;
+  --bois:#cbb18a;
+  --alert:#b3321f;
+  --ok:#1f6f4e;
+  --cote:#ef7d18;       /* lignes de cote */
+  --txt:#1d2a31;
+  --txt-2:#5d6b72;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--canvas);
+  color:var(--txt);
+  font:15px/1.45 "Helvetica Neue",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+header.top{
+  background:var(--ink);color:#fff;padding:18px 24px;
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  border-bottom:5px solid var(--jaune);
+}
+header.top h1{font-size:23px}
+header.top .sub{color:#aebac1;font-size:14px}
+header.top .who{margin-left:auto;font-size:13px;color:#aebac1;text-align:right;line-height:1.5}
+.wrap{max-width:1500px;margin:0 auto;padding:22px}
+.setup{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start;margin-bottom:20px}
+.setup .besoin{grid-column:1 / span 2;grid-row:1}
+.setup .besoin .body{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:6px 14px;align-items:start}
+.setup .besoin .radiocol{grid-row:1 / span 2;margin:0}
+.setup .besoin .opts{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:0;padding-top:20px}
+.setup .besoin .addcell{display:flex;align-items:flex-end;margin-bottom:0;padding-top:14px}
+.setup .besoin .addcell button{width:100%}
+.setup .travees{grid-column:3;grid-row:1 / span 4}
+.setup .plan{grid-column:1 / span 2;grid-row:2}
+.setup .gwarns{grid-column:1 / span 2;grid-row:3}
+.setup .gwarns:empty{display:none}
+.setup .cfgbom{grid-column:1 / span 2;grid-row:4}
+@media(max-width:1080px){
+  .setup{grid-template-columns:1fr 1fr}
+  .setup .travees{grid-column:auto;grid-row:auto}
+  .setup .plan,.setup .gwarns,.setup .cfgbom,.setup .besoin{grid-column:1 / -1;grid-row:auto}
+  .setup .besoin .radiocol{grid-row:auto}
+}
+@media(max-width:720px){.setup{grid-template-columns:1fr}.setup .plan,.setup .gwarns,.setup .cfgbom,.setup .besoin{grid-column:auto}.setup .besoin .body{grid-template-columns:1fr}}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:3px}
+.gate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-left:4px solid var(--jaune);border-radius:3px;padding:11px 14px;margin-bottom:18px;font-size:13.5px}
+.gate.ok{border-left-color:var(--ok)}
+.gate input[type=text]{width:150px;padding:6px 8px}
+.gate .msg{color:var(--txt-2)}
+.gate .msg.ko{color:var(--alert);font-weight:700}
+.gate .msg.ok{color:var(--ok);font-weight:700}
+.gate .sp{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card > h2{
+  font-size:13px;padding:11px 14px;border-bottom:1px solid var(--line);
+  background:#f7f9f9;color:var(--ink);
+}
+.card .body{padding:12px 14px}
+
+label.f{display:block;margin:0 0 9px}
+label.f > span{display:block;font-size:12.5px;color:var(--txt-2);margin-bottom:4px}
+select,input[type=number],input[type=text]{
+  width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:2px;
+  font:inherit;font-size:14px;background:#fff;color:var(--txt)
+}
+select:focus,input:focus,button:focus{outline:2px solid var(--jaune);outline-offset:1px}
+.f{display:block;margin:0 0 9px}
+.f > span{display:block;font-size:12.5px;color:var(--txt-2);margin-bottom:4px}
+.radios{display:grid;gap:5px}
+.rad{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;border:1px solid var(--line);border-radius:2px;padding:7px 9px;cursor:pointer}
+.rad:has(input:checked){border-color:var(--ink);background:#f7f9f9;font-weight:600}
+.rad input{margin-top:2px}
+.stepper{display:flex;gap:6px}
+.stepper button{width:34px;height:35px;padding:0;font-size:15px;line-height:1;font-weight:700}
+.stepper input{flex:1;height:35px;padding:6px;text-align:center}
+.qty{display:flex;align-items:center;gap:7px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line);font-size:13px;color:var(--txt-2)}
+.qty span{margin-right:auto}
+.qty button{width:32px;padding:5px 0;font-size:16px;line-height:1;font-weight:700}
+.qty input{width:56px;text-align:center;padding:6px 4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:0 0 7px;font-size:14px}
+.chk input{margin-top:3px}
+.hint{font-size:12px;color:var(--txt-2);margin:-4px 0 8px;line-height:1.35}
+.auto{font-size:12px;color:var(--ok);margin:-5px 0 9px;line-height:1.35}
+
+button{font:inherit;cursor:pointer;border-radius:2px;border:1px solid var(--ink);background:#fff;color:var(--ink);padding:8px 12px}
+button:hover{background:#f2f5f6}
+button.primary{background:var(--jaune);border-color:#d9ad00;font-weight:700}
+button.primary:hover{background:#ffd41f}
+button.ghost{border-color:var(--line);color:var(--txt-2);padding:5px 8px;font-size:13px}
+button.ghost:hover{background:#f2f5f6;color:var(--ink)}
+
+/* travées */
+.bayrow{border:1px solid var(--line);border-radius:2px;padding:7px;margin-bottom:8px;background:#fbfcfc}
+.bay{display:grid;grid-template-columns:34px 1fr auto auto;gap:7px;align-items:center}
+.baylisse{margin-top:6px;padding:6px 8px;font-size:13px}
+.baycap{margin-top:4px;font-size:11.5px;color:var(--txt-2)}
+.baycap.ko{color:var(--alert);font-weight:700}
+.bay .n{font-size:12px;color:#fff;background:var(--ink-2);border-radius:2px;text-align:center;padding:5px 0}
+.bay select{padding:6px 8px}
+.addbay{display:flex;gap:8px;margin-top:10px}
+.addbay button{flex:1}
+
+/* dessin */
+.drawing{background:var(--paper);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.drawing .head{display:flex;align-items:center;gap:14px;padding:11px 14px;border-bottom:1px solid var(--line);background:#f7f9f9;flex-wrap:wrap}
+.drawing .head h2{font-size:13px}
+.drawing .head .legend{margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--txt-2);flex-wrap:wrap}
+.drawing .head .legend i{display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
+svg{display:block;width:100%;height:auto;background:#fff}
+
+.legchk{font-size:12.5px;color:var(--txt-2)}
+.legchk span{cursor:pointer}
+
+.warn{margin:0;padding:10px 12px;border-left:4px solid var(--alert);background:#fdf1ef;font-size:13.5px;border-radius:2px}
+.warn.info{border-color:var(--jaune);background:#fdf8e3}
+.warn ul{margin:4px 0 0;padding-left:18px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--txt-2);font-weight:600;background:#f7f9f9}
+td.num,th.num{text-align:right;white-space:nowrap}
+td.ref{font-family:"SFMono-Regular",Consolas,monospace;font-size:11.5px;color:var(--txt-2);white-space:nowrap}
+tr.grp td{background:#f2f5f6;font-weight:700;font-size:12px;color:var(--ink)}
+tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;background:#fbfcfc}
+
+.totbar{display:flex;align-items:center;gap:16px;padding:14px;border-top:1px solid var(--line);background:#f7f9f9;flex-wrap:wrap}
+.totbar .big{font-size:26px;font-weight:700}
+.totbar .lbl{font-size:12px;color:var(--txt-2)}
+.totbar .sp{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap}
+.remise{width:78px}
+
+.devis td.name{font-weight:600}
+.recap{width:calc(66.667% - 6px)}
+@media(max-width:1080px){.recap{width:100%}}
+select.deptsel{width:auto;padding:2px 4px;font-size:13px;font-weight:700;border-color:var(--line)}
+.devis td.act{white-space:nowrap;text-align:right}
+.devis td.act button{margin-left:6px}
+button.del{border-color:var(--line);color:var(--alert);font-weight:700;padding:5px 9px;line-height:1}
+button.del:hover{background:#fdf1ef;border-color:var(--alert)}
+tr.editing td{background:#fdf8e3}
+.empty{padding:22px 14px;color:var(--txt-2);font-size:13.5px}
+
+@media print{
+  body{background:#fff}
+  aside,.noprint,.setup,.drawing,.cfgbom{display:none!important}
+  .wrap{display:block;max-width:none;padding:0}
+  .card{border:none;margin-top:0!important}
+  .card > h2{background:none;padding-left:0;border-bottom:2px solid var(--ink)}
+  header.top{border-bottom:3px solid var(--jaune)}
+  #warns{display:none}
+  table{font-size:11pt}
+  tfoot{display:table-row-group}
+  .totbar{display:none}
+  th,td{padding:4px 6px}
+  tr,tfoot{page-break-inside:avoid}
+  thead{display:table-header-group}
+  .recap{width:100%}
+  select.deptsel{appearance:none;-webkit-appearance:none;border:none;background:none;padding:0;font-weight:700}
+  .hint{font-size:9pt}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Devis RSL - Mini-Rack</h1>
+  <span class="who">RSL — Rayonnages Services Lorraine · tarif au 01/09/2026<br>54180 Heillecourt - https://rsl.eu - 03.83.55.49.50</span>
+</header>
+
+<div class="wrap">
+
+  <div class="gate noprint" id="gate"></div>
+
+  <section class="setup">
+    <div class="card besoin noprint">
+      <h2>Besoin</h2>
+      <div class="body">
+        <div class="f radiocol">
+          <div class="radios">
+            <label class="rad"><input type="radio" name="gamme" value="STD" checked><span>EPSIVOL — échelle peinte RAL 7024, montant 1,5 mm</span></label>
+            <label class="rad"><input type="radio" name="gamme" value="ONE"><span>EPSIVOL ONE — échelle galvanisée, montant 1,2 mm</span></label>
+          </div>
+        </div>
+        <label class="f"><span>Hauteur d'échelle</span><select id="hauteur"></select></label>
+        <label class="f"><span>Profondeur</span><select id="prof"></select></label>
+        <div class="f"><span>Niveaux de lisses</span>
+          <div class="stepper">
+            <button type="button" id="nivMinus" aria-label="Retirer un niveau">−</button>
+            <input type="number" id="niveaux" min="2" max="12" step="1" value="4">
+            <button type="button" id="nivPlus" aria-label="Ajouter un niveau">+</button>
+          </div>
+        </div>
+        <label class="f"><span>Échelles</span>
+          <select id="montage">
+            <option value="A">À assembler</option>
+            <option value="H">Montées en usine</option>
+          </select></label>
+        <label class="f"><span>Platelage</span>
+          <select id="platelage">
+            <option value="agglo">Bois aggloméré 19 mm</option>
+            <option value="melamine">Bois mélaminé blanc 19 mm</option>
+            <option value="tole">Tôle galvanisée 0,5 mm</option>
+            <option value="fil">Fil électro-zingué 50 × 100 mm</option>
+            <option value="none">Sans platelage (lisses seules)</option>
+          </select></label>
+        <div class="f opts">
+          <div class="chk" style="margin:0"><input type="checkbox" id="goupilles" checked><label for="goupilles">Goupilles de sécurité</label></div>
+          <div class="chk" style="margin:0"><input type="checkbox" id="fixation" checked><label for="fixation">Fixation au sol</label></div>
+        </div>
+        <div class="f addcell"><button type="button" class="primary addq" id="addQuoteTop">Ajouter au devis</button></div>
+      </div>
+    </div>
+
+    <div class="card travees noprint">
+      <h2>Travées</h2>
+      <div class="body">
+        <div id="bays"></div>
+        <div class="addbay">
+          <button type="button" id="addBay">Ajouter une travée</button>
+          <button type="button" class="ghost" id="sameAll" title="Appliquer la longueur de la travée 1 à toutes">Uniformiser</button>
+        </div>
+        <div class="qty">
+          <span>Ensembles identiques</span>
+          <button type="button" id="qtyMinus" aria-label="Retirer un ensemble">−</button>
+          <input type="number" id="qty" min="1" max="99" step="1" value="1">
+          <button type="button" id="qtyPlus" aria-label="Ajouter un ensemble">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="drawing plan">
+      <div class="head">
+        <h2 id="drawTitle">Vue de face</h2>
+        <label class="chk legchk noprint" style="margin:0"><input type="checkbox" id="basse" checked><span>Première lisse au plus bas</span></label>
+        <div class="legend">
+          <span><i id="legEch" style="background:#1d2a31"></i>Échelle</span>
+          <span><i style="background:#b7bfc3"></i>Lisse</span>
+          <span><i id="legPlat" style="background:#cbb18a"></i><span id="legPlatTxt">Platelage</span></span>
+        </div>
+      </div>
+      <div id="svgHost"></div>
+    </div>
+    <div id="warns" class="gwarns"></div>
+
+    <div class="card cfgbom">
+      <h2>Nomenclature de la configuration</h2>
+      <div id="bomHost"></div>
+      <div class="totbar">
+        <div><div class="lbl">Total matériel HT</div><div class="big" id="totCfg">—</div></div>
+        <div><div class="lbl">Poids</div><div id="poidsCfg" style="font-weight:700">—</div></div>
+        <div class="sp noprint">
+          <button type="button" class="primary addq" id="addQuote">Ajouter au devis</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>Devis</h2>
+      <div id="quoteHost"><div class="empty">Aucun ensemble ajouté. Configurez un rayonnage puis cliquez sur « Ajouter au devis ».</div></div>
+      <div class="totbar">
+        <div><div class="lbl" id="totQuoteLbl">Total HT transport compris</div><div class="big" id="totQuote">—</div></div>
+        <div class="sp noprint">
+          <button type="button" id="printBtn">Imprimer</button>
+          <button type="button" id="csvBtn">Exporter la nomenclature (CSV)</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint" style="margin:12px 2px 6px">Stockage manuel uniquement : hauteur maximale du 1<sup>er</sup> niveau 900 mm, distance maximale entre deux niveaux 900 mm, deux niveaux de lisses minimum par travée, charge maximale uniformément répartie 3 500 kg par travée. Placer les charges les plus lourdes à la base du rayonnage.</p>
+    <p class="hint" style="margin:0 2px 40px">Prix tarif fabricant au 01/09/2026, hors transport, hors éco-participation et hors pose. Charges admissibles selon FEM 10.2.06, pour des charges uniformément réparties.</p>
+  </section>
+</div>
+<script>const TARIF={"ECH":{"STD":{"A":{"1750_1000":["AR08017510AABA003",54.03,9.816],"1750_1100":["AR08017511AABA003",57.56,10.039],"1750_1200":["AR08017512AABA003",59.4,10.264],"1750_400":["AR08017540AABA003",46.58,8.579],"1750_500":["AR08017550AABA003",48.76,8.762],"1750_600":["AR08017560AABA003",49.96,8.961],"1750_700":["AR08017570AABA003",51.79,9.166],"1750_800":["AR08017580AABA003",51.91,9.379],"1750_900":["AR08017590AABA003",53.28,9.596],"2000_1000":["AR08020010AABA003",60.11,10.767],"2000_1100":["AR08020011AABA003",61.74,11.033],"2000_1200":["AR08020012AABA003",65.5,11.301],"2000_400":["AR08020040AABA003",52.74,9.307],"2000_500":["AR08020050AABA003",53.62,9.519],"2000_600":["AR08020060AABA003",54.51,9.753],"2000_700":["AR08020070AABA003",56.04,9.995],"2000_800":["AR08020080AABA003",56.39,10.247],"2000_900":["AR08020090AABA003",59.4,10.505],"2250_1000":["AR08022510AABA003",67.04,11.667],"2250_1100":["AR08022511AABA003",68.79,11.933],"2250_1200":["AR08022512AABA003",70.7,12.201],"2250_400":["AR08022540AABA003",56.39,10.207],"2250_500":["AR08022550AABA003",59.4,10.419],"2250_600":["AR08022560AABA003",61.25,10.653],"2250_700":["AR08022570AABA003",62.78,10.895],"2250_800":["AR08022580AABA003",63.95,11.147],"2250_900":["AR08022590AABA003",65.5,11.405],"2500_1000":["AR08025010AABA003",71.05,13.078],"2500_1100":["AR08025011AABA003",71.78,13.387],"2500_1200":["AR08025012AABA003",75.53,13.698],"2500_400":["AR08025040AABA003",63.95,11.395],"2500_500":["AR08025050AABA003",65.5,11.636],"2500_600":["AR08025060AABA003",67.04,11.905],"2500_700":["AR08025070AABA003",68.86,12.184],"2500_800":["AR08025080AABA003",69.49,12.475],"2500_900":["AR08025090AABA003",70.7,12.774],"2750_1000":["AR08027510AABA003",76.68,13.998],"2750_1100":["AR08027511AABA003",78.52,14.307],"2750_1200":["AR08027512AABA003",80.39,14.618],"2750_400":["AR08027540AABA003",70.7,12.315],"2750_500":["AR08027550AABA003",71.28,12.556],"2750_600":["AR08027560AABA003",72.21,12.825],"2750_700":["AR08027570AABA003",73.41,13.104],"2750_800":["AR08027580AABA003",75.68,13.395],"2750_900":["AR08027590AABA003",76.46,13.694],"3000_1000":["AR08030010AABB003",82.13,15.409],"3000_1100":["AR08030011AABB003",82.84,15.761],"3000_1200":["AR08030012AABB003",85.57,16.115],"3000_400":["AR08030040AABB003",73.41,13.503],"3000_500":["AR08030050AABB003",74.97,13.773],"3000_600":["AR08030060AABB003",76.46,14.077],"3000_700":["AR08030070AABB003",77.67,14.393],"3000_800":["AR08030080AABB003",80.12,14.723],"3000_900":["AR08030090AABB003",81.63,15.063],"3250_1000":["AR08032510AABB003",87.47,16.309],"3250_1100":["AR08032511AABB003",89.2,16.661],"3250_1200":["AR08032512AABB003",91.05,17.015],"3250_400":["AR08032540AABB003",77.67,14.403],"3250_500":["AR08032550AABB003",81.63,14.673],"3250_600":["AR08032560AABB003",82.86,14.977],"3250_700":["AR08032570AABB003",84.37,15.293],"3250_800":["AR08032580AABB003",85.91,15.623],"3250_900":["AR08032590AABB003",87.13,15.963],"3500_1000":["AR08035010AABB003",93.22,17.72],"3500_1100":["AR08035011AABB003",96.49,18.115],"3500_1200":["AR08035012AABB003",98.38,18.512],"3500_400":["AR08035040AABB003",84.37,15.591],"3500_500":["AR08035050AABB003",85.91,15.89],"3500_600":["AR08035060AABB003",87.13,16.229],"3500_700":["AR08035070AABB003",89.57,16.582],"3500_800":["AR08035080AABB003",91.05,16.951],"3500_900":["AR08035090AABB003",92.33,17.332],"3750_1000":["AR08037510AABB003",99.15,18.64],"3750_1100":["AR08037511AABB003",101.33,19.035],"3750_1200":["AR08037512AABB003",103.18,19.432],"3750_400":["AR08037540AABB003",89.57,16.511],"3750_500":["AR08037550AABB003",92.33,16.81],"3750_600":["AR08037560AABB003",93.82,17.149],"3750_700":["AR08037570AABB003",95.3,17.502],"3750_800":["AR08037580AABB003",96.54,17.871],"3750_900":["AR08037590AABB003",98.38,18.252],"4000_1000":["AR08040010AABB003",106.2,20.051],"4000_1100":["AR08040011AABB003",107.31,20.489],"4000_1200":["AR08040012AABB003",108.72,20.929],"4000_400":["AR08040040AABB003",95.3,17.699],"4000_500":["AR08040050AABB003",96.54,18.027],"4000_600":["AR08040060AABB003",100.53,18.401],"4000_700":["AR08040070AABB003",103.24,18.791],"4000_800":["AR08040080AABB003",104.77,19.199],"4000_900":["AR08040090AABB003",106.02,19.621],"4250_1000":["AR08042510AABB003",111.83,21.462],"4250_1100":["AR08042511AABB003",113.1,21.943],"4250_1200":["AR08042512AABB003",114.23,22.426],"4250_400":["AR08042540AABB003",101.74,18.887],"4250_500":["AR08042550AABB003",104.77,19.244],"4250_600":["AR08042560AABB003",106.02,19.653],"4250_700":["AR08042570AABB003",107.82,20.08],"4250_800":["AR08042580AABB003",109.37,20.527],"4250_900":["AR08042590AABB003",111.22,20.99],"4500_1000":["AR08045010AABB003",115.87,22.362],"4500_1100":["AR08045011AABB003",118.62,22.843],"4500_1200":["AR08045012AABB003",120.65,23.326],"4500_400":["AR08045040AABB003",106.02,19.787],"4500_500":["AR08045050AABB003",109.34,20.144],"4500_600":["AR08045060AABB003",111.22,20.553],"4500_700":["AR08045070AABB003",112.68,20.98],"4500_800":["AR08045080AABB003",114.23,21.427],"4500_900":["AR08045090AABB003",115.47,21.89]},"H":{"1750_1000":["AR08017510HABA003",62.12,9.816],"1750_1100":["AR08017511HABA003",66.15,10.039],"1750_1200":["AR08017512HABA003",68.34,10.264],"1750_400":["AR08017540HABA003",53.58,8.579],"1750_500":["AR08017550HABA003",56.09,8.762],"1750_600":["AR08017560HABA003",57.45,8.961],"1750_700":["AR08017570HABA003",59.55,9.166],"1750_800":["AR08017580HABA003",59.71,9.379],"1750_900":["AR08017590HABA003",61.28,9.596],"2000_1000":["AR08020010HABA003",69.15,10.767],"2000_1100":["AR08020011HABA003",70.98,11.033],"2000_1200":["AR08020012HABA003",75.33,11.301],"2000_400":["AR08020040HABA003",60.64,9.307],"2000_500":["AR08020050HABA003",61.66,9.519],"2000_600":["AR08020060HABA003",62.7,9.753],"2000_700":["AR08020070HABA003",64.44,9.995],"2000_800":["AR08020080HABA003",64.83,10.675],"2000_900":["AR08020090HABA003",68.34,10.505],"2250_1000":["AR08022510HABA003",77.11,11.667],"2250_1100":["AR08022511HABA003",79.12,11.933],"2250_1200":["AR08022512HABA003",81.28,12.201],"2250_400":["AR08022540HABA003",64.83,10.207],"2250_500":["AR08022550HABA003",68.34,10.419],"2250_600":["AR08022560HABA003",70.43,10.653],"2250_700":["AR08022570HABA003",72.19,10.895],"2250_800":["AR08022580HABA003",73.56,11.147],"2250_900":["AR08022590HABA003",75.33,11.405],"2500_1000":["AR08025010HABA003",81.71,13.078],"2500_1100":["AR08025011HABA003",82.56,13.387],"2500_1200":["AR08025012HABA003",86.85,13.698],"2500_400":["AR08025040HABA003",73.56,11.395],"2500_500":["AR08025050HABA003",75.33,11.636],"2500_600":["AR08025060HABA003",77.11,11.905],"2500_700":["AR08025070HABA003",79.18,12.184],"2500_800":["AR08025080HABA003",79.91,12.475],"2500_900":["AR08025090HABA003",81.28,12.774],"2750_1000":["AR08027510HABA003",88.19,13.998],"2750_1100":["AR08027511HABA003",90.29,14.307],"2750_1200":["AR08027512HABA003",92.47,14.618],"2750_400":["AR08027540HABA003",81.28,12.315],"2750_500":["AR08027550HABA003",81.97,12.556],"2750_600":["AR08027560HABA003",83.02,12.825],"2750_700":["AR08027570HABA003",84.41,13.104],"2750_800":["AR08027580HABA003",87.01,13.395],"2750_900":["AR08027590HABA003",87.94,13.694],"3000_1000":["AR08030010HABB003",94.44,15.409],"3000_1100":["AR08030011HABB003",95.25,15.761],"3000_1200":["AR08030012HABB003",98.42,16.115],"3000_400":["AR08030040HABB003",84.41,13.503],"3000_500":["AR08030050HABB003",86.22,13.773],"3000_600":["AR08030060HABB003",87.94,14.077],"3000_700":["AR08030070HABB003",89.33,14.393],"3000_800":["AR08030080HABB003",92.13,14.723],"3000_900":["AR08030090HABB003",93.89,15.063],"3250_1000":["AR08032510HABB003",100.57,16.309],"3250_1100":["AR08032511HABB003",102.59,16.661],"3250_1200":["AR08032512HABB003",104.73,17.015],"3250_400":["AR08032540HABB003",89.33,14.403],"3250_500":["AR08032550HABB003",93.89,14.673],"3250_600":["AR08032560HABB003",95.28,14.977],"3250_700":["AR08032570HABB003",97.02,15.293],"3250_800":["AR08032580HABB003",98.8,15.623],"3250_900":["AR08032590HABB003",100.2,15.963],"3500_1000":["AR08035010HABB003",107.19,17.72],"3500_1100":["AR08035011HABB003",110.97,18.115],"3500_1200":["AR08035012HABB003",113.14,18.512],"3500_400":["AR08035040HABB003",97.02,15.591],"3500_500":["AR08035050HABB003",98.8,15.89],"3500_600":["AR08035060HABB003",100.2,16.229],"3500_700":["AR08035070HABB003",102.99,16.582],"3500_800":["AR08035080HABB003",104.73,16.951],"3500_900":["AR08035090HABB003",106.16,17.332],"3750_1000":["AR08037510HABB003",114.05,18.64],"3750_1100":["AR08037511HABB003",116.53,19.035],"3750_1200":["AR08037512HABB003",118.66,19.432],"3750_400":["AR08037540HABB003",102.99,16.511],"3750_500":["AR08037550HABB003",106.16,16.81],"3750_600":["AR08037560HABB003",107.89,17.149],"3750_700":["AR08037570HABB003",109.58,17.502],"3750_800":["AR08037580HABB003",111.01,17.871],"3750_900":["AR08037590HABB003",113.14,18.252],"4000_1000":["AR08040010HABB003",122.11,20.051],"4000_1100":["AR08040011HABB003",123.42,20.489],"4000_1200":["AR08040012HABB003",125.04,20.929],"4000_400":["AR08040040HABB003",109.58,17.699],"4000_500":["AR08040050HABB003",111.01,18.027],"4000_600":["AR08040060HABB003",115.59,18.401],"4000_700":["AR08040070HABB003",118.71,18.791],"4000_800":["AR08040080HABB003",120.48,19.199],"4000_900":["AR08040090HABB003",121.92,19.621],"4250_1000":["AR08042510HABB003",128.6,21.462],"4250_1100":["AR08042511HABB003",130.09,21.943],"4250_1200":["AR08042512HABB003",131.39,22.426],"4250_400":["AR08042540HABB003",117.03,18.887],"4250_500":["AR08042550HABB003",120.48,19.244],"4250_600":["AR08042560HABB003",121.92,19.653],"4250_700":["AR08042570HABB003",123.99,20.08],"4250_800":["AR08042580HABB003",125.78,20.527],"4250_900":["AR08042590HABB003",127.88,20.99],"4500_1000":["AR08045010HABB003",133.26,22.362],"4500_1100":["AR08045011HABB003",136.41,22.843],"4500_1200":["AR08045012HABB003",138.72,23.326],"4500_400":["AR08045040HABB003",121.92,19.787],"4500_500":["AR08045050HABB003",125.77,20.144],"4500_600":["AR08045060HABB003",127.88,20.553],"4500_700":["AR08045070HABB003",129.58,20.98],"4500_800":["AR08045080HABB003",131.39,21.427],"4500_900":["AR08045090HABB003",132.77,21.89]}},"ONE":{"A":{"1750_1000":["BR08017510AABC099",46.92,6.892],"1750_1100":["BR08017511AABC099",48.42,7.019],"1750_1200":["BR08017512AABC099",49.93,7.149],"1750_400":["BR08017540AABC099",38.6,6.179],"1750_500":["BR08017550AABC099",39.86,6.291],"1750_600":["BR08017560AABC099",41.16,6.405],"1750_700":["BR08017570AABC099",42.56,6.522],"1750_800":["BR08017580AABC099",43.95,6.645],"1750_900":["BR08017590AABC099",45.45,6.767],"2000_1000":["BR08020010AABC099",53.64,7.572],"2000_1100":["BR08020011AABC099",55.42,7.699],"2000_1200":["BR08020012AABC099",57.23,7.829],"2000_400":["BR08020040AABC099",43.84,6.859],"2000_500":["BR08020050AABC099",45.28,6.971],"2000_600":["BR08020060AABC099",46.83,7.085],"2000_700":["BR08020070AABC099",48.45,7.202],"2000_800":["BR08020080AABC099",50.13,7.325],"2000_900":["BR08020090AABC099",51.88,7.447],"2250_1000":["BR08022510AABC099",56.64,8.852],"2250_1100":["BR08022511AABC099",58.44,9.026],"2250_1200":["BR08022512AABC099",60.25,9.204],"2250_400":["BR08022540AABC099",46.85,7.855],"2250_500":["BR08022550AABC099",48.29,8.015],"2250_600":["BR08022560AABC099",49.83,8.176],"2250_700":["BR08022570AABC099",51.44,8.34],"2250_800":["BR08022580AABC099",53.15,8.511],"2250_900":["BR08022590AABC099",54.89,8.68],"2500_1000":["BR08025010AABC099",63.39,10.062],"2500_1100":["BR08025011AABC099",65.46,10.269],"2500_1200":["BR08025012AABC099",67.55,10.481],"2500_400":["BR08025040AABC099",52.1,8.92],"2500_500":["BR08025050AABC099",53.71,9.096],"2500_600":["BR08025060AABC099",55.5,9.277],"2500_700":["BR08025070AABC099",57.37,9.464],"2500_800":["BR08025080AABC099",59.33,9.662],"2500_900":["BR08025090AABC099",61.33,9.859],"2750_1000":["BR08027510AABC099",66.38,10.742],"2750_1100":["BR08027511AABC099",68.46,10.949],"2750_1200":["BR08027512AABC099",70.56,11.161],"2750_400":["BR08027540AABC099",55.08,9.6],"2750_500":["BR08027550AABC099",56.74,9.776],"2750_600":["BR08027560AABC099",58.52,9.957],"2750_700":["BR08027570AABC099",60.38,10.144],"2750_800":["BR08027580AABC099",62.33,10.342],"2750_900":["BR08027590AABC099",64.35,10.539],"3000_1000":["BR08030010AABD099",73.11,11.416],"3000_1100":["BR08030011AABD099",75.48,11.623],"3000_1200":["BR08030012AABD099",77.88,11.835],"3000_400":["BR08030040AABD099",60.32,10.274],"3000_500":["BR08030050AABD099",62.17,10.45],"3000_600":["BR08030060AABD099",64.19,10.631],"3000_700":["BR08030070AABD099",66.29,10.818],"3000_800":["BR08030080AABD099",68.53,11.016],"3000_900":["BR08030090AABD099",70.78,11.213]},"H":{"1750_1000":["BR08017510HABC099",53.96,6.892],"1750_1100":["BR08017511HABC099",55.68,7.019],"1750_1200":["BR08017512HABC099",57.42,7.149],"1750_400":["BR08017540HABC099",44.4,6.179],"1750_500":["BR08017550HABC099",45.83,6.291],"1750_600":["BR08017560HABC099",47.33,6.405],"1750_700":["BR08017570HABC099",48.93,6.522],"1750_800":["BR08017580HABC099",50.56,6.645],"1750_900":["BR08017590HABC099",52.24,6.767],"2000_1000":["BR08020010HABC099",61.67,7.572],"2000_1100":["BR08020011HABC099",63.73,7.699],"2000_1200":["BR08020012HABC099",65.81,7.829],"2000_400":["BR08020040HABC099",50.4,6.859],"2000_500":["BR08020050HABC099",52.07,6.971],"2000_600":["BR08020060HABC099",53.84,7.085],"2000_700":["BR08020070HABC099",55.73,7.202],"2000_800":["BR08020080HABC099",57.67,7.325],"2000_900":["BR08020090HABC099",59.65,7.447],"2250_1000":["BR08022510HABC099",65.15,8.852],"2250_1100":["BR08022511HABC099",67.19,9.026],"2250_1200":["BR08022512HABC099",69.3,9.204],"2250_400":["BR08022540HABC099",53.86,7.855],"2250_500":["BR08022550HABC099",55.54,8.015],"2250_600":["BR08022560HABC099",57.3,8.176],"2250_700":["BR08022570HABC099",59.18,8.34],"2250_800":["BR08022580HABC099",61.12,8.511],"2250_900":["BR08022590HABC099",63.14,8.68],"2500_1000":["BR08025010HABC099",72.89,10.062],"2500_1100":["BR08025011HABC099",75.29,10.269],"2500_1200":["BR08025012HABC099",77.67,10.481],"2500_400":["BR08025040HABC099",59.89,8.92],"2500_500":["BR08025050HABC099",61.78,9.096],"2500_600":["BR08025060HABC099",63.85,9.277],"2500_700":["BR08025070HABC099",65.96,9.464],"2500_800":["BR08025080HABC099",68.24,9.662],"2500_900":["BR08025090HABC099",70.52,9.859],"2750_1000":["BR08027510HABC099",76.35,10.742],"2750_1100":["BR08027511HABC099",78.75,10.949],"2750_1200":["BR08027512HABC099",81.14,11.161],"2750_400":["BR08027540HABC099",63.36,9.6],"2750_500":["BR08027550HABC099",65.25,9.776],"2750_600":["BR08027560HABC099",67.3,9.957],"2750_700":["BR08027570HABC099",69.44,10.144],"2750_800":["BR08027580HABC099",71.7,10.342],"2750_900":["BR08027590HABC099",73.99,10.539],"3000_1000":["BR08030010HABD099",84.07,11.416],"3000_1100":["BR08030011HABD099",86.81,11.623],"3000_1200":["BR08030012HABD099",89.56,11.835],"3000_400":["BR08030040HABD099",69.39,10.274],"3000_500":["BR08030050HABD099",71.49,10.45],"3000_600":["BR08030060HABD099",73.8,10.631],"3000_700":["BR08030070HABD099",76.23,10.818],"3000_800":["BR08030080HABD099",78.78,11.016],"3000_900":["BR08030090HABD099",81.41,11.213]}}},"LIS":{"rect50":{"STD":{"1000":["AR09001000ACAA002",19.18,2.152],"1250":["AR09001250ACAA002",21.39,2.627],"1500":["AR09001500ACAA002",22.32,3.102],"1800":["AR09001800ACAA002",23.72,3.672],"2000":["AR09002000ACAA002",24.87,4.052],"2250":["AR09002250ACAA002",26.14,4.527],"2500":["AR09002500ACAA002",28.03,5.002],"2700":["AR09002700ACAA002",31.17,5.382],"3000":["AR09003000ACAA002",31.82,5.952]}},"rect60":{"STD":{"1000":["AR09001000ADAA002",20.27,2.9],"1250":["AR09001250ADAA002",22.1,3.55],"1500":["AR09001500ADAA002",24.27,4.2],"1800":["AR09001800ADAA002",25.83,4.98],"2000":["AR09002000ADAA002",27.67,5.5],"2250":["AR09002250ADAA002",30.4,6.2],"2500":["AR09002500ADAA002",32.91,6.8],"2700":["AR09002700ADAA002",36.62,7.32],"3000":["AR09003000ADAA002",38.17,8.1]}},"rect80":{"STD":{"1000":["AR09001000AEAA002",26.1,4.152],"1250":["AR09001250AEAA002",28.82,5.127],"1500":["AR09001500AEAA002",30.97,6.102],"1800":["AR09001800AEAA002",33.68,7.272],"2000":["AR09002000AEAA002",35.81,8.052],"2250":["AR09002250AEAA002",39.21,9.027],"2500":["AR09002500AEAA002",41.93,10.002],"2700":["AR09002700AEAA002",45.55,10.782],"3000":["AR09003000AEAA002",46.78,11.952]}},"feu45":{"STD":{"1000":["AR09001000AIAA002",8.63,1.45],"1250":["AR09001250AIAA002",10.21,1.75],"1500":["AR09001500AIAA002",11.83,2.04],"1800":["AR09001800AIAA002",13.76,2.39],"2000":["AR09002000AIAA002",15.8,2.63]},"ONE":{"1000":["BR09001000AIAA002",8.63,1.45],"1250":["BR09001250AIAA002",10.21,1.75],"1500":["BR09001500AIAA002",11.83,2.04],"1800":["BR09001800AIAA002",13.76,2.39],"2000":["BR09002000AIAA002",15.8,2.63]}},"feu65":{"STD":{"1000":["AR09001000AJAA002",16.31,2.252],"1250":["AR09001250AJAA002",17.32,2.752],"1500":["AR09001500AJAA002",19.09,3.252],"1800":["AR09001800AJAA002",20.12,3.852],"2000":["AR09002000AJAA002",21.63,4.252],"2250":["AR09002250AJAA002",23.64,4.752],"2500":["AR09002500AJAA002",25.94,5.252]},"ONE":{"1000":["BR09001000AJAA002",16.31,2.252],"1250":["BR09001250AJAA002",17.32,2.752],"1500":["BR09001500AJAA002",19.09,3.252],"1800":["BR09001800AJAA002",20.12,3.852],"2000":["BR09002000AJAA002",21.63,4.252],"2250":["BR09002250AJAA002",23.64,4.752],"2500":["BR09002500AJAA002",25.94,5.252]}},"feu85":{"STD":{"1000":["AR09001000AKAA002",20.19,2.94],"1250":["AR09001250AKAA002",22.58,3.61],"1500":["AR09001500AKAA002",24.99,4.28],"1800":["AR09001800AKAA002",27.68,5.08],"2000":["AR09002000AKAA002",28.59,5.61],"2250":["AR09002250AKAA002",31.55,6.28],"2500":["AR09002500AKAA002",34.54,6.95],"2700":["AR09002700AKAA002",39.91,7.48],"3000":["AR09003000AKAA002",40.76,8.28]}},"feu65p":{"STD":{"1000":["AR09001000AMAA002",21.16,2.05],"1250":["AR09001250AMAA002",22.19,2.49],"1500":["AR09001500AMAA002",23.95,2.94],"1800":["AR09001800AMAA002",24.98,3.47],"2000":["AR09002000AMAA002",26.45,3.83],"2250":["AR09002250AMAA002",28.51,4.27],"2500":["AR09002500AMAA002",30.79,4.72]}},"z107":{"STD":{"1000":["AR09001000AOAA002",21.22,2.58],"1250":["AR09001250AOAA002",23.72,3.16],"1500":["AR09001500AOAA002",26.22,3.74],"1800":["AR09001800AOAA002",28.72,4.43],"2000":["AR09002000AOAA002",30.01,4.89],"2250":["AR09002250AOAA002",33.15,5.47],"2500":["AR09002500AOAA002",36.26,6.05],"2700":["AR09002700AOAA002",41.91,6.51],"3000":["AR09003000AOAA002",42.84,7.2]}},"pneu":{"STD":{"1000":["AR09001000APAA002",11.46,1.72],"1250":["AR09001250APAA002",13.76,2.08],"1500":["AR09001500APAA002",16.04,2.45],"1800":["AR09001800APAA002",18.86,2.88],"2000":["AR09002000APAA002",21.6,3.17],"2250":["AR09002250APAA002",23.39,3.53]},"ONE":{"1000":["BR09001000APAA002",11.46,1.72],"1250":["BR09001250APAA002",13.76,2.08],"1500":["BR09001500APAA002",16.04,2.45],"1800":["BR09001800APAA002",18.86,2.88],"2000":["BR09002000APAA002",21.6,3.17],"2250":["BR09002250APAA002",23.39,3.53]}},"ovale":{"STD":{"1000":["AR09001000AQAA002",18.47,1.8],"1250":["AR09001250AQAA002",20.29,2.17],"1500":["AR09001500AQAA002",21.21,2.55],"1800":["AR09001800AQAA002",22.46,3],"2000":["AR09002000AQAA002",23.63,3.3],"2250":["AR09002250AQAA002",25.17,3.67]},"ONE":{"1000":["BR09001000AQAA002",18.47,1.8],"1250":["BR09001250AQAA002",20.29,2.17],"1500":["BR09001500AQAA002",21.21,2.55],"1800":["BR09001800AQAA002",22.46,3],"2000":["BR09002000AQAA002",23.63,3.3],"2250":["BR09002250AQAA002",25.17,3.67]}}},"PLA":{"agglo":{"feu":{"1000_1000":["AR11010010AAAB000",20.37,16.42],"1000_1100":["AR11010011AAAB000",22.39,13.59],"1000_1200":["AR11010012AAAB000",24.44,19.7],"1000_400":["AR11010040AAAB000",8.15,6.57],"1000_500":["AR11010050AAAB000",10.2,8.21],"1000_600":["AR11010060AAAB000",12.22,9.85],"1000_700":["AR11010070AAAB000",14.26,11.49],"1000_800":["AR11010080AAAB000",16.29,13.14],"1000_900":["AR11010090AAAB000",18.35,11.12],"1250_1000":["AR11012510AAAB000",25.4,15.7],"1250_1100":["AR11012511AAAB000",29.3,17.4],"1250_1200":["AR11012512AAAB000",30.53,19],"1250_400":["AR11012540AAAB000",10.2,5.9],"1250_500":["AR11012550AAAB000",12.75,7.5],"1250_600":["AR11012560AAAB000",15.3,9.2],"1250_700":["AR11012570AAAB000",17.84,10.8],"1250_800":["AR11012580AAAB000",20.36,12.5],"1250_900":["AR11012590AAAB000",22.91,14.1],"1500_1000":["AR11015010AAAB000",30.53,18.9],"1500_1100":["AR11015011AAAB000",33.61,20.9],"1500_1200":["AR11015012AAAB000",36.64,22.9],"1500_400":["AR11015040AAAB000",12.22,7.1],"1500_500":["AR11015050AAAB000",15.3,9],"1500_600":["AR11015060AAAB000",18.35,11],"1500_700":["AR11015070AAAB000",21.38,13],"1500_800":["AR11015080AAAB000",24.44,15],"1500_900":["AR11015090AAAB000",27.48,16.9],"1800_1000":["AR11018010AAAB000",36.64,29.56],"1800_1100":["AR11018011AAAB000",40.3,24.45],"1800_1200":["AR11018012AAAB000",43.99,35.47],"1800_400":["AR11018040AAAB000",14.67,11.82],"1800_500":["AR11018050AAAB000",18.35,14.78],"1800_600":["AR11018060AAAB000",22.0,17.73],"1800_700":["AR11018070AAAB000",25.66,20.69],"1800_800":["AR11018080AAAB000",29.31,23.64],"1800_900":["AR11018090AAAB000",32.97,20.01],"2000_1000":["AR11020010AAAB000",40.74,25.3],"2000_1100":["AR11020011AAAB000",44.79,27.9],"2000_1200":["AR11020012AAAB000",48.86,30.5],"2000_400":["AR11020040AAAB000",16.29,9.4],"2000_500":["AR11020050AAAB000",20.36,12.1],"2000_600":["AR11020060AAAB000",24.44,14.7],"2000_700":["AR11020070AAAB000",28.49,17.3],"2000_800":["AR11020080AAAB000",32.59,20],"2000_900":["AR11020090AAAB000",36.64,22.6],"2250_1000":["AR11022510AAAB000",45.82,36.95],"2250_1100":["AR11022511AAAB000",50.37,30.57],"2250_1200":["AR11022512AAAB000",54.99,44.33],"2250_400":["AR11022540AAAB000",18.35,14.78],"2250_500":["AR11022550AAAB000",22.91,18.47],"2250_600":["AR11022560AAAB000",27.48,22.17],"2250_700":["AR11022570AAAB000",32.07,25.86],"2250_800":["AR11022580AAAB000",36.64,29.56],"2250_900":["AR11022590AAAB000",41.22,25.5],"2500_1000":["AR11025010AAAB000",50.91,41.05],"2500_1100":["AR11025011AAAB000",56.0,33.96],"2500_1200":["AR11025012AAAB000",61.08,49.26],"2500_400":["AR11025040AAAB000",20.36,16.42],"2500_500":["AR11025050AAAB000",25.4,20.53],"2500_600":["AR11025060AAAB000",30.53,18.34],"2500_700":["AR11025070AAAB000",35.63,28.74],"2500_800":["AR11025080AAAB000",40.74,32.84],"2500_900":["AR11025090AAAB000",45.82,27.79],"2700_1000":["AR11027010AAAB000",54.99,44.33],"2700_1100":["AR11027011AAAB000",60.49,36.68],"2700_1200":["AR11027012AAAB000",65.96,53.2],"2700_400":["AR11027040AAAB000",22.0,17.73],"2700_500":["AR11027050AAAB000",27.48,22.17],"2700_600":["AR11027060AAAB000",32.97,26.6],"2700_700":["AR11027070AAAB000",38.5,31.03],"2700_800":["AR11027080AAAB000",43.99,35.47],"2700_900":["AR11027090AAAB000",49.48,30.01],"3000_1000":["AR11030010AAAB000",61.08,49.26],"3000_1100":["AR11030011AAAB000",67.17,40.76],"3000_1200":["AR11030012AAAB000",73.31,59.11],"3000_400":["AR11030040AAAB000",24.44,19.7],"3000_500":["AR11030050AAAB000",30.53,24.63],"3000_600":["AR11030060AAAB000",36.64,29.56],"3000_700":["AR11030070AAAB000",42.77,34.48],"3000_800":["AR11030080AAAB000",48.86,29.94],"3000_900":["AR11030090AAAB000",54.99,33.35]},"rect":{"1000_1000":["AR11010010ABAAB00",20.37,13],"1000_1100":["AR11010011ABAAB00",22.39,15.02],"1000_1200":["AR11010012ABAAB00",24.44,15.6],"1000_400":["AR11010040ABAAB00",8.15,5.2],"1000_500":["AR11010050ABAAB00",10.2,6.5],"1000_600":["AR11010060ABAAB00",12.22,7.8],"1000_700":["AR11010070ABAAB00",14.26,9.1],"1000_800":["AR11010080ABAAB00",16.29,10.4],"1000_900":["AR11010090ABAAB00",18.35,11.7],"1250_1000":["AR11012510ABAAB00",25.4,16.25],"1250_1100":["AR11012511ABAAB00",29.3,18.82],"1250_1200":["AR11012512ABAAB00",30.53,19.5],"1250_400":["AR11012540ABAAB00",10.2,6.5],"1250_500":["AR11012550ABAAB00",12.75,8.12],"1250_600":["AR11012560ABAAB00",15.3,9.75],"1250_700":["AR11012570ABAAB00",17.84,11.38],"1250_800":["AR11012580ABAAB00",20.36,13],"1250_900":["AR11012590ABAAB00",22.91,14.62],"1500_1000":["AR11015010ABAAB00",30.53,19.5],"1500_1100":["AR11015011ABAAB00",33.61,22.61],"1500_1200":["AR11015012ABAAB00",36.64,23.4],"1500_400":["AR11015040ABAAB00",12.22,7.8],"1500_500":["AR11015050ABAAB00",15.3,9.75],"1500_600":["AR11015060ABAAB00",18.35,11.7],"1500_700":["AR11015070ABAAB00",21.38,13.65],"1500_800":["AR11015080ABAAB00",24.44,15.6],"1500_900":["AR11015090ABAAB00",27.48,17.55],"1800_1000":["AR11018010ABAAB00",36.64,23.4],"1800_1100":["AR11018011ABAAB00",40.3,27.17],"1800_1200":["AR11018012ABAAB00",43.99,28.08],"1800_400":["AR11018040ABAAB00",14.67,9.36],"1800_500":["AR11018050ABAAB00",18.35,11.7],"1800_600":["AR11018060ABAAB00",22.0,14.04],"1800_700":["AR11018070ABAAB00",25.66,16.3],"1800_800":["AR11018080ABAAB00",29.31,18.7],"1800_900":["AR11018090ABAAB00",32.97,21],"2000_1000":["AR11020010ABAAB00",40.74,26],"2000_1100":["AR11020011ABAAB00",44.79,30.2],"2000_1200":["AR11020012ABAAB00",48.86,31.2],"2000_400":["AR11020040ABAAB00",16.29,10.4],"2000_500":["AR11020050ABAAB00",20.36,13],"2000_600":["AR11020060ABAAB00",24.44,15.6],"2000_700":["AR11020070ABAAB00",28.49,18.2],"2000_800":["AR11020080ABAAB00",32.59,20.8],"2000_900":["AR11020090ABAAB00",36.64,23.4],"2250_1000":["AR11022510ABAAB00",45.82,29.25],"2250_1100":["AR11022511ABAAB00",50.37,34],"2250_1200":["AR11022512ABAAB00",54.99,35.1],"2250_400":["AR11022540ABAAB00",18.35,11.7],"2250_500":["AR11022550ABAAB00",22.91,14.62],"2250_600":["AR11022560ABAAB00",27.48,17.55],"2250_700":["AR11022570ABAAB00",32.07,20.47],"2250_800":["AR11022580ABAAB00",36.64,23.4],"2250_900":["AR11022590ABAAB00",41.22,26.32],"2500_1000":["AR11025010ABAAB00",50.91,32.5],"2500_1100":["AR11025011ABAAB00",56.0,37.79],"2500_1200":["AR11025012ABAAB00",61.08,39],"2500_400":["AR11025040ABAAB00",20.36,13],"2500_500":["AR11025050ABAAB00",25.4,16.25],"2500_600":["AR11025060ABAAB00",30.53,19.5],"2500_700":["AR11025070ABAAB00",35.63,22.75],"2500_800":["AR11025080ABAAB00",40.74,26],"2500_900":["AR11025090ABAAB00",45.82,29.25],"2700_1000":["AR11027010ABAAB00",54.99,35.1],"2700_1100":["AR11027011ABAAB00",60.49,40.83],"2700_1200":["AR11027012ABAAB00",65.96,42.12],"2700_400":["AR11027040ABAAB00",22.0,14],"2700_500":["AR11027050ABAAB00",27.48,17.55],"2700_600":["AR11027060ABAAB00",32.97,21],"2700_700":["AR11027070ABAAB00",38.5,24.57],"2700_800":["AR11027080ABAAB00",43.99,28.08],"2700_900":["AR11027090ABAAB00",49.48,31.59],"3000_1000":["AR11030010ABAAB00",61.08,39],"3000_1100":["AR11030011ABAAB00",67.17,45.38],"3000_1200":["AR11030012ABAAB00",73.31,46.8],"3000_400":["AR11030040ABAAB00",24.44,15.6],"3000_500":["AR11030050ABAAB00",30.53,19.5],"3000_600":["AR11030060ABAAB00",36.64,23.4],"3000_700":["AR11030070ABAAB00",42.77,27.3],"3000_800":["AR11030080ABAAB00",48.86,31.2],"3000_900":["AR11030090ABAAB00",54.99,35.1]}},"melamine":{"feu":{"1000_1000":["AR11010010BAAB000",26.92,16.42],"1000_1100":["AR11010011BAAB000",29.63,13.59],"1000_1200":["AR11010012BAAB000",32.31,19.7],"1000_400":["AR11010040BAAB000",10.8,6.57],"1000_500":["AR11010050BAAB000",13.46,8.21],"1000_600":["AR11010060BAAB000",16.15,9.85],"1000_700":["AR11010070BAAB000",18.86,11.49],"1000_800":["AR11010080BAAB000",21.53,13.14],"1000_900":["AR11010090BAAB000",24.27,11.12],"1250_1000":["AR11012510BAAB000",33.68,20.53],"1250_1100":["AR11012511BAAB000",37.04,16.98],"1250_1200":["AR11012512BAAB000",40.4,24.63],"1250_400":["AR11012540BAAB000",13.46,8.21],"1250_500":["AR11012550BAAB000",16.84,10.26],"1250_600":["AR11012560BAAB000",20.19,12.32],"1250_700":["AR11012570BAAB000",23.58,14.37],"1250_800":["AR11012580BAAB000",26.92,16.42],"1250_900":["AR11012590BAAB000",30.32,13.89],"1500_1000":["AR11015010BAAB000",40.4,24.63],"1500_1100":["AR11015011BAAB000",44.42,20.38],"1500_1200":["AR11015012BAAB000",48.48,29.56],"1500_400":["AR11015040BAAB000",16.15,9.85],"1500_500":["AR11015050BAAB000",20.19,12.32],"1500_600":["AR11015060BAAB000",24.27,14.78],"1500_700":["AR11015070BAAB000",28.29,17.24],"1500_800":["AR11015080BAAB000",32.31,19.7],"1500_900":["AR11015090BAAB000",36.36,16.67],"1800_1000":["AR11018010BAAB000",48.48,29.56],"1800_1100":["AR11018011BAAB000",53.34,24.45],"1800_1200":["AR11018012BAAB000",58.19,35.47],"1800_400":["AR11018040BAAB000",19.4,11.82],"1800_500":["AR11018050BAAB000",24.27,14.78],"1800_600":["AR11018060BAAB000",29.06,17.73],"1800_700":["AR11018070BAAB000",33.95,20.69],"1800_800":["AR11018080BAAB000",38.75,23.64],"1800_900":["AR11018090BAAB000",43.64,20.01],"2000_1000":["AR11020010BAAB000",53.9,32.84],"2000_1100":["AR11020011BAAB000",59.29,27.17],"2000_1200":["AR11020012BAAB000",64.65,39.41],"2000_400":["AR11020040BAAB000",21.53,13.14],"2000_500":["AR11020050BAAB000",26.92,16.42],"2000_600":["AR11020060BAAB000",32.31,19.7],"2000_700":["AR11020070BAAB000",37.71,22.99],"2000_800":["AR11020080BAAB000",43.11,26.27],"2000_900":["AR11020090BAAB000",48.48,22.23],"2250_1000":["AR11022510BAAB000",60.61,36.95],"2250_1100":["AR11022511BAAB000",66.66,30.57],"2250_1200":["AR11022512BAAB000",72.76,44.33],"2250_400":["AR11022540BAAB000",24.27,14.78],"2250_500":["AR11022550BAAB000",30.32,18.47],"2250_600":["AR11022560BAAB000",36.36,22.17],"2250_700":["AR11022570BAAB000",42.42,25.86],"2250_800":["AR11022580BAAB000",48.49,29.56],"2250_900":["AR11022590BAAB000",54.55,25.01],"2500_1000":["AR11025010BAAB000",67.36,41.05],"2500_1100":["AR11025011BAAB000",74.09,33.96],"2500_1200":["AR11025012BAAB000",80.85,49.26],"2500_400":["AR11025040BAAB000",26.92,16.42],"2500_500":["AR11025050BAAB000",33.68,20.53],"2500_600":["AR11025060BAAB000",40.4,24.63],"2500_700":["AR11025070BAAB000",47.15,28.74],"2500_800":["AR11025080BAAB000",53.9,32.84],"2500_900":["AR11025090BAAB000",60.61,27.79],"2700_1000":["AR11027010BAAB000",72.76,44.33],"2700_1100":["AR11027011BAAB000",80.03,36.68],"2700_1200":["AR11027012BAAB000",87.29,53.2],"2700_400":["AR11027040BAAB000",29.09,17.73],"2700_500":["AR11027050BAAB000",36.36,22.17],"2700_600":["AR11027060BAAB000",43.64,26.6],"2700_700":["AR11027070BAAB000",50.91,31.03],"2700_800":["AR11027080BAAB000",58.19,35.47],"2700_900":["AR11027090BAAB000",65.5,30.01],"3000_1000":["AR11030010BAAB000",80.85,49.26],"3000_1100":["AR11030011BAAB000",88.94,40.76],"3000_1200":["AR11030012BAAB000",97.0,59.11],"3000_400":["AR11030040BAAB000",32.34,19.7],"3000_500":["AR11030050BAAB000",40.4,24.63],"3000_600":["AR11030060BAAB000",48.48,29.56],"3000_700":["AR11030070BAAB000",56.59,34.48],"3000_800":["AR11030080BAAB000",64.65,39.41],"3000_900":["AR11030090BAAB000",72.76,33.35]},"rect":{"1000_1000":["AR11010010BBAB000",26.92,13],"1000_1100":["AR11010011BBAB000",29.63,12.98],"1000_1200":["AR11010012BBAB000",32.31,15.6],"1000_400":["AR11010040BBAB000",10.8,5.2],"1000_500":["AR11010050BBAB000",13.46,6.5],"1000_600":["AR11010060BBAB000",16.15,7.8],"1000_700":["AR11010070BBAB000",18.86,9.1],"1000_800":["AR11010080BBAB000",21.53,10.4],"1000_900":["AR11010090BBAB000",24.27,11.7],"1250_1000":["AR11012510BBAB000",33.68,16.25],"1250_1100":["AR11012511BBAB000",37.04,16.25],"1250_1200":["AR11012512BBAB000",40.4,19.5],"1250_400":["AR11012540BBAB000",13.46,6.5],"1250_500":["AR11012550BBAB000",16.84,8.12],"1250_600":["AR11012560BBAB000",20.19,9.75],"1250_700":["AR11012570BBAB000",23.58,11.38],"1250_800":["AR11012580BBAB000",26.92,13],"1250_900":["AR11012590BBAB000",30.32,14.62],"1500_1000":["AR11015010BBAB000",40.4,19.5],"1500_1100":["AR11015011BBAB000",44.42,19.53],"1500_1200":["AR11015012BBAB000",48.48,23.4],"1500_400":["AR11015040BBAB000",16.15,7.8],"1500_500":["AR11015050BBAB000",20.19,9.75],"1500_600":["AR11015060BBAB000",24.27,11.7],"1500_700":["AR11015070BBAB000",28.29,13.65],"1500_800":["AR11015080BBAB000",32.31,15.6],"1500_900":["AR11015090BBAB000",36.36,17.55],"1800_1000":["AR11018010BBAB000",48.48,23.4],"1800_1100":["AR11018011BBAB000",53.34,23.46],"1800_1200":["AR11018012BBAB000",58.19,28.08],"1800_400":["AR11018040BBAB000",19.4,9.36],"1800_500":["AR11018050BBAB000",24.27,11.7],"1800_600":["AR11018060BBAB000",29.06,14.04],"1800_700":["AR11018070BBAB000",33.95,16.3],"1800_800":["AR11018080BBAB000",38.75,18.7],"1800_900":["AR11018090BBAB000",43.64,21],"2000_1000":["AR11020010BBAB000",53.9,26],"2000_1100":["AR11020011BBAB000",59.29,26.08],"2000_1200":["AR11020012BBAB000",64.65,31.2],"2000_400":["AR11020040BBAB000",21.53,10.4],"2000_500":["AR11020050BBAB000",26.92,13],"2000_600":["AR11020060BBAB000",32.31,15.6],"2000_700":["AR11020070BBAB000",37.71,18.2],"2000_800":["AR11020080BBAB000",43.11,20.8],"2000_900":["AR11020090BBAB000",48.48,23.4],"2250_1000":["AR11022510BBAB000",60.61,29.25],"2250_1100":["AR11022511BBAB000",66.66,29.36],"2250_1200":["AR11022512BBAB000",72.76,35.1],"2250_400":["AR11022540BBAB000",24.27,11.7],"2250_500":["AR11022550BBAB000",30.32,14.62],"2250_600":["AR11022560BBAB000",36.36,17.55],"2250_700":["AR11022570BBAB000",42.42,20.47],"2250_800":["AR11022580BBAB000",48.49,23.4],"2250_900":["AR11022590BBAB000",54.55,26.32],"2500_1000":["AR11025010BBAB000",67.36,32.5],"2500_1100":["AR11025011BBAB000",74.09,32.64],"2500_1200":["AR11025012BBAB000",80.85,39],"2500_400":["AR11025040BBAB000",26.92,13],"2500_500":["AR11025050BBAB000",33.68,16.25],"2500_600":["AR11025060BBAB000",40.4,19.5],"2500_700":["AR11025070BBAB000",47.15,22.75],"2500_800":["AR11025080BBAB000",53.9,26],"2500_900":["AR11025090BBAB000",60.61,29.25],"2700_1000":["AR11027010BBAB000",72.76,35.1],"2700_1100":["AR11027011BBAB000",80.03,35.26],"2700_1200":["AR11027012BBAB000",87.29,42.12],"2700_400":["AR11027040BBAB000",29.09,14],"2700_500":["AR11027050BBAB000",36.36,17.55],"2700_600":["AR11027060BBAB000",43.64,21],"2700_700":["AR11027070BBAB000",50.91,24.57],"2700_800":["AR11027080BBAB000",58.19,28.08],"2700_900":["AR11027090BBAB000",65.5,31.59],"3000_1000":["AR11030010BBAB000",80.85,39],"3000_1100":["AR11030011BBAB000",88.94,39.19],"3000_1200":["AR11030012BBAB000",97.0,46.8],"3000_400":["AR11030040BBAB000",32.34,15.6],"3000_500":["AR11030050BBAB000",40.4,19.5],"3000_600":["AR11030060BBAB000",48.48,23.4],"3000_700":["AR11030070BBAB000",56.59,27.3],"3000_800":["AR11030080BBAB000",64.65,31.2],"3000_900":["AR11030090BBAB000",72.76,35.1]}},"tole":{"feu":{"1000_1000":["AR11010010CAAA099",39.37,6.34],"1000_1100":["AR11010011CAAA099",43.55,6.97],"1000_1200":["AR11010012CAAA099",47.72,7.64],"1000_400":["AR11010040CAAA099",16.19,2.37],"1000_500":["AR11010050CAAA099",20.27,2.99],"1000_600":["AR11010060CAAA099",23.66,3.66],"1000_700":["AR11010070CAAA099",27.58,4.33],"1000_800":["AR11010080CAAA099",31.53,5],"1000_900":["AR11010090CAAA099",35.44,5.67],"1250_1000":["AR11012510CAAA099",49.2,7.86],"1250_1100":["AR11012511CAAA099",59.63,8.63],"1250_1200":["AR11012512CAAA099",59.88,9.46],"1250_400":["AR11012540CAAA099",20.27,2.93],"1250_500":["AR11012550CAAA099",25.35,3.71],"1250_600":["AR11012560CAAA099",29.59,4.54],"1250_700":["AR11012570CAAA099",34.48,5.37],"1250_800":["AR11012580CAAA099",39.4,6.2],"1250_900":["AR11012590CAAA099",44.3,7.03],"1500_1000":["AR11015010CAAA099",59.03,9.38],"1500_1100":["AR11015011CAAA099",65.3,10.29],"1500_1200":["AR11015012CAAA099",71.56,11.28],"1500_400":["AR11015040CAAA099",24.31,3.49],"1500_500":["AR11015050CAAA099",30.38,4.43],"1500_600":["AR11015060CAAA099",35.49,5.42],"1500_700":["AR11015070CAAA099",41.37,6.41],"1500_800":["AR11015080CAAA099",47.25,7.4],"1500_900":["AR11015090CAAA099",53.15,8.39],"1800_1000":["AR11018010CAAA099",72.37,11.1],"1800_1100":["AR11018011CAAA099",80.36,12.15],"1800_1200":["AR11018012CAAA099",87.78,13.32],"1800_400":["AR11018040CAAA099",29.81,4.11],"1800_500":["AR11018050CAAA099",37.24,5.25],"1800_600":["AR11018060CAAA099",43.55,6.42],"1800_700":["AR11018070CAAA099",50.68,7.59],"1800_800":["AR11018080CAAA099",57.94,8.76],"1800_900":["AR11018090CAAA099",65.16,9.93],"2000_1000":["AR11020010CAAA099",78.71,12.42],"2000_1100":["AR11020011CAAA099",87.08,13.61],"2000_1200":["AR11020012CAAA099",95.46,14.92],"2000_400":["AR11020040CAAA099",32.43,4.61],"2000_500":["AR11020050CAAA099",40.5,5.87],"2000_600":["AR11020060CAAA099",47.31,7.18],"2000_700":["AR11020070CAAA099",55.17,8.49],"2000_800":["AR11020080CAAA099",63.0,9.8],"2000_900":["AR11020090CAAA099",70.85,11.11],"2250_1000":["AR11022510CAAA099",88.53,13.94],"2250_1100":["AR11022511CAAA099",97.94,15.27],"2250_1200":["AR11022512CAAA099",107.36,16.74],"2250_400":["AR11022540CAAA099",36.47,5.17],"2250_500":["AR11022550CAAA099",45.59,6.59],"2250_600":["AR11022560CAAA099",53.26,8.06],"2250_700":["AR11022570CAAA099",62.09,9.53],"2250_800":["AR11022580CAAA099",70.91,11],"2250_900":["AR11022590CAAA099",79.72,12.47],"2500_1000":["AR11025010CAAA099",98.39,15.46],"2500_1100":["AR11025011CAAA099",119.31,16.93],"2500_1200":["AR11025012CAAA099",119.77,18.56],"2500_400":["AR11025040CAAA099",40.5,5.73],"2500_500":["AR11025050CAAA099",50.66,7.31],"2500_600":["AR11025060CAAA099",59.16,8.94],"2500_700":["AR11025070CAAA099",68.97,10.57],"2500_800":["AR11025080CAAA099",78.77,12.2],"2500_900":["AR11025090CAAA099",88.57,13.83],"2700_1000":["AR11027010CAAA099",107.28,16.52],"2700_1100":["AR11027011CAAA099",118.69,18.06],"2700_1200":["AR11027012CAAA099",130.09,19.8],"2700_400":["AR11027040CAAA099",44.22,6.1],"2700_500":["AR11027050CAAA099",55.24,7.82],"2700_600":["AR11027060CAAA099",64.52,9.56],"2700_700":["AR11027070CAAA099",75.17,11.3],"2700_800":["AR11027080CAAA099",85.9,13.04],"2700_900":["AR11027090CAAA099",96.58,14.78],"3000_1000":["AR11030010CAAA099",118.53,18.5],"3000_1100":["AR11030011CAAA099",131.12,20.25],"3000_1200":["AR11030012CAAA099",143.71,22.2],"3000_400":["AR11030040CAAA099",48.84,6.85],"3000_500":["AR11030050CAAA099",61.01,8.75],"3000_600":["AR11030060CAAA099",71.24,10.7],"3000_700":["AR11030070CAAA099",83.08,12.65],"3000_800":["AR11030080CAAA099",94.88,14.6],"3000_900":["AR11030090CAAA099",106.69,16.55]}},"fil":{"feu":{"1000_1000":["AN11010010FAAA099",38.02,5.49],"1000_600":["AN11010060FAAA099",21.84,3.27],"1000_800":["AN11010080FAAA099",29.91,4.41],"1250_1000":["AN11012510FAAA099",44.67,6.82],"1250_600":["AN11012560FAAA099",26.47,4.05],"1250_800":["AN11012580FAAA099",36.63,5.49],"1500_1000":["AN11015010FAAA099",49.84,8.64],"1500_600":["AN11015060FAAA099",30.25,4.9],"1500_800":["AN11015080FAAA099",40.88,6.9],"1800_1000":["AN11018010FAAA099",65.41,9.7],"1800_600":["AN11018060FAAA099",39.04,5.8],"1800_800":["AN11018080FAAA099",53.8,7.92],"2000_1000":["AN11020010FAAA099",72.75,10.98],"2000_600":["AN11020060FAAA099",43.66,6.54],"2000_800":["AN11020080FAAA099",59.8,8.82],"2250_1000":["AN11022510FAAA099",81.05,12.31],"2250_600":["AN11022560FAAA099",48.31,7.32],"2250_800":["AN11022580FAAA099",66.53,9.9],"2500_1000":["AN11025010FAAA099",89.32,13.64],"2500_600":["AN11025060FAAA099",52.92,8.1],"2500_800":["AN11025080FAAA099",73.22,10.98],"2700_1000":["AN11027010FAAA099",98.11,14.55],"2700_600":["AN11027060FAAA099",58.56,8.7],"2700_800":["AN11027080FAAA099",80.7,11.88],"3000_1000":["AN11030010FAAA099",109.13,16.47],"3000_600":["AN11030060FAAA099",65.51,9.81],"3000_800":["AN11030080FAAA099",89.71,13.23]},"rect":{"1000_1000":["AN11010010FAAA099",38.02,5.49],"1000_600":["AN11010060FAAA099",21.84,3.27],"1000_800":["AN11010080FAAA099",29.91,4.41],"1250_1000":["AN11012510FAAA099",44.67,6.82],"1250_600":["AN11012560FAAA099",26.47,4.05],"1250_800":["AN11012580FAAA099",36.63,5.49],"1500_1000":["AN11015010FAAA099",49.84,8.64],"1500_600":["AN11015060FAAA099",30.25,4.9],"1500_800":["AN11015080FAAA099",40.88,6.9],"1800_1000":["AN11018010FAAA099",65.41,9.7],"1800_600":["AN11018060FAAA099",39.04,5.8],"1800_800":["AN11018080FAAA099",53.8,7.92],"2000_1000":["AN11020010FAAA099",72.75,10.98],"2000_600":["AN11020060FAAA099",43.66,6.54],"2000_800":["AN11020080FAAA099",59.8,8.82],"2250_1000":["AN11022510FAAA099",81.05,12.31],"2250_600":["AN11022560FAAA099",48.31,7.32],"2250_800":["AN11022580FAAA099",66.53,9.9],"2500_1000":["AN11025010FAAA099",89.32,13.64],"2500_600":["AN11025060FAAA099",52.92,8.1],"2500_800":["AN11025080FAAA099",73.22,10.98],"2700_1000":["AN11027010FAAA099",98.11,14.55],"2700_600":["AN11027060FAAA099",58.56,8.7],"2700_800":["AN11027080FAAA099",80.7,11.88],"3000_1000":["AN11030010FAAA099",109.13,16.47],"3000_600":["AN11030060FAAA099",65.51,9.81],"3000_800":["AN11030080FAAA099",89.71,13.23]}}},"TRA":{"feu":{"400":["AR10000400AEBC099",2.33,0.26],"500":["AR10000500AEBC099",2.73,0.33],"600":["AR10000600AEBC099",3.15,0.39],"700":["AR10000700AEBC099",3.71,0.46],"800":["AR10000800AEBC099",4.27,0.64],"900":["AR10000900AEBC099",5.26,0.71],"1000":["AR10001000AECC099",5.26,0.79],"1100":["AR10001100AECC099",6.59,0.86],"1200":["AR10001200AECC099",6.59,0.95]},"rect":{"400":["AR10000400ABAA002",4.67,0.58],"500":["AR10000500ABAA002",5.01,0.69],"600":["AR10000600ABAA002",5.31,0.79],"700":["AR10000700ABAA002",5.74,0.89],"800":["AR10000800ABAA002",6.12,1],"900":["AR10000900ABAA002",6.93,1.1],"1000":["AR10001000ABAA002",6.93,1.2],"1100":["AR10001100ABAA002",8.1,1.3],"1200":["AR10001200ABAA002",8.1,1.43]},"rect80":{"400":["AR10000400ACAA002",4.67,0.44],"500":["AR10000500ACAA002",5.01,0.54],"600":["AR10000600ACAA002",5.31,0.7],"700":["AR10000700ACAA002",5.74,0.8],"800":["AR10000800ACAA002",6.12,0.85],"900":["AR10000900ACAA002",6.93,0.96],"1000":["AR10001000ACAA002",6.93,1.06],"1100":["AR10001100ACAA002",8.1,1.17],"1200":["AR10001200ACAA002",8.1,1.29]}},"ACC":{"goupille":["AR04000000J000000",0.35,0.005,"EPSIVOL - goupille de sécurité"],"butee30":["AR04000030G000099",1.57,0.03,"Butée galvanisée ouv. 30 mm (lisse rectangulaire 50x30 / 60x30)"],"butee40":["AR04000040G000099",1.57,0.04,"Butée galvanisée ouv. 40 mm (lisse rectangulaire 80x40)"],"cheville":["AR132X10900A00000",6.99,0.22,"Fixation sol béton : 2 chevilles M10 Ø10 Lg 90 mm (lot de 2)"]},"TRANS":{"g1":{"1":[27.2254,43.6062,0.1225,0.0867,0.074,0.0589,0.0485,0.0347],"2":[27.8834,48.0668,0.1002,0.0672,0.0513,0.0416,0.0355,0.0232],"3":[31.3508,45.6716,0.1329,0.0948,0.0844,0.0532,0.0485,0.0324],"4":[46.8125,60.5054,0.1722,0.1236,0.1179,0.0844,0.074,0.0566],"5":[46.1538,59.2298,0.1676,0.1236,0.1179,0.0844,0.074,0.0566],"6":[37.6372,58.7879,0.156,0.1283,0.1236,0.0832,0.0705,0.0555],"7":[43.3342,56.1899,0.1618,0.119,0.1109,0.089,0.0636,0.0474],"8":[26.2576,32.8417,0.1161,0.0623,0.0611,0.0379,0.0306,0.022],"9":[45.7031,59.4291,0.156,0.1225,0.1179,0.0982,0.0867,0.0578],"10":[33.1643,43.4774,0.132,0.0856,0.0782,0.0477,0.0367,0.0232],"11":[45.7031,59.4291,0.1629,0.1317,0.119,0.0982,0.0844,0.0636],"12":[44.4089,57.4849,0.1676,0.1317,0.1017,0.0901,0.074,0.0578],"13":[32.7606,45.407,0.1352,0.104,0.1005,0.0832,0.0774,0.0555],"14":[34.5578,43.5424,0.1112,0.0782,0.0611,0.0477,0.0391,0.0306],"15":[44.4089,57.2866,0.1629,0.1017,0.0948,0.0832,0.0705,0.0485],"16":[35.0371,45.8438,0.1768,0.1017,0.0924,0.0693,0.0578,0.037],"17":[36.7936,48.8341,0.1618,0.1017,0.0924,0.0693,0.0578,0.037],"18":[34.4131,47.4671,0.1387,0.0867,0.074,0.0566,0.0451,0.0277],"19":[40.7226,63.5588,0.156,0.1017,0.0901,0.074,0.0612,0.0439],"20":"consult","21":[30.7153,41.4889,0.1213,0.0867,0.074,0.0566,0.0451,0.0289],"22":[40.2719,49.6135,0.156,0.1109,0.074,0.0659,0.0451,0.037],"23":[39.6363,50.8396,0.1479,0.0867,0.074,0.0659,0.0566,0.037],"24":[37.8799,49.2924,0.1352,0.1017,0.0948,0.0716,0.0612,0.0439],"25":[39.3937,48.1294,0.1387,0.0924,0.082,0.0601,0.0508,0.0358],"26":[31.3508,43.7989,0.1109,0.1005,0.0948,0.0589,0.0578,0.0566],"27":[30.6339,41.4014,0.1076,0.077,0.0599,0.0391,0.0367,0.0232],"28":[31.7829,41.4551,0.1259,0.0733,0.0611,0.0477,0.0403,0.0244],"29":[41.1501,54.0168,0.1618,0.1005,0.0924,0.082,0.0636,0.0439],"30":[33.7429,48.9119,0.1248,0.1225,0.1225,0.074,0.0728,0.0578],"31":[30.1144,42.9921,0.1317,0.104,0.0936,0.0705,0.0601,0.0508],"32":[46.5814,60.4946,0.156,0.1202,0.1109,0.0924,0.0763,0.0566],"33":[39.9946,62.7096,0.1179,0.0948,0.0924,0.0728,0.0693,0.0474],"34":[35.2105,59.3025,0.1202,0.1075,0.1075,0.074,0.0728,0.0601],"35":[38.9777,46.4465,0.1236,0.0867,0.0659,0.0451,0.0381,0.0358],"36":[40.2719,47.7408,0.1329,0.074,0.0693,0.0532,0.0451,0.0312],"37":[31.79,42.5746,0.1202,0.0901,0.0878,0.0566,0.0451,0.0312],"38":[27.4565,39.2547,0.119,0.0797,0.0763,0.0578,0.0578,0.0381],"39":[32.6682,47.8152,0.1248,0.0867,0.0751,0.0636,0.0532,0.0358],"40":[38.9777,51.0071,0.1444,0.1179,0.1109,0.089,0.0809,0.0578],"41":[35.0371,46.2624,0.119,0.0728,0.0612,0.0451,0.0404,0.0266],"42":[28.5312,44.0858,0.1109,0.0728,0.0728,0.0485,0.0474,0.0381],"43":[36.5741,49.4407,0.1433,0.0994,0.0844,0.0693,0.0589,0.0404],"44":[38.7697,48.3536,0.1121,0.0844,0.0774,0.0578,0.0485,0.0347],"45":[34.3133,52.0961,0.1198,0.0697,0.0562,0.0477,0.0403,0.0232],"46":[46.5814,50.5251,0.1676,0.1179,0.1005,0.0832,0.0763,0.0532],"47":[39.8443,44.1957,0.1676,0.1098,0.1052,0.0855,0.074,0.0578],"48":[45.5067,60.6537,0.1791,0.1387,0.1387,0.0855,0.074,0.0578],"49":[32.6682,50.7124,0.119,0.0867,0.0728,0.0659,0.052,0.0324],"50":[40.2719,57.0933,0.1236,0.082,0.0728,0.052,0.0485,0.0324],"51":[30.6339,51.5047,0.1174,0.066,0.0562,0.0403,0.0367,0.022],"52":[38.9219,48.5824,0.1161,0.0721,0.0685,0.0477,0.0465,0.0269],"53":[33.0842,35.3755,0.1329,0.082,0.0774,0.0497,0.0451,0.0277],"54":[42.6014,49.1971,0.1406,0.0623,0.0611,0.0367,0.033,0.0269],"55":[34.9979,43.3649,0.1161,0.0819,0.0623,0.0367,0.033,0.0293],"56":[44.4089,46.7002,0.1456,0.0959,0.0878,0.0716,0.0578,0.0393],"57":[33.3965,46.7861,0.1161,0.066,0.0562,0.0416,0.033,0.0244],"58":[40.0639,51.0579,0.1306,0.0763,0.0659,0.0578,0.0451,0.0277],"59":[19.8032,42.2356,0.0697,0.0367,0.0342,0.0208,0.0171,0.0134],"60":[26.7099,46.4737,0.1002,0.0672,0.0526,0.0379,0.033,0.022],"61":[34.9979,51.0327,0.132,0.077,0.0685,0.0489,0.0403,0.0269],"62":[21.1968,42.3007,0.0733,0.0526,0.0501,0.0232,0.0232,0.0147],"63":[36.7936,48.4155,0.1225,0.074,0.0682,0.0497,0.0485,0.0381],"64":[37.0247,48.4263,0.1676,0.1283,0.0948,0.0844,0.0763,0.0566],"65":[37.8799,45.9766,0.1548,0.134,0.0936,0.0844,0.0763,0.0566],"66":[38.0994,50.9661,0.1583,0.1283,0.1109,0.0844,0.0763,0.0589],"67":[33.9099,52.8581,0.1247,0.0807,0.0587,0.0379,0.0367,0.0281],"68":[35.2302,54.3414,0.1369,0.0611,0.0611,0.0416,0.0367,0.0306],"69":[18.8128,43.4446,0.0867,0.0497,0.0485,0.0451,0.0439,0.0358],"70":[33.5349,46.4016,0.1179,0.0832,0.0589,0.0578,0.0474,0.0324],"71":[28.3117,50.5089,0.0994,0.0774,0.0659,0.0474,0.0462,0.037],"72":[32.2291,44.8865,0.1294,0.0682,0.0497,0.0474,0.037,0.0254],"73":[23.9551,39.5097,0.0867,0.0763,0.0705,0.0659,0.0532,0.0393],"74":[24.3711,44.5194,0.134,0.0844,0.0716,0.0659,0.0532,0.0393],"75":[31.7829,38.8215,0.1284,0.0697,0.0562,0.0391,0.0342,0.0232],"76":[31.0617,41.4209,0.1027,0.0611,0.0513,0.0367,0.0355,0.0232],"77":[29.0447,51.4422,0.1247,0.0611,0.0599,0.0367,0.0342,0.0232],"78":[30.1816,41.59,0.1284,0.0636,0.0599,0.0379,0.0355,0.0232],"79":[35.0371,45.8438,0.1236,0.0809,0.074,0.0589,0.0497,0.0335],"80":[26.7099,46.4737,0.1002,0.0672,0.0416,0.0342,0.0281,0.0171],"81":[33.5349,48.2633,0.1329,0.1098,0.0994,0.0867,0.0774,0.0566],"82":[33.5349,48.2633,0.1352,0.1132,0.1017,0.0844,0.074,0.0566],"83":[33.1304,53.7193,0.1387,0.1075,0.1005,0.0867,0.0751,0.0566],"84":[32.8646,48.6506,0.119,0.1109,0.1109,0.0728,0.0624,0.0474],"85":[38.9777,49.9716,0.126,0.0867,0.0751,0.0578,0.0566,0.0358],"86":[34.4131,46.8502,0.1329,0.0867,0.0728,0.0578,0.0474,0.0335],"87":[37.8799,49.711,0.1236,0.0867,0.0774,0.0624,0.0578,0.0335],"88":[35.6947,47.5576,0.1296,0.0782,0.0697,0.0538,0.0465,0.0306],"89":[35.6947,49.9582,0.1394,0.0782,0.0623,0.0477,0.0416,0.0293],"90":[36.5741,44.0429,0.1248,0.0901,0.089,0.0578,0.0474,0.0335],"91":[34.5578,47.2831,0.1259,0.0697,0.0513,0.0379,0.033,0.0232],"92":[33.6288,50.9688,0.1284,0.0611,0.0477,0.0391,0.033,0.022],"93":[33.6288,51.6913,0.1284,0.0611,0.0477,0.0465,0.033,0.022],"94":[33.6288,50.9688,0.1284,0.0611,0.0477,0.0367,0.033,0.022],"95":[35.6947,46.6837,0.1284,0.0599,0.0587,0.0367,0.033,0.022],"autres":"consult"},"g2":{"1":[66.5498,101.402,0.2531,0.1768,0.126,0.089,0.0636,0.0508],"2":[51.9651,79.2129,0.1736,0.1332,0.0819,0.0538,0.0391,0.0281],"3":[72.2699,109.1444,0.2276,0.1514,0.1132,0.0774,0.0636,0.037],"4":[103.3896,156.8929,0.3536,0.2531,0.1907,0.1387,0.1132,0.0774],"5":[99.9691,150.1559,0.3536,0.2531,0.1907,0.1387,0.1132,0.0774],"6":[107.6884,164.4388,0.3663,0.2658,0.2022,0.1514,0.126,0.089],"7":[82.8319,125.0567,0.2658,0.2149,0.1514,0.1017,0.089,0.0636],"8":[54.0921,81.7922,0.2017,0.1332,0.0819,0.0538,0.0391,0.0391],"9":[106.8217,160.1401,0.3282,0.2531,0.1768,0.126,0.1017,0.0774],"10":[57.7105,87.4275,0.187,0.1467,0.0941,0.0538,0.0391,0.0391],"11":[101.6793,153.819,0.3039,0.2531,0.1768,0.126,0.1017,0.0774],"12":[91.4063,136.6356,0.2912,0.2404,0.1768,0.1132,0.1017,0.0774],"13":[89.696,118.7241,0.2912,0.2404,0.1641,0.1132,0.1017,0.089],"14":[63.4436,107.6953,0.2408,0.1467,0.0941,0.0538,0.0538,0.0391],"15":[83.4096,121.798,0.2658,0.2022,0.1514,0.1017,0.089,0.0636],"16":[76.5455,116.4939,0.2531,0.1768,0.126,0.089,0.0774,0.0508],"17":[80.5438,112.6227,0.2404,0.1768,0.126,0.089,0.0774,0.0508],"18":[61.9737,100.1655,0.2404,0.1514,0.1017,0.0636,0.0508,0.037],"19":[78.8336,107.5266,0.2404,0.1907,0.126,0.089,0.0774,0.0636],"20":"consult","21":[73.9801,99.3566,0.2149,0.1514,0.1017,0.0636,0.0508,0.037],"22":[69.6929,108.3355,0.2796,0.1768,0.1132,0.0774,0.0636,0.0508],"23":[74.5464,114.4485,0.2912,0.1768,0.126,0.0774,0.0636,0.0508],"24":[73.4139,112.6227,0.2404,0.1907,0.126,0.089,0.0774,0.0636],"25":[77.4006,114.252,0.2531,0.1641,0.1132,0.0774,0.0636,0.0508],"26":[71.1143,97.5308,0.2404,0.2149,0.1514,0.1132,0.089,0.0636],"27":[66.4752,92.5984,0.2139,0.1198,0.0819,0.0538,0.0391,0.0281],"28":[55.5957,96.8891,0.2274,0.1332,0.0941,0.0538,0.0391,0.0281],"29":[64.2733,108.9479,0.3155,0.2149,0.1514,0.089,0.0774,0.0508],"30":[80.2665,124.8602,0.3039,0.2276,0.1641,0.1132,0.1017,0.0774],"31":[87.1191,140.1601,0.2912,0.2149,0.1641,0.1132,0.1017,0.0774],"32":[93.6827,134.2435,0.2796,0.2276,0.1641,0.1132,0.1017,0.0774],"33":[79.1225,127.2985,0.2796,0.2022,0.1387,0.1017,0.089,0.0636],"34":[94.8268,126.9056,0.3039,0.2276,0.1641,0.1132,0.1017,0.0774],"35":[61.9737,108.5319,0.2276,0.1514,0.1017,0.0774,0.0508,0.037],"36":[64.2733,101.2056,0.2276,0.1387,0.089,0.0636,0.0508,0.037],"37":[58.5532,103.2394,0.2404,0.1387,0.1017,0.0636,0.0508,0.037],"38":[78.8336,128.3385,0.2796,0.1907,0.1514,0.089,0.0774,0.0508],"39":[73.4139,124.6638,0.2658,0.1641,0.1514,0.0774,0.0636,0.0508],"40":[90.2622,123.4273,0.2796,0.1641,0.1641,0.1132,0.1017,0.0774],"41":[59.1309,109.7684,0.2404,0.1387,0.089,0.0636,0.0508,0.037],"42":[79.9776,124.4442,0.2658,0.1768,0.126,0.089,0.0774,0.0508],"43":[79.1225,110.1613,0.2404,0.1907,0.1387,0.1017,0.0774,0.0508],"44":[63.9844,105.8741,0.2531,0.1768,0.126,0.0774,0.0636,0.0508],"45":[62.2334,124.528,0.2543,0.1467,0.1332,0.0538,0.0538,0.0281],"46":[89.9733,138.1147,0.3039,0.2149,0.1514,0.1017,0.089,0.0636],"47":[84.831,128.7199,0.2912,0.1768,0.1514,0.1017,0.089,0.0636],"48":[100.9629,117.9268,0.2912,0.2149,0.1641,0.1132,0.089,0.0636],"49":[61.9737,96.2943,0.2404,0.1768,0.1132,0.0774,0.0636,0.037],"50":[65.1168,112.3916,0.2658,0.1514,0.1132,0.0636,0.0636,0.037],"51":[58.6151,117.0835,0.2274,0.1198,0.0819,0.0538,0.0391,0.0281],"52":[64.0548,120.7018,0.2408,0.1601,0.0941,0.0672,0.0538,0.0391],"53":[65.6946,115.685,0.2531,0.1514,0.1017,0.0636,0.0508,0.037],"54":[62.2334,124.3324,0.2408,0.1467,0.1076,0.0672,0.0538,0.0391],"55":[58.0161,124.7847,0.2408,0.1601,0.1076,0.0672,0.0538,0.0391],"56":[78.5562,130.6844,0.3421,0.2022,0.1387,0.089,0.0774,0.0508],"57":[60.7421,124.3324,0.2274,0.1467,0.0941,0.0672,0.0538,0.0391],"58":[63.9844,104.8225,0.2531,0.1514,0.1017,0.0636,0.0508,0.037],"59":[34.7412,79.3107,0.1332,0.0672,0.0538,0.0391,0.0281,0.0134],"60":[51.0605,100.0185,0.1736,0.1076,0.0819,0.0538,0.0391,0.0391],"61":[63.4436,110.4335,0.2677,0.1601,0.1076,0.0672,0.0538,0.0391],"62":[41.0856,81.1198,0.1332,0.0819,0.0672,0.0391,0.0281,0.0281],"63":[75.413,97.9699,0.2658,0.1768,0.1132,0.0774,0.0636,0.0508],"64":[92.5387,189.1682,0.3155,0.2276,0.1641,0.1132,0.1017,0.0774],"65":[100.5353,189.1682,0.3282,0.2276,0.1641,0.1132,0.1017,0.0774],"66":[104.8225,196.1594,0.3421,0.2404,0.1768,0.126,0.1017,0.0774],"67":[99.4072,122.9022,0.2543,0.1736,0.1198,0.0819,0.0672,0.0391],"68":[103.3434,122.9022,0.2543,0.1736,0.1198,0.0819,0.0672,0.0391],"69":[66.5498,124.398,0.2796,0.126,0.126,0.089,0.0636,0.0508],"70":[65.6946,123.7509,0.2658,0.1514,0.1132,0.0636,0.0636,0.037],"71":[68.26,113.108,0.2531,0.1514,0.126,0.0774,0.0636,0.0508],"72":[64.8395,114.3907,0.2404,0.1514,0.1017,0.0636,0.0508,0.037],"73":[74.2575,138.6694,0.3155,0.2022,0.1514,0.089,0.0774,0.0508],"74":[76.5455,141.8935,0.3155,0.2149,0.1514,0.089,0.0774,0.0636],"75":[65.265,124.1857,0.187,0.1198,0.0819,0.0538,0.0391,0.0281],"76":[52.5763,104.3947,0.2408,0.1332,0.0941,0.0538,0.0538,0.0281],"77":[65.8763,124.1857,0.187,0.1198,0.0819,0.0538,0.0538,0.0391],"78":[66.1696,124.1857,0.187,0.1198,0.0819,0.0538,0.0538,0.0391],"79":[66.5498,124.398,0.2796,0.1768,0.1132,0.0774,0.0636,0.037],"80":[48.0411,94.1264,0.1736,0.0941,0.0672,0.0391,0.0391,0.0281],"81":[85.975,154.5239,0.3155,0.2149,0.1768,0.1132,0.1017,0.0774],"82":[88.5404,154.5239,0.3039,0.2149,0.1768,0.1132,0.1017,0.0774],"83":[101.1131,187.585,0.3421,0.2531,0.1768,0.1132,0.1017,0.089],"84":[83.9759,140.4606,0.2912,0.2404,0.1641,0.1132,0.1017,0.0774],"85":[72.5472,124.2478,0.3282,0.1641,0.1132,0.089,0.0636,0.0636],"86":[66.388,114.7605,0.2796,0.1641,0.1132,0.0774,0.0636,0.0508],"87":[64.2733,118.6779,0.3039,0.1768,0.1132,0.089,0.0636,0.0508],"88":[65.5584,122.511,0.2677,0.1601,0.1076,0.0672,0.0538,0.0391],"89":[61.6345,119.6505,0.2139,0.1467,0.0941,0.0672,0.0538,0.0391],"90":[62.2741,118.8281,0.2658,0.1514,0.1017,0.0774,0.0508,0.0508],"91":[65.5584,124.1857,0.187,0.1198,0.0819,0.0538,0.0538,0.0391],"92":[65.5584,124.1857,0.187,0.1198,0.0819,0.0538,0.0391,0.0281],"93":[65.5584,124.1857,0.187,0.1198,0.0819,0.0538,0.0391,0.0281],"94":[65.5584,124.1857,0.187,0.1198,0.0819,0.0538,0.0391,0.0281],"95":[65.5584,124.1857,0.187,0.1198,0.0819,0.0538,0.0391,0.0281],"autres":"consult"}}};</script>
+<script>/* ---------- Accès aux prix ----------
+   Le code est vérifié côté Make : la page envoie {code, source} en POST,
+   Make répond ok / ko. Renseigner l'URL du webhook Make ci-dessous.        */
+const WEBHOOK_CODE = "https://hook.eu2.make.com/mnpm5jf706d8n3vdxgpwb7rugpk0f7qp";   // scénario Make « Verif code remise » (9612960)
+const MAIL_RSL = "s.degardin@rsl.eu";
+let prixVisibles = false;
+let gateMsg = "", gateEtat = "", codeValide = "";
+
+/* ---------- Référentiel produit ---------- */
+const CAP = {
+  feu45 :{1000:630,1250:533,1500:465,1800:384,2000:324},
+  feu65 :{1000:1100,1250:914,1500:792,1800:683,2000:633,2250:565,2500:470},
+  feu85 :{1000:1500,1250:1500,1500:1500,1800:1500,2000:1409,2250:1146,2500:948,2700:832,3000:689},
+  feu65p:{1000:880,1250:731,1500:633,1800:546,2000:506,2250:452,2500:376},
+  z107  :{1000:1500,1250:1500,1500:1500,1800:1500,2000:1500,2250:1376,2500:1252,2700:1130,3000:934},
+  rect50:{1000:1004,1250:802,1500:556,1800:386,2000:312,2250:246,2500:200,2700:170,3000:138},
+  rect60:{1000:1500,1250:1354,1500:1078,1800:748,2000:606,2250:478,2500:388,2700:332,3000:268},
+  rect80:{1000:1500,1250:1500,1500:1500,1800:1500,2000:1500,2250:1188,2500:962,2700:826,3000:668},
+  pneu  :{1000:450,1250:370,1500:300,1800:240,2000:210,2250:180},
+  ovale :{1000:424,1250:326,1500:226,1800:156,2000:126,2250:100}
+};
+const LISSES = {
+  feu45 :{lab:"Feuillure 45×36×1 mm",      fam:"feu",  plat:true,  h:45},
+  feu65 :{lab:"Feuillure 65×36×1,2 mm",    fam:"feu",  plat:true,  h:65},
+  feu85 :{lab:"Feuillure 85×36×1,5 mm",    fam:"feu",  plat:true,  h:85},
+  feu65p:{lab:"Feuillure perforée 65×36×1,2 mm", fam:"feu", plat:true, h:65},
+  z107  :{lab:"« Z » 107×36×1,5 mm", fam:"feu",  plat:true,  h:107},
+  rect50:{lab:"Rectangulaire 50×30×1,5 mm",fam:"rect", plat:true,  h:50},
+  rect60:{lab:"Rectangulaire 60×30×2 mm",  fam:"rect", plat:true,  h:60},
+  rect80:{lab:"Rectangulaire 80×40×2 mm",  fam:"rect80",plat:true, h:80},
+  pneu  :{lab:"Porte-pneus 70×43×1 mm",    fam:"spe",  plat:false, h:70},
+  ovale :{lab:"Ovale portemanteau 40×20×2 mm", fam:"spe", plat:false, h:40}
+};
+/* ordre de préférence pour la section proposée par défaut */
+const AUTO_ORDER = ["feu65","feu85","z107","feu45","rect60","rect80","rect50","feu65p"];
+const PLAT_LAB = {agglo:"Platelage bois aggloméré 19 mm", melamine:"Platelage bois mélaminé blanc 19 mm",
+                  tole:"Platelage tôle galvanisée 0,5 mm", fil:"Platelage fil mi-lourd électro-zingué 50 × 100 mm",
+                  none:"Sans platelage"};
+const PLAT_COLOR = {agglo:"#cbb18a", melamine:"#f0f1ef", tole:"#c8ced1", fil:"#dfe4e6"};
+const PROFS_FIL = [600,800,1000];
+const HAUTEURS = {STD:[1750,2000,2250,2500,2750,3000,3250,3500,3750,4000,4250,4500], ONE:[1750,2000,2250,2500,2750,3000]};
+const PROFS = [400,500,600,700,800,900,1000,1100,1200];
+const CHARGE_ECH = {STD:4500, ONE:2500};
+const CHARGE_TRAVEE = {STD:3500, ONE:2500};   // charge maxi U.R. par travée, stockage manuel
+const ESPACE_MAX = 900;                        // distance maxi entre 2 niveaux et hauteur maxi du 1er niveau
+const H1_DESSUS = 150;                         // dessus de la 1re lisse au ras du sol
+
+/* ---------- État ---------- */
+const S = {
+  gamme:"STD", qty:1, hauteur:2000, prof:800, niveaux:4, montage:"A",
+  platelage:"agglo", goupilles:true, fixation:true, basse:true,
+  bays:[{L:2000,lisse:"auto"},{L:2000,lisse:"auto"}], remise:0, dept:"54"
+};
+const quote = [];
+let editing = null;   // index de la ligne de devis en cours de modification
+const $ = id => document.getElementById(id);
+const px = v => prixVisibles ? eur(v) : "—";
+const eur = v => v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+const mm  = v => v.toLocaleString("fr-FR") + " mm";
+
+/* ---------- Règles ---------- */
+function gammeOf(){ return S.gamme; }
+/* charge admissible par niveau : lisse, limite de gamme et charge maxi par travée */
+function chargeAdm(code, L, g, niv){
+  const c = CAP[code][L];
+  if(c === undefined) return null;
+  return Math.min(c, Math.floor(CHARGE_TRAVEE[g] / (niv || S.niveaux)), g === "ONE" ? 500 : 1500);
+}
+function lissesDispo(g){
+  return Object.keys(LISSES).filter(k => TARIF.LIS[k] && TARIF.LIS[k][g]);
+}
+function longueursDispo(g, code){
+  if(code){
+    const t = TARIF.LIS[code] && TARIF.LIS[code][g];
+    return t ? Object.keys(t).map(Number).sort((a,b)=>a-b) : [];
+  }
+  const set = new Set();                                  // union de toutes les sections de la gamme
+  lissesDispo(g).forEach(k => Object.keys(TARIF.LIS[k][g]).forEach(l => set.add(+l)));
+  return [...set].sort((a,b)=>a-b);
+}
+function sectionsPourLongueur(g, L){
+  return lissesDispo(g).filter(k => TARIF.LIS[k][g][L]);
+}
+/* section proposée par défaut : la moins chère disponible sur cette longueur */
+function lisseAuto(g, L){
+  const dispo = sectionsPourLongueur(g, L).filter(k => LISSES[k].fam !== "spe" && CAP[k][L] !== undefined);
+  const rang = k => { const i = AUTO_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+  dispo.sort((a,b) => rang(a) - rang(b));
+  return dispo[0] || sectionsPourLongueur(g, L)[0];
+}
+/* section retenue pour une travée : choix de la travée, sinon choix global, sinon automatique */
+function lisseDe(bay, g){
+  g = g || gammeOf();
+  const dispo = sectionsPourLongueur(g, bay.L);
+  if(bay.lisse !== "auto" && dispo.includes(bay.lisse)) return bay.lisse;
+  return lisseAuto(g, bay.L);
+}
+function sectionsUtilisees(g){
+  return [...new Set(S.bays.map(b => lisseDe(b, g)))];
+}
+function lisseRef(){                                     // section au profil le plus haut : sert au calage des niveaux
+  const g = gammeOf();
+  return sectionsUtilisees(g).sort((x,z) => LISSES[z].h - LISSES[x].h)[0] || lisseAuto(g, S.bays[0].L);
+}
+/* profondeurs où le platelage choisi existe sur toutes les longueurs de travée */
+function profsPlatelage(){
+  if(S.platelage === "none") return PROFS.slice();
+  const g = gammeOf();
+  return PROFS.filter(P => S.bays.every(b => {
+    const code = lisseDe(b, g);
+    if(!LISSES[code].plat) return true;
+    const plat = (S.platelage === "tole" && LISSES[code].fam !== "feu") ? "agglo" : S.platelage;
+    const sub = (plat === "tole" || plat === "fil") ? "feu" : (LISSES[code].fam === "feu" ? "feu" : "rect");
+    return !!(TARIF.PLA[plat] && TARIF.PLA[plat][sub] && TARIF.PLA[plat][sub][b.L + "_" + P]);
+  }));
+}
+function platOf(code){
+  if(S.platelage === "none" || !LISSES[code].plat) return "none";
+  if(S.platelage === "tole" && LISSES[code].fam !== "feu") return "agglo"; // tôle : lisses feuillure ou Z uniquement
+  if(S.platelage === "fil" && PROFS_FIL.indexOf(S.prof) < 0) return "agglo"; // fil : profondeurs 600, 800 et 1000 mm
+  return S.platelage;
+}
+/* nombre de traverses de répartition par niveau (catalogue p.21) */
+function nbTraverses(prof, L, code, plat){
+  if(LISSES[code].fam === "spe") return 0;
+  if(prof <= 700){
+    if(L <= 1250) return 0;
+    if(L <= 2250) return (code === "feu45" || plat === "tole") ? 2 : 0;
+    return 2;
+  }
+  if(prof <= 900) return 2;
+  return L <= 2250 ? 2 : 3;
+}
+function traverseKey(code){
+  if(code === "rect80") return "rect80";
+  if(LISSES[code].fam === "rect") return "rect";
+  return "feu";
+}
+
+/* ---------- Calcul ---------- */
+function niveauxOf(code){
+  const H = S.hauteur, lh = Math.max(40, LISSES[code || lisseRef()].h), out = [];
+  if(S.basse && S.niveaux >= 2){
+    const base = Math.max(0, H1_DESSUS - lh), pas = (H - 100 - base)/(S.niveaux - 1);
+    for(let i=0;i<S.niveaux;i++) out.push(Math.round(base + i*pas));
+  } else {
+    const pas = (H - 100)/S.niveaux;
+    for(let i=1;i<=S.niveaux;i++) out.push(Math.round(i*pas));
+  }
+  return out;                                   // hauteurs de sous-face
+}
+/* grille 2 dès qu'il y a du platelage bois ou des échelles montées en usine */
+function grilleDe(lignes){
+  return lignes.some(l => l.cfg.montage === "H" || l.cfg.platelage === "agglo" || l.cfg.platelage === "melamine") ? "g2" : "g1";
+}
+function transport(baseHT, grille, dept){
+  const g = TARIF.TRANS[grille][dept] || TARIF.TRANS[grille]["autres"];
+  if(g === "consult") return {consult:true, montant:0};
+  const seuils = grille === "g1" ? [150, 300] : [200, 400];
+  if(baseHT <= seuils[0]) return {montant: Math.round(g[0]*100)/100, forfait:true};
+  if(baseHT <= seuils[1]) return {montant: Math.round(g[1]*100)/100, forfait:true};
+  const tranches = [[seuils[1],1500,2],[1500,2600,3],[2600,5200,4],[5200,7800,5],[7800,10000,6],[10000,Infinity,7]];
+  const t = tranches.find(t => baseHT > t[0] && baseHT <= t[1]) || tranches[tranches.length-1];
+  return {montant: Math.round(baseHT * g[t[2]] * 100)/100, taux: g[t[2]]};
+}
+function snapshot(){
+  return {gamme:S.gamme, hauteur:S.hauteur, prof:S.prof, niveaux:S.niveaux, montage:S.montage,
+          platelage:S.platelage, goupilles:S.goupilles, fixation:S.fixation, basse:S.basse,
+          qty:S.qty, bays:S.bays.map(b => Object.assign({}, b))};
+}
+function restaurer(cfg){
+  Object.assign(S, cfg, {bays: cfg.bays.map(b => Object.assign({}, b))});
+  document.querySelectorAll("input[name=gamme]").forEach(r => r.checked = (r.value === S.gamme));
+  ["basse","goupilles","fixation"].forEach(k => $(k).checked = S[k]);
+  $("qty").value = S.qty;
+  $("platelage").value = S.platelage;
+}
+function R_G(g){ return g==="ONE" ? "EPSIVOL ONE" : "EPSIVOL"; }
+function compute(){
+  const g = gammeOf(), niv = S.niveaux, prof = S.prof, H = S.hauteur, nb = S.bays.length;
+  const items = [], warns = [];
+  const codeRef = lisseRef();
+
+  /* échelles : n travées + 1 */
+  const ech = TARIF.ECH[g][S.montage][H + "_" + prof];
+  if(ech){
+    items.push({grp:"Échelles", ref:ech[0], des:R_G(g)+" — échelle "+(g==="ONE"?"galvanisée":"peinte RAL 7024")+
+      " "+(S.montage==="A"?"à assembler":"montée en usine")+" H. "+H+" mm P. "+prof+" mm", q:nb+1, pu:ech[1], kg:ech[2]});
+  } else warns.push("Échelle H. "+H+" mm × P. "+prof+" mm indisponible dans cette gamme.");
+
+  /* lisses, platelages, traverses : par couple longueur / section */
+  const groupes = {};
+  S.bays.forEach(b => {
+    const code = lisseDe(b, g), k = b.L + "|" + code;
+    groupes[k] = groupes[k] || {L:b.L, code, n:0};
+    groupes[k].n++;
+  });
+  Object.keys(groupes).sort().forEach(k => {
+    const {L, code, n} = groupes[k], plat = platOf(code);
+    const li = TARIF.LIS[code][g] && TARIF.LIS[code][g][L];
+    if(li) items.push({grp:"Lisses", ref:li[0], des:"Lisse "+LISSES[code].lab+" — RAL 7035 — L. "+L+" mm", q:n*niv*2, pu:li[1], kg:li[2]});
+    else warns.push("Lisse "+LISSES[code].lab+" indisponible en longueur "+L+" mm.");
+
+    if(plat !== "none"){
+      const sub = (plat === "tole" || plat === "fil") ? "feu" : (LISSES[code].fam === "feu" ? "feu" : "rect");
+      const pl = TARIF.PLA[plat][sub] && TARIF.PLA[plat][sub][L + "_" + prof];
+      if(pl) items.push({grp:"Platelages", ref:pl[0], des:PLAT_LAB[plat]+" — niveau L. "+L+" mm P. "+prof+" mm", q:n*niv, pu:pl[1], kg:pl[2]});
+      else warns.push("Platelage "+PLAT_LAB[plat].toLowerCase()+" indisponible en "+L+" × "+prof+" mm.");
+    }
+    const nt = nbTraverses(prof, L, code, plat);
+    if(nt){
+      const tv = TARIF.TRA[traverseKey(code)][prof];
+      if(tv) items.push({grp:"Traverses de répartition", ref:tv[0], des:"Traverse de répartition galvanisée P. "+prof+" mm", q:n*niv*nt, pu:tv[1], kg:tv[2]});
+    }
+    if((plat === "agglo" || plat === "melamine") && LISSES[code].fam.indexOf("rect") === 0){
+      const bu = TARIF.ACC[code === "rect80" ? "butee40" : "butee30"];
+      items.push({grp:"Accessoires", ref:bu[0], des:bu[3], q:n*niv*4, pu:bu[1], kg:bu[2]});
+    }
+    if(S.platelage !== "none" && !LISSES[code].plat)
+      warns.push("Les lisses "+LISSES[code].lab+" se posent sans platelage : travées de "+L+" mm non platelées.");
+  });
+
+  if(S.goupilles){
+    const go = TARIF.ACC.goupille;
+    items.push({grp:"Accessoires", ref:go[0], des:"Goupille de sécurité (4 par niveau)", q:nb*niv*4, pu:go[1], kg:go[2]});
+  }
+  if(S.fixation){
+    const ch = TARIF.ACC.cheville;
+    items.push({grp:"Accessoires", ref:ch[0], des:ch[3], q:nb+1, pu:ch[1], kg:ch[2]});
+  }
+
+  /* fusion des lignes identiques puis quantité d'ensembles */
+  const merged = [];
+  items.forEach(it => {
+    const f = merged.find(m => m.ref === it.ref && m.des === it.des);
+    if(f) f.q += it.q; else merged.push(Object.assign({}, it));
+  });
+  const K = Math.max(1, S.qty|0);
+  merged.forEach(it => { it.q *= K; it.tot = Math.round(it.q * it.pu * 100)/100; });
+
+  const total = Math.round(merged.reduce((s,i)=>s+i.tot,0)*100)/100;
+  const poids = Math.round(merged.reduce((s,i)=>s+i.q*(i.kg||0),0)*10)/10;
+
+  /* contrôles généraux */
+  if(niv < 2) warns.push("Prévoir deux niveaux de lisses minimum par travée.");
+  if(S.platelage === "fil" && S.bays.some(b => platOf(lisseDe(b, g)) !== "fil"))
+    warns.push("Le platelage fil existe en profondeur "+profsPlatelage().join(", ")+" mm : platelage aggloméré retenu.");
+  if(S.platelage === "tole" && S.bays.some(b => LISSES[lisseDe(b, g)].fam !== "feu"))
+    warns.push("Le platelage tôle galvanisée s'insère dans les lisses feuillure ou « Z » : platelage aggloméré retenu sur les travées à lisses rectangulaires.");
+
+  const hN = niveauxOf(codeRef), lh = Math.max(40, LISSES[codeRef].h);
+  const h1 = hN[0] + lh;
+  if(h1 > ESPACE_MAX)
+    warns.push("Dessus du 1er niveau à "+h1+" mm : la hauteur maximale du 1er niveau est de "+ESPACE_MAX+" mm en stockage manuel.");
+  let ecartMax = 0;
+  for(let i=1;i<hN.length;i++) ecartMax = Math.max(ecartMax, hN[i]-hN[i-1]);
+  if(ecartMax > ESPACE_MAX){
+    const mini = Math.ceil((S.hauteur - 100 - hN[0]) / ESPACE_MAX) + 1;
+    warns.push("Écart entre niveaux de "+Math.round(ecartMax)+" mm : le maximum est de "+ESPACE_MAX+" mm en stockage manuel. Prévoir "+mini+" niveaux de lisses sur cette hauteur.");
+  }
+
+  const horsTout = S.bays.reduce((s,b)=>s+b.L+50, 50);
+  return {g, codeRef, items:merged, total, poids, warns, horsTout, niveaux:hN};
+}
+
+/* ---------- Dessin vue de face ---------- */
+function draw(R){
+  const H = S.hauteur, g = R.g, POST = 50, platH = 19;
+  const wReal = R.horsTout;
+  const u  = Math.max(1, (wReal + 1200)/1700);  // facteur d'échelle des traits et du texte
+  const mL = 120*u, mR = 115*u, mT = 95*u, mB = 245*u;
+  const vbW = wReal + mL + mR, vbH = H + mT + mB;
+  const fs = Math.round(30*u), fsS = Math.round(25*u);
+  const X0 = mL, Y0 = mT + H, y = v => Y0 - v;
+  const ECH_F = g === "ONE" ? "#c5cccf" : "#1d2a31";
+  const ECH_S = g === "ONE" ? "#939da3" : "#0f1a1f";
+  const niveaux = R.niveaux;
+
+  let s = '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vue de face du rayonnage">';
+  s += '<defs><pattern id="sol" width="'+(26*u)+'" height="'+(26*u)+'" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+     + '<line x1="0" y1="0" x2="0" y2="'+(26*u)+'" stroke="#b7bfc3" stroke-width="'+(3*u)+'"/></pattern></defs>';
+
+  s += '<rect x="'+(X0-140)+'" y="'+Y0+'" width="'+(wReal+300)+'" height="'+(26*u)+'" fill="url(#sol)"/>';
+  s += '<line x1="'+(X0-140)+'" y1="'+Y0+'" x2="'+(X0+wReal+160)+'" y2="'+Y0+'" stroke="#1d2a31" stroke-width="'+(3.5*u)+'"/>';
+
+  /* travées : platelage, lisses, charge admissible */
+  let x = X0 + POST; const echX = [X0];
+  S.bays.forEach(b => {
+    const code = lisseDe(b, g), lh = Math.max(40, LISSES[code].h), plat = platOf(code);
+    niveaux.forEach(h => {
+      if(plat !== "none")
+        s += '<rect x="'+x+'" y="'+(y(h)-platH)+'" width="'+b.L+'" height="'+platH+'" fill="'+PLAT_COLOR[plat]+'" stroke="#8d949a" stroke-width="'+(1.2*u)+'"/>';
+      s += '<rect x="'+(x-POST)+'" y="'+y(h)+'" width="'+(b.L+2*POST)+'" height="'+lh+'" fill="#b7bfc3" stroke="#7d868c" stroke-width="'+(1.4*u)+'"/>';
+    });
+    /* charge admissible au-dessus de la travée */
+    const cap = chargeAdm(code, b.L, g, S.niveaux);
+    const hTop = niveaux[niveaux.length-1] + lh;
+    s += txt(x + b.L/2, y(hTop) - 38*u, (cap !== null ? cap + " kg/niveau" : "charge à consulter"), fsS, "#1d2a31");
+    x += b.L + POST; echX.push(x - POST);
+  });
+
+  /* échelles + platines */
+  echX.forEach(px => {
+    s += '<rect x="'+px+'" y="'+y(H)+'" width="'+POST+'" height="'+H+'" fill="'+ECH_F+'" stroke="'+ECH_S+'" stroke-width="'+(1.4*u)+'"/>';
+    s += '<rect x="'+(px-30)+'" y="'+(Y0-12)+'" width="'+(POST+60)+'" height="12" fill="'+ECH_F+'" stroke="'+ECH_S+'" stroke-width="'+(1.2*u)+'"/>';
+  });
+
+  /* cotes */
+  const y1 = Y0 + 90*u;
+  x = X0 + POST;
+  S.bays.forEach((b,i) => {
+    s += coteH(x, x+b.L, y1, b.L+" mm", fsS);
+    s += txt(x+b.L/2, y1 + fsS*1.9, "travée "+(i+1), fsS, "#5d6b72");
+    x += b.L + POST;
+  });
+  s += coteH(X0, X0+wReal, y1 + fsS*4.4, wReal+" mm hors tout", fs);
+  s += coteV(X0-70*u, y(0), y(H), H+" mm", fsS);
+
+  niveaux.forEach((h,i) => s += txt(X0+wReal+38*u, y(h)+Math.max(40, LISSES[R.codeRef].h)+fsS*0.35, "N"+(i+1), fsS, "#5d6b72", "start"));
+  if(niveaux[0] > 250) s += txt(X0+wReal+38*u, Y0-fsS*0.3, "sol", fsS, "#8d949a", "start");
+  s += '</svg>';
+  return s;
+
+  function txt(px,py,t,size,col,anchor){
+    return '<text x="'+px+'" y="'+py+'" font-size="'+size+'" text-anchor="'+(anchor||"middle")+'" fill="'+col+'" font-family="Helvetica,Arial">'+t+'</text>';
+  }
+  function coteH(x1,x2,yy,t,size){
+    const tick = 16*u;
+    return '<line x1="'+x1+'" y1="'+(yy-tick)+'" x2="'+x1+'" y2="'+(yy+tick)+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + '<line x1="'+x2+'" y1="'+(yy-tick)+'" x2="'+x2+'" y2="'+(yy+tick)+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + '<line x1="'+x1+'" y1="'+yy+'" x2="'+x2+'" y2="'+yy+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + txt((x1+x2)/2, yy - 10*u, t, size, "#d96a05");
+  }
+  function coteV(xx,ya,yb,t,size){
+    const tick = 14*u;
+    return '<line x1="'+(xx-tick)+'" y1="'+ya+'" x2="'+(xx+tick)+'" y2="'+ya+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + '<line x1="'+(xx-tick)+'" y1="'+yb+'" x2="'+(xx+tick)+'" y2="'+yb+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + '<line x1="'+xx+'" y1="'+ya+'" x2="'+xx+'" y2="'+yb+'" stroke="#ef7d18" stroke-width="'+(1.3*u)+'"/>'
+         + '<text x="'+(xx-10*u)+'" y="'+((ya+yb)/2)+'" font-size="'+size+'" text-anchor="middle" fill="#d96a05" font-family="Helvetica,Arial"'
+         + ' transform="rotate(-90 '+(xx-10*u)+' '+((ya+yb)/2)+')">'+t+'</text>';
+  }
+}
+
+/* ---------- Accès aux prix ---------- */
+function renderGate(){
+  const g = $("gate");
+  if(prixVisibles){
+    g.className = "gate ok noprint";
+    g.innerHTML = '<b>Prix affichés</b><span class="msg">'
+      + (S.remise ? 'Remise de ' + S.remise + ' % appliquée sur la fourniture.' : 'Code d\'accès validé.') + '</span>'
+      + '<span class="sp"><button type="button" id="lockBtn" class="ghost">Masquer les prix</button></span>';
+    $("lockBtn").onclick = () => { prixVisibles = false; gateMsg = ""; gateEtat = ""; codeValide = ""; S.remise = 0; render(); };
+    return;
+  }
+  g.className = "gate noprint";
+  g.innerHTML = '<b>Prix masqués</b>'
+    + '<label style="display:flex;align-items:center;gap:7px">Code d\'accès'
+    + '<input type="text" id="codeInput" placeholder="code" autocomplete="off"></label>'
+    + '<button type="button" id="codeBtn">Valider</button>'
+    + '<span class="msg '+gateEtat+'" id="codeMsg">'+(gateMsg || "Sans code, la demande de prix se fait par e-mail.")+'</span>'
+    + '<span class="sp"><button type="button" id="mailBtn">Demander les prix par e-mail</button></span>';
+  $("codeBtn").onclick = () => verifierCode($("codeInput").value.trim());
+  $("codeInput").onkeydown = e => { if(e.key === "Enter") verifierCode(e.target.value.trim()); };
+  $("mailBtn").onclick = demandeParMail;
+}
+async function verifierCode(code){
+  if(!code){ gateMsg = "Saisir un code."; gateEtat = "ko"; return renderGate(); }
+  if(!WEBHOOK_CODE){ gateMsg = "Vérification indisponible : webhook Make non configuré."; gateEtat = "ko"; return renderGate(); }
+  gateMsg = "Vérification en cours…"; gateEtat = ""; renderGate();
+  try{
+    const r = await fetch(WEBHOOK_CODE, {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({code, source:"epsivol", type:"acces-prix"})});
+    const txt = (await r.text()).trim();
+    let ok = false, taux = null;
+    try{
+      const j = JSON.parse(txt);
+      const t = parseFloat(j.remise !== undefined ? j.remise : (j.taux !== undefined ? j.taux : j.discount));
+      if(!isNaN(t)) taux = t;
+      const vrai = v => [true, 1, "1", "true", "oui", "ok"].includes(typeof v === "string" ? v.toLowerCase() : v);
+      ok = vrai(j.ok) || vrai(j.valide) || vrai(j.acces) || vrai(j.tarifs) || vrai(j.prix)
+        || ["ok","valide","true"].includes(String(j.status || j.resultat || "").toLowerCase())
+        || (taux !== null && taux > 0);
+    }catch(e){ ok = /^(ok|true|1|valide)$/i.test(txt); }
+    if(ok){
+      prixVisibles = true; gateMsg = ""; gateEtat = ""; codeValide = code;
+      S.remise = (taux === null) ? 0 : (taux > 0 && taux <= 1 ? Math.round(taux*100) : Math.round(taux));
+      render();
+    }
+    else if(/^accepted$/i.test(txt)){
+      gateMsg = "Le webhook répond « Accepted » : le scénario Make n'a pas de module Webhook response."; gateEtat = "ko"; renderGate();
+    }
+    else { gateMsg = "Code refusé ou réponse non reconnue : " + (txt.slice(0,60) || "(vide)"); gateEtat = "ko"; renderGate(); }
+  }catch(e){
+    gateMsg = "Vérification impossible (réseau)."; gateEtat = "ko"; renderGate();
+  }
+}
+function demandeParMail(){
+  const R = window.__R;
+  const lignes = quote.length
+    ? quote.map(q => q.id + " — " + q.label).join("\n")
+    : (R ? "1 Minirack H." + S.hauteur + " P." + S.prof + " L." + R.horsTout + " mm · "
+         + S.bays.length + " travée(s) (" + S.bays.map(b=>b.L).join(" + ") + " mm) · " + S.niveaux + " niveaux" : "");
+  const postes = (quote.length ? (window.__ALL || []) : (R ? R.items : []));
+  const recap = postes.slice(0, 40).map(i => "  " + i.q + " × " + i.ref + " — " + i.des
+    + (prixVisibles ? "  " + eur(i.tot) : "")).join("\n")
+    + (postes.length > 40 ? "\n  … (" + (postes.length - 40) + " lignes supplémentaires)" : "");
+  const corps = "Bonjour,\n\nMerci de me communiquer le prix pour la configuration suivante :\n\n"
+    + lignes
+    + "\n\nDétail des articles du devis :\n" + recap
+    + "\n\nLivraison : département " + S.dept
+    + "\n\nCoordonnées :\nSociété :\nNom :\nTéléphone :\nE-mail :\n\nCordialement,";
+  window.location.href = "mailto:" + MAIL_RSL + "?subject=" + encodeURIComponent("Demande de prix — configurateur EPSIVOL")
+    + "&body=" + encodeURIComponent(corps);
+}
+
+/* ---------- Rendu ---------- */
+function bomTable(items, withTot){
+  if(!items.length) return '<div class="empty">Rien à chiffrer pour l\'instant.</div>';
+  let h = '<table><thead><tr><th>Référence</th><th>Désignation</th><th class="num">Qté</th><th class="num">P.U. HT</th><th class="num">Total HT</th></tr></thead><tbody>';
+  const grps = [];
+  items.forEach(i => { if(!grps.includes(i.grp)) grps.push(i.grp); });
+  grps.forEach(g => {
+    h += '<tr class="grp"><td colspan="5">'+g+'</td></tr>';
+    items.filter(i=>i.grp===g).forEach(i => {
+      h += '<tr><td class="ref">'+i.ref+'</td><td>'+i.des+'</td><td class="num">'+i.q+'</td><td class="num">'+px(i.pu)+'</td><td class="num">'+px(i.tot)+'</td></tr>';
+    });
+  });
+  h += '</tbody>';
+  if(withTot){
+    const t = items.reduce((s,i)=>s+i.tot,0);
+    h += '<tfoot><tr><td colspan="4" class="num">Total HT</td><td class="num">'+px(t)+'</td></tr></tfoot>';
+  }
+  return h + '</table>';
+}
+
+function render(){
+  const R = compute();
+
+  /* selects dépendants de la gamme */
+  fillSelect($("hauteur"), HAUTEURS[R.g].map(v=>[v, v+" mm"]), S.hauteur);
+  const profOK = profsPlatelage();
+  fillSelect($("prof"), PROFS.map(v => [v, v+" mm"+(profOK.includes(v) ? "" : " — platelage indisponible"), !profOK.includes(v)]), S.prof);
+  $("niveaux").value = S.niveaux;
+  const secs = sectionsUtilisees(R.g);
+
+  renderBays(R);
+
+  $("drawTitle").textContent = "Vue de face — " + R_G(R.g) + ", " + S.bays.length + (S.bays.length>1?" travées":" travée")
+    + (S.qty > 1 ? " — " + S.qty + " ensembles identiques" : "");
+  $("svgHost").innerHTML = draw(R);
+  $("legEch").style.background = R.g === "ONE" ? "#c5cccf" : "#1d2a31";
+  const platVue = platOf(R.codeRef);
+  $("legEch").title = R_G(R.g);
+  $("legPlat").style.background = platVue === "none" ? "#ffffff" : PLAT_COLOR[platVue];
+  $("legPlatTxt").textContent = platVue === "none" ? "Sans platelage" : PLAT_LAB[platVue];
+
+  $("warns").innerHTML = R.warns.length
+    ? '<div class="warn"><b>À vérifier</b><ul>'+R.warns.map(w=>'<li>'+w+'</li>').join("")+'</ul></div>' : "";
+
+  $("bomHost").innerHTML = bomTable(R.items, false);
+  $("totCfg").textContent = px(R.total);
+  $("poidsCfg").textContent = R.poids.toLocaleString("fr-FR") + " kg";
+
+  document.querySelectorAll(".addq").forEach(b =>
+    b.textContent = (editing !== null && quote[editing]) ? "Mettre à jour le repère " + quote[editing].id : "Ajouter au devis");
+  renderGate();
+  renderQuote();
+  window.__R = R;
+}
+
+function renderBays(R){
+  const g = R.g, L = longueursDispo(g), host = $("bays");
+  host.innerHTML = S.bays.map((b,i) => {
+    const code = lisseDe(b, g), cap = chargeAdm(code, b.L, g, S.niveaux);
+    const secs = sectionsPourLongueur(g, b.L);
+    return '<div class="bayrow">'
+      + '<div class="bay"><span class="n">'+(i+1)+'</span>'
+      + '<select data-bay="'+i+'">'
+      + L.map(l => '<option value="'+l+'"'+(l===b.L?" selected":"")+'>'+l+' mm</option>').join("")
+      + '</select>'
+      + '<button type="button" class="ghost" data-dup="'+i+'" title="Dupliquer">+</button>'
+      + '<button type="button" class="ghost" data-del="'+i+'" title="Supprimer"'+(S.bays.length<2?" disabled":"")+'>×</button></div>'
+      + '<select class="baylisse" data-lisse="'+i+'">'
+      + '<option value="auto"'+(b.lisse==="auto"?" selected":"")+'>Section automatique — '+LISSES[code].lab+'</option>'
+      + secs.map(k => '<option value="'+k+'"'+(b.lisse===k?" selected":"")+'>'+LISSES[k].lab
+          + (chargeAdm(k, b.L, g, S.niveaux)!==null ? " — "+chargeAdm(k, b.L, g, S.niveaux)+" kg" : "")+'</option>').join("")
+      + '</select>'
+      + '<div class="baycap">'+(cap!==null ? cap+" kg par niveau" : "charge à consulter")+'</div>'
+      + '</div>';
+  }).join("");
+  host.querySelectorAll("select[data-bay]").forEach(el => el.onchange = e => {
+    S.bays[+e.target.dataset.bay].L = +e.target.value; render();
+  });
+  host.querySelectorAll("select[data-lisse]").forEach(el => el.onchange = e => {
+    S.bays[+e.target.dataset.lisse].lisse = e.target.value; render();
+  });
+  host.querySelectorAll("[data-dup]").forEach(el => el.onclick = e => {
+    const i = +e.target.dataset.dup; S.bays.splice(i+1, 0, Object.assign({}, S.bays[i])); render();
+  });
+  host.querySelectorAll("[data-del]").forEach(el => el.onclick = e => {
+    const i = +e.target.dataset.del; if(S.bays.length>1){ S.bays.splice(i,1); render(); }
+  });
+}
+
+function deptSelect(){
+  const dl = Object.keys(TARIF.TRANS.g1).filter(k => k !== "autres").sort((x,z) => +x - +z);
+  return '<select class="deptsel noprint-border" id="dept" aria-label="Département de livraison">'
+    + dl.map(d => '<option value="'+d+'"'+(S.dept===d?" selected":"")+'>'+(d === "20" ? "20 (Corse)" : d)+'</option>').join("")
+    + '<option value="autres"'+(S.dept==="autres"?" selected":"")+'>autres (DOM, étranger)</option></select>';
+}
+function renderQuote(){
+  const host = $("quoteHost");
+  if(!quote.length){
+    host.innerHTML = '<div class="empty">Aucun ensemble ajouté. Configurez un rayonnage puis cliquez sur « Ajouter au devis ».</div>';
+    $("totQuote").textContent = "—"; return;
+  }
+  let h = '<table><thead><tr><th>Repère</th><th>Ensemble</th><th class="num">Poids</th><th class="num">Total HT</th><th class="noprint"></th></tr></thead><tbody class="devis">';
+  quote.forEach((q,i) => {
+    h += '<tr'+(editing === i ? ' class="editing"' : '')+'><td class="name">'+q.id+'</td><td>'+q.label+'</td>'
+      + '<td class="num">'+q.poids.toLocaleString("fr-FR")+' kg</td><td class="num">'+px(q.total)+'</td>'
+      + '<td class="noprint act"><button type="button" class="ghost" data-edit="'+i+'">Modifier</button>'
+      + '<button type="button" class="del" data-q="'+i+'" title="Supprimer" aria-label="Supprimer">×</button></td></tr>';
+  });
+  const brut = Math.round(quote.reduce((s,q)=>s+q.total,0)*100)/100;
+  const net = Math.round(brut*(1-S.remise/100)*100)/100;
+  const grille = grilleDe(quote);
+  const tr = transport(brut, grille, S.dept);
+  const totalTTCHT = Math.round((net + tr.montant)*100)/100;
+  h += '</tbody><tfoot>';
+  h += '<tr><td colspan="3" class="num">Total matériel HT au tarif</td><td class="num">'+px(brut)+'</td><td class="noprint"></td></tr>';
+  if(S.remise) h += '<tr><td colspan="3" class="num">Remise '+S.remise+' %</td><td class="num">− '+eur(Math.round((brut-net)*100)/100)+'</td><td class="noprint"></td></tr>';
+  h += '<tr><td colspan="3" class="num">Transport — livraison dép. '+deptSelect()+' — grille '+(grille === "g1" ? "1" : "2")+'</td><td class="num">'
+     + (tr.consult ? "sur consultation" : px(tr.montant))+'</td><td class="noprint"></td></tr>';
+  h += '<tr><td colspan="3" class="num">Total HT</td><td class="num">'+px(totalTTCHT)+(prixVisibles && tr.consult ? " + transport" : "")+'</td><td class="noprint"></td></tr>';
+  h += '</tfoot></table>';
+
+  /* nomenclature consolidée */
+  const all = [];
+  quote.forEach(q => q.items.forEach(it => {
+    const f = all.find(m => m.ref === it.ref && m.des === it.des);
+    if(f){ f.q += it.q; f.tot = Math.round(f.q*f.pu*100)/100; }
+    else all.push(Object.assign({}, it));
+  }));
+  h += '<div class="recap"><div style="padding:16px 14px 0"><h3 style="font-size:13px;margin-bottom:8px">Détail des articles du devis</h3></div>' + bomTable(all, true) + '</div>';
+  host.innerHTML = h;
+  const ds = document.getElementById("dept");
+  if(ds) ds.onchange = e => { S.dept = e.target.value; renderQuote(); };
+  host.querySelectorAll("[data-q]").forEach(el => el.onclick = e => {
+    const i = +e.target.dataset.q;
+    quote.splice(i,1);
+    if(editing === i) editing = null; else if(editing !== null && editing > i) editing--;
+    reindex(); render();
+  });
+  host.querySelectorAll("[data-edit]").forEach(el => el.onclick = e => {
+    const i = +e.target.dataset.edit;
+    editing = i; restaurer(quote[i].cfg); render();
+    document.querySelector(".setup").scrollIntoView && document.querySelector(".setup").scrollIntoView({behavior:"smooth", block:"start"});
+  });
+  $("totQuote").textContent = px(totalTTCHT) + (prixVisibles && tr.consult ? " + transport" : "");
+  $("totQuoteLbl").textContent = "Total HT" + (tr.consult ? " hors transport (sur consultation)" : " transport compris");
+  window.__ALL = all;
+}
+function reindex(){ quote.forEach((q,i)=> q.id = String.fromCharCode(65+i)); }
+
+function fillSelect(el, pairs, val){
+  const cur = pairs.map(p=>p[0]+"~"+p[1]+"~"+(p[2]?1:0));
+  if(el.dataset.sig === cur.join("|")){ el.value = String(val); return; }
+  el.dataset.sig = cur.join("|");
+  el.innerHTML = pairs.map(p => '<option value="'+p[0]+'"'+(p[2]?" disabled":"")+'>'+p[1]+'</option>').join("");
+  el.value = String(val);
+  if(el.selectedIndex < 0) el.selectedIndex = 0;
+}
+
+/* ---------- Événements ---------- */
+function bind(id, key, cast){
+  const el = $(id);
+  el.addEventListener("change", () => {
+    S[key] = cast ? cast(el.value) : el.value;
+    if(key === "gamme" || key === "hauteur"){
+      const hs = HAUTEURS[gammeOf()];
+      if(!hs.includes(S.hauteur)) S.hauteur = hs[hs.length-1];
+    }
+    render();
+  });
+  el.addEventListener("input", () => { if(el.type === "number"){ S[key] = cast(el.value); render(); } });
+}
+bind("hauteur","hauteur",Number);
+bind("prof","prof",Number);
+function setNiv(n){ S.niveaux = Math.min(12, Math.max(2, n|0)); $("niveaux").value = S.niveaux; render(); }
+$("nivPlus").onclick  = () => setNiv(S.niveaux + 1);
+$("nivMinus").onclick = () => setNiv(S.niveaux - 1);
+$("niveaux").oninput = e => { const v = parseInt(e.target.value,10); if(v >= 2) setNiv(v); };
+bind("montage","montage");
+bind("platelage","platelage");
+document.querySelectorAll('input[name=gamme]').forEach(r => r.addEventListener("change", () => {
+  S.gamme = r.value;
+  const hs = HAUTEURS[S.gamme];
+  if(!hs.includes(S.hauteur)) S.hauteur = hs[hs.length-1];
+  const L = longueursDispo(S.gamme);
+  S.bays.forEach(b => { if(!L.includes(b.L)) b.L = L.reduce((x,z)=>Math.abs(z-b.L)<Math.abs(x-b.L)?z:x); });
+  render();
+}));
+function setQty(n){ S.qty = Math.min(99, Math.max(1, n|0)); $("qty").value = S.qty; render(); }
+$("qtyPlus").onclick  = () => setQty(S.qty + 1);
+$("qtyMinus").onclick = () => setQty(S.qty - 1);
+$("qty").oninput = e => { const v = parseInt(e.target.value,10); if(v>0) setQty(v); };
+$("basse").onchange = e => { S.basse = e.target.checked; render(); };
+$("goupilles").onchange = e => { S.goupilles = e.target.checked; render(); };
+$("fixation").onchange = e => { S.fixation = e.target.checked; render(); };
+$("addBay").onclick = () => { S.bays.push(Object.assign({}, S.bays[S.bays.length-1])); render(); };
+$("sameAll").onclick = () => { const b0 = S.bays[0]; S.bays = S.bays.map(()=>Object.assign({}, b0)); render(); };
+
+function ajouterAuDevis(){
+  const R = window.__R;
+  const label = S.qty + " Minirack" + (R.g === "ONE" ? " ONE" : "")
+    + " H." + S.hauteur + " P." + S.prof + " L." + R.horsTout + " mm · "
+    + S.bays.length + (S.bays.length>1?" travées":" travée") + " (" + S.bays.map(b=>b.L).join(" + ") + " mm) · "
+    + S.niveaux + " niveaux · " + sectionsUtilisees(R.g).map(k=>LISSES[k].lab).join(" · ")
+    + (platOf(R.codeRef) === "none" ? " · sans platelage" : " · " + PLAT_LAB[platOf(R.codeRef)].replace("Platelage ",""));
+  const ligne = {id:"A", label, items:R.items.map(i=>Object.assign({},i)), total:R.total, poids:R.poids, cfg:snapshot()};
+  if(editing !== null && quote[editing]){ quote[editing] = ligne; editing = null; }
+  else quote.push(ligne);
+  reindex(); render();
+  const qh = document.getElementById("quoteHost"); if(qh && qh.scrollIntoView) qh.scrollIntoView({behavior:"smooth", block:"start"});
+}
+document.querySelectorAll(".addq").forEach(b => b.onclick = ajouterAuDevis);
+$("printBtn").onclick = () => window.print();
+$("csvBtn").onclick = () => {
+  const rows = (window.__ALL && window.__ALL.length ? window.__ALL : (window.__R ? window.__R.items : []));
+  if(!rows.length) return;
+  const csv = (prixVisibles ? ["Reference;Designation;Quantite;PU HT;Total HT"] : ["Reference;Designation;Quantite"])
+    .concat(rows.map(i => prixVisibles
+      ? [i.ref, '"'+i.des.replace(/"/g,"'")+'"', i.q, i.pu.toFixed(2).replace(".",","), i.tot.toFixed(2).replace(".",",")].join(";")
+      : [i.ref, '"'+i.des.replace(/"/g,"'")+'"', i.q].join(";")))
+    .join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"}));
+  a.download = "nomenclature-epsivol.csv"; a.click();
+};
+
+render();
+</script>
+</body>
+</html>
