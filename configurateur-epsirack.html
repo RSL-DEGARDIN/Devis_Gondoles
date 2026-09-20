@@ -358,6 +358,7 @@ tbody tr:hover{background:#FAFAF8}
         <div class="barre-actions">
           <button class="btn-secondaire" id="btnPdf">PDF</button>
           <button class="btn-secondaire" id="btnCsv">CSV</button>
+          <button class="btn-secondaire" id="btnPlan">Plan (RackPlan)</button>
           <button class="btn-secondaire" id="btnCopier">Copier</button>
           <button class="btn-lien" id="btnVider">Vider le devis</button>
         </div>
@@ -1024,6 +1025,88 @@ function lignesCsv(){
   return [entete, ...corps].map(r=>r.join(';')).join('\r\n');
 }
 
+/* ==========================================================
+   EXPORT PLAN RACKPLAN — JSON v3 importable dans l'outil RackPlan.
+   1 rack = 1 file (run) ; travées alignées en X (utile+160 au
+   départ, +80 pour les suivantes). Racks empilés en Y (pas 3100).
+   Double-face = 2 files parallèles, écart 200 mm, 2e file à Y+1300.
+   ========================================================== */
+function exporterPlan(){
+  if (!devis.length) return toast('Le devis est vide');
+
+  const MARGE = 200;          // marge depuis le bord de l'entrepôt
+  const PAS_RACK = 3100;      // écart vertical entre deux racks
+  const ECART_DF = 200;       // écart entre les 2 faces d'un double-face
+  const DECALE_DF = 1300;     // Y de la 2e face d'un double-face
+
+  const bays = [];
+  let yCourant = MARGE;
+  let numTravee = 0;
+  let numRun = 0;
+
+  const poseFile = (r, y, runId) => {
+    let x = MARGE;
+    for (let t = 0; t < r.travees; t++){
+      numTravee++;
+      bays.push({
+        id: 'TRV-' + String(numTravee).padStart(3,'0'),
+        mode: t === 0 ? 'depart' : 'suite',
+        x: Math.round(x),
+        y: Math.round(y),
+        upright: 80,
+        beam: r.L,
+        levels: r.niveaux,
+        depth: r.p,
+        section: r.s,
+        rotation: 0,
+        run: runId
+      });
+      x += r.L + (t === 0 ? 160 : 80);
+    }
+  };
+
+  // chaque rack (et chaque exemplaire d'un rack multiple) devient une ou deux files
+  for (const r of devis){
+    for (let ex = 0; ex < r.racks; ex++){
+      numRun++;
+      const runId = 'R' + numRun;
+      poseFile(r, yCourant, runId);
+      if (r.face === 2){
+        poseFile(r, yCourant + DECALE_DF, runId);
+        yCourant += DECALE_DF + PAS_RACK;   // 2e face à +1300, puis allée de 3000
+      } else {
+        yCourant += PAS_RACK;
+      }
+    }
+  }
+
+  // dimensions de l'entrepôt : on englobe tout avec une marge
+  const maxX = Math.max(...bays.map(b => b.x + b.beam)) + MARGE;
+  const maxY = Math.max(...bays.map(b => b.y + (bays.find(x=>x.run===b.run)?.depth||1100))) + MARGE;
+  const arrondi = (v, pas) => Math.ceil(v / pas) * pas;
+
+  const plan = {
+    version: 3,
+    unit: 'mm',
+    warehouse: {
+      width: Math.max(30000, arrondi(maxX, 1000)),
+      depth: Math.max(18000, arrondi(maxY, 1000)),
+      gridSize: 50
+    },
+    cotes: [],
+    labels: [],
+    bays
+  };
+
+  const blob = new Blob([JSON.stringify(plan, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ts = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'').replace(/(\d{8})(\d{4})/,'$1-$2');
+  a.download = `plan-epsirack-${ts}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast(`Plan exporté — ${bays.length} travées, ${numRun} files`);
+}
+
 function telechargerCsv(){
   if (!devis.length) return toast('Le devis est vide');
   const blob = new Blob(['\ufeff'+lignesCsv()], {type:'text/csv;charset=utf-8'});
@@ -1369,6 +1452,7 @@ document.querySelectorAll('a.logo, a.retour').forEach(a => a.addEventListener('c
 $('ajouter').addEventListener('click', ajouter);
 $('btnPdf').addEventListener('click', construirePdf);
 $('btnCsv').addEventListener('click', telechargerCsv);
+$('btnPlan').addEventListener('click', exporterPlan);
 $('btnCopier').addEventListener('click', copier);
 $('btnEnvoyer').addEventListener('click', envoyerDemande);
 $('btnCopierDemande').addEventListener('click', ()=>{
