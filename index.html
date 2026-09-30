@@ -1590,8 +1590,6 @@ async function genererDevisPDF(){
     doc.setPage(p);
     doc.setDrawColor(224,229,234); doc.setLineWidth(0.2); doc.line(M,286,PW-M,286);
     doc.setFontSize(7); doc.setTextColor(...grey);
-    doc.text("Document sans engagement de prix — demande de devis",PW/2,290,{align:"center"});
-    doc.setFontSize(7); doc.setTextColor(...grey);
     doc.text("RSL — Rayonnages Services Lorraine · Heillecourt (54) · s.degardin@rsl.eu",M,294);
     doc.text("Page "+p+" / "+pages,PW-M,294,{align:"right"});
   }
