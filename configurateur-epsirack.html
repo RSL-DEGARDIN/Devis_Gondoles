@@ -136,7 +136,7 @@ footer.note{max-width:1500px;margin:0 auto;padding:0 16px 30px;color:var(--muted
 /* ---------- Impression du devis ---------- */
 #printDoc{display:none}
 @media print{
-  @page{size:A4 portrait;margin:14mm}
+  @page{size:A4 portrait;margin:14mm 8mm}
   body{background:#fff;font-size:11pt}
   header.top,.wrap,footer.note{display:none!important}
   #printDoc{display:block}
@@ -144,7 +144,14 @@ footer.note{max-width:1500px;margin:0 auto;padding:0 16px 30px;color:var(--muted
   #printDoc .ph{display:flex;justify-content:space-between;border-bottom:3px solid var(--accent);padding-bottom:8px;margin-bottom:12px}
   #printDoc .blk{display:flex;justify-content:space-between;gap:20px;margin-bottom:12px;font-size:10pt}
   #printDoc h3{font-size:12pt;margin:14px 0 4px;color:var(--brand);page-break-after:avoid}
+  #printDoc .rack h1{font-size:13pt;margin:14px 0 2px;color:var(--brand);page-break-after:avoid}
+  #printDoc .rack h2{font-size:10.5pt;font-weight:600;margin:0 0 6px;color:#555;page-break-after:avoid;text-transform:none;letter-spacing:normal}
   #printDoc table{font-size:9.5pt}
+  #printDoc table.bom{table-layout:fixed}
+  #printDoc table.bom th:nth-child(1),#printDoc table.bom td:nth-child(1){width:68%}
+  #printDoc table.bom th:nth-child(2),#printDoc table.bom td:nth-child(2){width:7%}
+  #printDoc table.bom th:nth-child(3),#printDoc table.bom td:nth-child(3){width:12%}
+  #printDoc table.bom th:nth-child(4),#printDoc table.bom td:nth-child(4){width:13%}
   #printDoc img{width:100%;max-height:70mm;object-fit:contain;border:1px solid #ddd;border-radius:6px}
   #printDoc .rack{page-break-inside:avoid}
   #printDoc .plan-page{page-break-before:always}
@@ -1111,14 +1118,14 @@ $("#btnPrint").onclick=async()=>{
    <div class="ph"><div><h1>DEVIS ${num}</h1><div>Date : ${d.toLocaleDateString("fr-FR")} · Valable jusqu'au ${fin.toLocaleDateString("fr-FR")}</div>${dossier?`<div><b>Dossier : ${dossier}</b></div>`:""}</div>
      <div style="text-align:right"><b>${CONFIG.contact.societe}</b><br>${CONFIG.contact.ville}<br>${CONFIG.contact.email}</div></div>
    <div class="blk"><div><b>Client</b><br>${c.societe||"—"}<br>${c.nom||""}<br>${c.email||""} ${c.tel||""}<br>Livraison : ${c.cp||""} ${c.ville||""}</div></div>
-   ${devis.map((q,i)=>`<div class="rack"><h3>Rayonnage ${i+1} : ${q.label}</h3>
+   ${devis.map((q,i)=>`<div class="rack"><h1>Rayonnage ${i+1}</h1><h2>${q.label}</h2>
      ${q.img?`<img src="${q.img}">`:""}
-     <table><thead><tr><th>Réf.</th><th>Désignation</th><th class="r">Qté</th><th class="r">P.U. HT</th><th class="r">Total HT</th></tr></thead>
-     <tbody>${q.bom.map(l=>`<tr><td>${l.ref}</td><td>${l.des}</td><td class="r">${l.q}</td><td class="r">${l.pu!=null?eur(l.pu):"—"}</td><td class="r">${l.pu!=null?eur(l.pu*l.q):"—"}</td></tr>`).join("")}</tbody>
-     <tfoot><tr><td colspan="4">Sous-total</td><td class="r">${eur(q.total)}</td></tr></tfoot></table></div>`).join("")}
-   <div class="rack"><h3>Nomenclature globale</h3><table><thead><tr><th>Réf.</th><th>Désignation</th><th class="r">Qté</th><th class="r">P.U. HT</th><th class="r">Total HT</th></tr></thead>
-     <tbody>${bomGlobale().map(l=>`<tr><td>${l.ref}</td><td>${l.des}</td><td class="r">${l.q}</td><td class="r">${l.pu!=null?eur(l.pu):"—"}</td><td class="r">${l.pu!=null?eur(l.pu*l.q):"—"}</td></tr>`).join("")}</tbody>
-     <tfoot><tr><td colspan="4">Poids total</td><td class="r">${kg(poidsGlobal(bomGlobale()))}</td></tr></tfoot></table></div>
+     <table class="bom"><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">P.U. HT</th><th class="r">Total HT</th></tr></thead>
+     <tbody>${q.bom.map(l=>`<tr><td>${l.des}<br><span class="ref">${l.ref}</span></td><td class="r">${l.q}</td><td class="r">${l.pu!=null?eur(l.pu):"—"}</td><td class="r">${l.pu!=null?eur(l.pu*l.q):"—"}</td></tr>`).join("")}</tbody>
+     <tfoot><tr><td colspan="3">Sous-total</td><td class="r">${eur(q.total)}</td></tr></tfoot></table></div>`).join("")}
+   <div class="rack"><h3>Nomenclature globale</h3><table class="bom"><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">P.U. HT</th><th class="r">Total HT</th></tr></thead>
+     <tbody>${bomGlobale().map(l=>`<tr><td>${l.des}<br><span class="ref">${l.ref}</span></td><td class="r">${l.q}</td><td class="r">${l.pu!=null?eur(l.pu):"—"}</td><td class="r">${l.pu!=null?eur(l.pu*l.q):"—"}</td></tr>`).join("")}</tbody>
+     <tfoot><tr><td colspan="3">Poids total</td><td class="r">${kg(poidsGlobal(bomGlobale()))}</td></tr></tfoot></table></div>
    <table class="tot"><tr><td>Total matériel HT</td><td class="r">${eur(t.ht)}</td></tr>
      <tr><td>Livraison HT (dépt ${dept||"—"})</td><td class="r">${t.port.ok?eur(t.port.val):t.port.txt}</td></tr>
      <tr><td style="font-size:14pt"><b>Total HT</b></td><td class="r" style="font-size:14pt"><b>${eur(t.base)}</b></td></tr>
