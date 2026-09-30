@@ -247,6 +247,11 @@
   details.bom summary::before{content:"▸ ";color:var(--accent);}
   details.bom[open] summary::before{content:"▾ ";}
 
+  .save-box{margin-top:16px;padding-top:14px;border-top:1px dashed var(--steel-100);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .save-box .btn-copy{flex:0 1 auto;}
+  .save-box .save-hint{flex:1 1 100%;font-size:12px;color:var(--steel-300);margin:2px 0 0;}
+  .welcome-resume{margin-top:18px;font-size:13px;color:var(--steel-500);}
+  .welcome-resume button{background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
   .send-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
   .btn-send{flex:1 1 auto;padding:14px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
   .btn-send:hover{background:var(--accent-dark);}
@@ -283,6 +288,7 @@
         <span class="choice-d">Vous placez vos gondoles sur un plan du magasin, à l'échelle, avec vue 3D.</span>
       </button>
     </div>
+    <p class="welcome-resume">Vous avez déjà commencé ? <button type="button" id="chooseResume">Ouvrir un projet enregistré</button></p>
   </div>
 </div>
 
@@ -375,6 +381,12 @@
       <a href="#" class="btn-send" id="btnEmail">✉ Envoyer ma demande par email</a>
       <button type="button" class="btn-copy" id="btnPdf">⭳ Télécharger le devis (PDF)</button>
       <button type="button" class="btn-copy" id="btnCopy">Copier ma demande</button>
+    </div>
+    <div class="save-box">
+      <button type="button" class="btn-copy" id="btnSave">💾 Enregistrer le projet</button>
+      <button type="button" class="btn-copy" id="btnOpen">📂 Ouvrir un projet enregistré</button>
+      <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
+      <p class="save-hint">Le projet (gondoles, plan, coordonnées) est enregistré dans un petit fichier .json, dans le dossier de votre choix. Rouvrez-le un autre jour pour tout retrouver et continuer à modifier.</p>
     </div>
     <p class="send-note">Le bouton email ouvre votre messagerie pré-remplie, adressée à RSL. Sinon, « Copier ma demande » et collez dans un email à s.degardin@rsl.eu.</p>
   </div>
@@ -957,8 +969,11 @@ let lastMouseWorld=null;       // dernière position souris sur le plan (en mèt
 svg.addEventListener("pointermove",e=>{ const[sx,sy]=svgPoint(e); lastMouseWorld=pxToWorld(sx,sy); });
 svg.addEventListener("pointerleave",()=>{ lastMouseWorld=null; });
 
+// une gondole dupliquée/collée rejoint le groupe (même repère) de sa source
+function ensureGrp(g){ if(g.grp===0) g.grp=nextGrp++; return g.grp; }
 function copySel(){
   const g=sel(); if(!g) return false;
+  ensureGrp(g);
   clipGondole={...g, tabProfs:(g.tabProfs||[]).slice()};
   flashMsg("Gondole "+repereOf(g)+" copiée");
   return true;
@@ -998,7 +1013,7 @@ window.addEventListener("keydown",e=>{
   if((e.key==="Delete"||e.key==="Backspace")&&selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}
   if(e.key==="r"||e.key==="R")rotateSel();
   // * : dupliquer la gondole sélectionnée
-  if(e.key==="*"||e.code==="NumpadMultiply"){ const g=sel(); if(g){ const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:(g.tabProfs||[]).slice()}; gondoles.push(c); selId=c.id; renderAll(); flashMsg("Gondole "+repereOf(c)+" dupliquée"); e.preventDefault(); } }
+  if(e.key==="*"||e.code==="NumpadMultiply"){ const g=sel(); if(g){ ensureGrp(g); const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:(g.tabProfs||[]).slice()}; gondoles.push(c); selId=c.id; renderAll(); flashMsg("Gondole "+repereOf(c)+" dupliquée"); e.preventDefault(); } }
   // + / − : allonger ou raccourcir la gondole sélectionnée d'une travée (1 ml)
   if(e.key==="+"||e.key==="="||e.code==="NumpadAdd"){ const g=sel(); if(g){ g.len=Math.min(30,g.len+1); renderAll(); flashMsg("Gondole "+repereOf(g)+" : "+g.len+" ml"); e.preventDefault(); } }
   if(e.key==="-"||e.key==="_"||e.code==="NumpadSubtract"){ const g=sel(); if(g){ g.len=Math.max(1,g.len-1); renderAll(); flashMsg("Gondole "+repereOf(g)+" : "+g.len+" ml"); e.preventDefault(); } }
@@ -1113,7 +1128,7 @@ function buildTabLevels(){
     row.appendChild(seg);box.appendChild(row);
   });
 }
-document.getElementById("btnDup").addEventListener("click",()=>{const g=sel();if(!g)return;const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:g.tabProfs.slice()};gondoles.push(c);selId=c.id;renderAll();detIsNew=true;detSnapshot={...c,tabProfs:c.tabProfs.slice()};});
+document.getElementById("btnDup").addEventListener("click",()=>{const g=sel();if(!g)return;ensureGrp(g);const c={...g,id:nextId++,x:g.x+0.5,y:g.y+0.5,tabProfs:g.tabProfs.slice()};gondoles.push(c);selId=c.id;renderAll();detIsNew=true;detSnapshot={...c,tabProfs:c.tabProfs.slice()};});
 document.getElementById("btnDelSel").addEventListener("click",()=>{if(selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;closeDetModal();detectPlanColor();renderAll();}});
 
 // ---- Popup zoom de l'aperçu ----
@@ -1399,7 +1414,36 @@ function schemaGondolePng(g){
   });
 }
 
-function genererDevisPDF(){
+// Plan 2D complet (cadré sur l'emprise des gondoles) -> PNG, pour la dernière page du PDF
+function planPng2D(){
+  return new Promise(resolve=>{
+    if(!gondoles.length) return resolve(null);
+    let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
+    gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
+    const pad=0.6, x0=mnX-pad, y0=mnY-pad, spanX=mxX-mnX+2*pad, spanY=mxY-mnY+2*pad;
+    const ppm=Math.min(90,2000/Math.max(spanX,spanY));
+    const Wp=Math.round(spanX*ppm), Hp=Math.round(spanY*ppm);
+    const tmp=document.createElementNS(NS,"svg");
+    tmp.setAttribute("xmlns",NS); tmp.setAttribute("viewBox",`0 0 ${Wp} ${Hp}`);
+    tmp.setAttribute("width",Wp); tmp.setAttribute("height",Hp); tmp.setAttribute("font-family","Segoe UI, Arial, sans-serif");
+    tmp.appendChild(E("rect",{x:0,y:0,width:Wp,height:Hp,fill:"#ffffff"}));
+    for(let i=Math.ceil(x0);i<=x0+spanX;i++){const x=(i-x0)*ppm;tmp.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hp,stroke:"#e6ebf0","stroke-width":1}));}
+    for(let j=Math.ceil(y0);j<=y0+spanY;j++){const y=(j-y0)*ppm;tmp.appendChild(E("line",{x1:0,y1:y,x2:Wp,y2:y,stroke:"#e6ebf0","stroke-width":1}));}
+    const saveView=view, saveSel=selId;
+    view={ox:-x0*ppm,oy:-y0*ppm,ppm}; selId=null;
+    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); } finally { view=saveView; selId=saveSel; }
+    tmp.appendChild(E("line",{x1:14,y1:Hp-16,x2:14+ppm,y2:Hp-16,stroke:"#55677d","stroke-width":3}));
+    tmp.appendChild(E("text",{x:14,y:Hp-24,"font-size":13,fill:"#55677d"},"1 m"));
+    const xml=new XMLSerializer().serializeToString(tmp);
+    const img=new Image();
+    img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=Wp; cv.height=Hp; cv.getContext("2d").drawImage(img,0,0);
+      resolve({url:cv.toDataURL("image/png"),ratio:Wp/Hp,w:spanX-2*pad,h:spanY-2*pad}); };
+    img.onerror=()=>resolve(null);
+    img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(xml)));
+  });
+}
+
+async function genererDevisPDF(){
   const { jsPDF }=window.jspdf;
   const doc=new jsPDF({unit:"mm",format:"a4"});
   const PW=210, M=14; let y=16;
@@ -1434,7 +1478,7 @@ function genererDevisPDF(){
     // nomenclature du groupe = nomenclature unitaire × Q
     const bom=buildBomForGondole(g).map(i=>({...i, qty:i.qty*Q}));
 
-    const estH=18+bom.length*5.6+10;
+    const estH=18+bom.length*5.6+10+68;
     if(y+estH>282){ doc.addPage(); y=16; }
 
     // bandeau titre du poste
@@ -1452,6 +1496,15 @@ function genererDevisPDF(){
     if(g.plinthes)desc+=" · avec plinthes";
     if(g.chapiteau&&chapiteauPossible(g.face,g.h))desc+=" · avec chapiteaux";
     doc.text(desc,M+1,y); y+=3;
+
+    // vue 3D du repère (une seule pour toutes les gondoles identiques du groupe)
+    let img3d=null; try{ img3d=window.gondole3dJpeg?window.gondole3dJpeg(g):null; }catch(_){}
+    if(img3d){
+      const iw=112, ih=iw*620/1000, ix=(PW-iw)/2;
+      doc.setDrawColor(224,229,234); doc.rect(ix-0.3,y+0.7,iw+0.6,ih+0.6);
+      doc.addImage(img3d,"JPEG",ix,y+1,iw,ih);
+      y+=ih+4;
+    }
 
     // tableau détaillé
     doc.autoTable({
@@ -1512,6 +1565,25 @@ function genererDevisPDF(){
     alternateRowStyles:{fillColor:[250,251,252]}
   });
 
+  // -- Dernière page : plan d'implantation 2D complet (mode plan uniquement) --
+  if(!document.body.classList.contains("mode-list")){
+    const pl=await planPng2D();
+    if(pl){
+      doc.addPage(); y=16;
+      doc.setDrawColor(...accent); doc.setLineWidth(0.5); doc.line(M,y,PW-M,y); doc.setLineWidth(0.2); y+=6;
+      doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(13);
+      doc.text("Plan d'implantation",M,y); y+=5;
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
+      const f1=v=>v.toFixed(1).replace(".",",");
+      doc.text(`Emprise : ${f1(pl.w)} m x ${f1(pl.h)} m  ·  ${gondoles.length} gondole${gondoles.length>1?"s":""}  ·  quadrillage = 1 m`,M,y); y+=4;
+      const availW=PW-2*M, availH=282-y-4;
+      let iw=availW, ih=iw/pl.ratio; if(ih>availH){ ih=availH; iw=ih*pl.ratio; }
+      const ix=(PW-iw)/2;
+      doc.setDrawColor(224,229,234); doc.rect(ix-0.3,y-0.3,iw+0.6,ih+0.6);
+      doc.addImage(pl.url,"PNG",ix,y,iw,ih);
+    }
+  }
+
   // -- Pied de page sur chaque page --
   const pages=doc.internal.getNumberOfPages();
   for(let p=1;p<=pages;p++){
@@ -1570,6 +1642,85 @@ function startWith(m){
 document.getElementById("chooseList").addEventListener("click",()=>startWith("list"));
 document.getElementById("choosePlan").addEventListener("click",()=>startWith("plan"));
 setMode("plan");   // état par défaut derrière l'écran d'accueil
+
+// ===================== Enregistrer / rouvrir un projet =====================
+const PROJET_APP="rsl-gondoles", PROJET_VERSION=1;
+function projetVersJson(){
+  return JSON.stringify({
+    app:PROJET_APP, version:PROJET_VERSION, savedAt:new Date().toISOString(),
+    mode:document.body.classList.contains("mode-list")?"list":"plan",
+    client:{nom:val("cNom"),societe:val("cSociete"),email:val("cEmail"),tel:val("cTel"),msg:val("cMsg")},
+    planColor, nextGrp, gondoles
+  },null,2);
+}
+async function enregistrerProjet(){
+  if(gondoles.length===0 && !confirm("Le projet est vide. L'enregistrer quand même ?")) return;
+  const soc=val("cSociete").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_|_$/g,"");
+  const d=new Date().toISOString().slice(0,10);
+  const nom="Projet_gondoles"+(soc?"_"+soc:"")+"_"+d+".json";
+  const data=projetVersJson();
+  // Chrome / Edge : vraie fenêtre « Enregistrer sous » (choix du dossier)
+  if(window.showSaveFilePicker){
+    try{
+      const h=await window.showSaveFilePicker({suggestedName:nom,types:[{description:"Projet gondoles RSL",accept:{"application/json":[".json"]}}]});
+      const w=await h.createWritable(); await w.write(data); await w.close();
+      flashMsg("Projet enregistré"); return;
+    }catch(e){ if(e&&e.name==="AbortError") return; /* sinon : repli téléchargement */ }
+  }
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  a.download=nom; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  flashMsg("Projet téléchargé dans votre dossier Téléchargements");
+}
+function nettoyerGondole(o){
+  const num=(v,d)=>Number.isFinite(Number(v))?Number(v):d;
+  const g={
+    id:num(o.id,0), x:num(o.x,1), y:num(o.y,1), rot:[0,90,180,270].includes(num(o.rot,0))?num(o.rot,0):0,
+    face:o.face==="DF"?"DF":"SF",
+    h:HAUTEURS.includes(num(o.h,0))?num(o.h,0):2100,
+    p:PROFONDEURS.includes(num(o.p,0))?num(o.p,0):470,
+    f:o.f==="FP"?"FP":"FL",
+    len:Math.max(1,Math.min(30,Math.round(num(o.len,1)))),
+    plinthes:!!o.plinthes, chapiteau:!!o.chapiteau,
+    color:COLORIS[o.color]?o.color:"blanc",
+    grp:Math.max(0,Math.round(num(o.grp,0)))
+  };
+  g.tabProfs=(Array.isArray(o.tabProfs)?o.tabProfs:[]).slice(0,8).map(pf=>PROFONDEURS.includes(Number(pf))?Math.min(Number(pf),g.p):g.p);
+  return g;
+}
+function chargerProjetTexte(txt){
+  let d; try{ d=JSON.parse(txt); }catch(e){ alert("Ce fichier n'est pas un projet valide."); return; }
+  if(!d||d.app!==PROJET_APP||!Array.isArray(d.gondoles)){ alert("Ce fichier n'est pas un projet gondoles RSL."); return; }
+  if(gondoles.length && document.getElementById("welcome").classList.contains("hidden")){
+    if(!confirm("Ouvrir ce projet remplacera le travail en cours. Continuer ?")) return;
+  }
+  const usedIds=new Set();
+  gondoles=d.gondoles.map(nettoyerGondole).map(g=>{ while(!g.id||usedIds.has(g.id)) g.id=(g.id||0)+1; usedIds.add(g.id); return g; });
+  nextId=gondoles.reduce((m,g)=>Math.max(m,g.id),0)+1;
+  nextGrp=Math.max(Number(d.nextGrp)||1, gondoles.reduce((m,g)=>Math.max(m,g.grp),0)+1);
+  planColor=COLORIS[d.planColor]?d.planColor:"blanc";
+  selId=null;
+  const c=d.client||{};
+  document.getElementById("cNom").value=c.nom||""; document.getElementById("cSociete").value=c.societe||"";
+  document.getElementById("cEmail").value=c.email||""; document.getElementById("cTel").value=c.tel||"";
+  document.getElementById("cMsg").value=c.msg||"";
+  document.getElementById("welcome").classList.add("hidden");
+  setMode(d.mode==="list"?"list":"plan");
+  detectPlanColor(); renderAll(); fitView();
+  flashMsg("Projet ouvert : "+gondoles.length+" gondole"+(gondoles.length>1?"s":""));
+}
+const fileOpen=document.getElementById("fileOpen");
+function ouvrirProjet(){ fileOpen.value=""; fileOpen.click(); }
+fileOpen.addEventListener("change",()=>{
+  const f=fileOpen.files&&fileOpen.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>chargerProjetTexte(String(r.result)); r.readAsText(f);
+});
+document.getElementById("btnSave").addEventListener("click",enregistrerProjet);
+document.getElementById("btnOpen").addEventListener("click",ouvrirProjet);
+document.getElementById("chooseResume").addEventListener("click",ouvrirProjet);
+// Ctrl+S = enregistrer le projet
+window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||e.key==="S")){ e.preventDefault(); enregistrerProjet(); } });
 
 // ===================== Module 3D (Three.js) =====================
 (function(){
@@ -1762,6 +1913,21 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
     orbit.radius=Math.max(3, sp*1.7);
     orbit.theta=Math.PI*0.25; orbit.phi=Math.PI*0.4;
     applyCam();
+    fitGroup();
+  }
+  // Cadre automatiquement la caméra sur la boîte englobante réelle du contenu
+  // (recherche de la plus petite distance pour laquelle les 8 coins restent dans l'image)
+  function fitGroup(){
+    if(!group) return;
+    const box=new THREE.Box3().setFromObject(group);
+    if(box.isEmpty()) return;
+    const c=box.getCenter(new THREE.Vector3());
+    const pts=[]; [box.min.x,box.max.x].forEach(x=>[box.min.y,box.max.y].forEach(y=>[box.min.z,box.max.z].forEach(z=>pts.push(new THREE.Vector3(x,y,z)))));
+    orbit.target.copy(c);
+    const fits=()=>{ camera.updateMatrixWorld(); return pts.every(p=>{ const v=p.clone().project(camera); return v.z<1 && Math.abs(v.x)<=0.9 && Math.abs(v.y)<=0.9; }); };
+    let lo=0.3, hi=150;   // < plan lointain de la caméra (200), sinon tout est jugé « hors champ »
+    for(let i=0;i<40;i++){ const mid=(lo+hi)/2; orbit.radius=mid; applyCam(); if(fits()) hi=mid; else lo=mid; }
+    orbit.radius=hi; applyCam();
   }
   function resize(){ const w=stageEl.clientWidth,h=stageEl.clientHeight; if(!w||!h)return; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
   function loop(){ rafId=requestAnimationFrame(loop); if(renderer&&scene&&camera) renderer.render(scene,camera); }
@@ -1782,6 +1948,19 @@ setMode("plan");   // état par défaut derrière l'écran d'accueil
   document.getElementById("btn3DPlan").addEventListener("click",()=>{ if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;} open("store"); });
   document.getElementById("btn3DGond").addEventListener("click",()=>open("one"));
   document.getElementById("detView3D").addEventListener("click",()=>{ if(sel())open("one"); });
+  // Rendu 3D hors-écran d'UNE gondole -> image JPEG (pour le PDF)
+  window.gondole3dJpeg=function(g){
+    if(!ensureInit()) return null;
+    const W=1000,H=620;
+    const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+    r.setPixelRatio(1); r.setSize(W,H); r.shadowMap.enabled=true;
+    camera.aspect=W/H; camera.updateProjectionMatrix();
+    buildOne({...g,rot:0});
+    r.render(scene,camera);
+    const url=r.domElement.toDataURL("image/jpeg",0.88);
+    r.dispose();
+    return url;
+  };
   document.getElementById("detView2D").addEventListener("click",()=>{ if(sel())openVizModal(); });
   document.getElementById("d3Close").addEventListener("click",close);
   modal.addEventListener("click",e=>{ if(e.target===modal) close(); });
