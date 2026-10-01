@@ -1919,6 +1919,22 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
     });
     if(isDF && g.h<=1700) addBox(L,0.02,mEp,0,Ht-0.02,0,metalMat);
 
+    // plinthes (option du devis) : un cache 1000 mm par travée et par face, à l'avant,
+    // qui ferme l'espace entre le sol / les piétements et la tablette de base
+    if(g.plinthes){
+      const tP=0.012;                                   // épaisseur du cache
+      for(let m=0;m<L;m++){
+        const xc=x0+m+0.5;
+        if(isDF){
+          const zf=mEp/2+fondEp+D;                      // avant de la tablette de base
+          addBox(1,pietH,tP,xc,0, zf-tP/2, panelMat);
+          addBox(1,pietH,tP,xc,0,-(zf-tP/2),panelMat);
+        } else {
+          addBox(1,pietH,tP,xc,0, zMont+mEp/2+fondEp+D-tP/2, panelMat);
+        }
+      }
+    }
+
     // rotation autour de l'axe vertical selon g.rot, puis translation au centre
     const rot=(g.rot||0)*Math.PI/180, cosr=Math.cos(rot), sinr=Math.sin(rot);
     items.forEach(it=>{
