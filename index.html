@@ -254,6 +254,7 @@
   .welcome-resume button{background:none;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;}
   /* Mode visionneuse client (lien #v=...) : seule la vue 3D plein écran est visible */
   body.viewer-mode > *:not(.d3-modal):not(script):not(.flash-msg){display:none!important;}
+  body.viewer-mode::before{content:"Chargement de votre vue 3D…";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;color:#55677d;font:600 15px 'Segoe UI',system-ui,sans-serif;}
   body.viewer-mode .d3-modal{padding:0;background:#fff;}
   body.viewer-mode .d3-inner{width:100vw;height:100vh;max-width:none;border-radius:0;box-shadow:none;}
   body.viewer-mode .d3-close{display:none;}
@@ -275,6 +276,7 @@
 </style>
 </head>
 <body>
+<script>if(/^#[vj]=/.test(location.hash))document.body.classList.add("viewer-mode");</script>
 
 <!-- ÉCRAN D'ACCUEIL : choix du mode -->
 <div class="welcome" id="welcome">
@@ -2019,7 +2021,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     let u8=b64u.dec(m[2]); if(m[1]==="v") u8=await streamBytes(u8,DecompressionStream);
     document.body.classList.add("viewer-mode");
     chargerProjetTexte(new TextDecoder().decode(u8));
-    document.getElementById("d3Title").innerHTML='<img src="'+LOGO_RSL_JPEG+'" alt="RSL" style="height:30px;vertical-align:middle;margin-right:12px">Votre projet de gondoles en 3D';
+    document.getElementById("d3Title").innerHTML='<img src="'+LOGO_RSL_JPEG+'" alt="RSL" style="height:30px;vertical-align:middle;margin-right:12px">Votre projet de gondoles en 3D <span style="font-weight:500;color:#55677d;font-size:13.5px">(vous pourrez le faire tourner à 360°)</span>';
     document.querySelector(".d3-hint").innerHTML='Glissez pour tourner à 360° · molette ou pincement pour zoomer · double-clic pour recentrer &nbsp;·&nbsp; Une question ? <a href="mailto:'+DEST_EMAIL+'">'+DEST_EMAIL+'</a>';
     window.open3DStore();
   }catch(e){ document.body.classList.remove("viewer-mode"); alert("Lien invalide ou incomplet."); }
