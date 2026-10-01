@@ -544,6 +544,15 @@ const COLORIS={
 };
 const faceLabel=face=>face==="SF"?"simple-face":"double-face";
 const fondsLabel=f=>f==="FL"?"lisses":"perforés";
+// Libellé exact des fonds : seuls les fonds H400 sont perforés (choix FP) ; les H100/H300 sont toujours lisses
+// ex. H1600 : "4 fonds dont 3 perforés" ; H2100 : "5 fonds perforés" ; en lisses : "4 fonds lisses"
+function fondsTxt(g){
+  const rep=FONDS_H[g.h]; const n=(rep[100]||0)+(rep[300]||0)+rep[400];
+  const nP=g.f==="FP"?rep[400]:0;
+  if(nP===0) return n+" fond"+(n>1?"s":"")+" lisse"+(n>1?"s":"");
+  if(nP===n) return n+" fond"+(n>1?"s":"")+" perforé"+(n>1?"s":"");
+  return n+" fonds dont "+nP+" perforé"+(nP>1?"s":"");
+}
 const plinthesParGondole=(face,len)=>(face==="SF"?1:2)*len;
 const chapiteauPossible=(face,h)=>face==="DF"&&h<=1700;
 // Épaisseur (section) du montant selon la hauteur : 60 mm jusqu'à H.2100, 80 mm au-delà
@@ -562,7 +571,7 @@ function tabResume(profs){
 }
 function designationText(g){
   const col=COLORIS[g.color]||COLORIS.blanc;
-  let t=`1 gondole ${faceLabel(g.face)} ${col.label} (${col.ral}) H.${g.h} P.${g.p} L.${g.len}x1000 - Fonds ${fondsLabel(g.f)}`;
+  let t=`1 gondole ${faceLabel(g.face)} ${col.label} (${col.ral}) H.${g.h} P.${g.p} L.${g.len}x1000 - ${fondsTxt(g)}`;
   if(g.plinthes)t+=" - Avec plinthes";
   if(g.chapiteau&&chapiteauPossible(g.face,g.h))t+=" - Avec chapiteaux";
   const rt=tabResume(g.tabProfs); if(rt)t+=" - "+rt;
@@ -833,7 +842,7 @@ function draw(g) {
     `<b>${FACES.find(x => x.code === g.face).label}</b>`,
     `<b>${C.label} — ${C.ral}</b>`,
     `H.${g.h}`, `P.${g.p}`,
-    `fonds ${g.f === "FL" ? "lisses" : "perforés"}`,
+    fondsTxt(g),
     `${g.len}×1000 (1 départ${suites>0 ? ` + ${suites} suite${suites>1?"s":""}` : ""})`
   ];
   if (g.plinthes) parts.push("plinthes");
@@ -1511,7 +1520,7 @@ async function genererDevisPDF(){
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
     const nbInter=nd.nbTab-1;
     const tabTxt = nbInter>0 ? ` + ${nbInter} tablette${nbInter>1?"s":""}` : "";
-    let desc=`Coloris ${col.label} (${col.ral}) · ${nd.nbFonds} fonds ${fondsLabel(g.f)} / base${tabTxt} soit ${nd.niveaux} niveau${nd.niveaux>1?"x":""} de pose`;
+    let desc=`Coloris ${col.label} (${col.ral}) · ${fondsTxt(g)} / base${tabTxt} soit ${nd.niveaux} niveau${nd.niveaux>1?"x":""} de pose`;
     if(g.plinthes)desc+=" · avec plinthes";
     if(g.chapiteau&&chapiteauPossible(g.face,g.h))desc+=" · avec chapiteaux";
     doc.text(desc,M+1,y); y+=3;
@@ -1857,22 +1866,35 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
 
     // fonds : collés au montant, de part et d'autre en DF. Un panneau par travée (1000 mm).
     // Fonds perforés (FP) : matériau à texture de trous ; lisses (FL) : panneau uni.
+    // Composition réelle des fonds (comme le dessin 2D) : du bas vers le haut, le petit fond LISSE
+    // (H300 ou H100) puis les fonds H400, perforés uniquement si le choix est « Perforés ».
     const isPerfo = g.f==="FP";
-    let fondMat=panelMat;
+    const repF=FONDS_H[g.h], hFond=Ht-pietH;
+    const segsF=[];
+    for(let k=0;k<repF[300];k++) segsF.push({mm:300,perfo:false});
+    for(let k=0;k<repF[100];k++) segsF.push({mm:100,perfo:false});
+    for(let k=0;k<repF[400];k++) segsF.push({mm:400,perfo:isPerfo});
+    const totMm=segsF.reduce((a,x)=>a+x.mm,0)||1;
+    let perfoM=null;
     if(isPerfo){
       const t=perfoTexture(C.panel).clone(); t.needsUpdate=true;
       t.wrapS=t.wrapT=THREE.RepeatWrapping;
-      t.repeat.set(3, Math.max(3,Math.round((Ht-pietH)*3.2)));
-      fondMat=new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
+      t.repeat.set(3, 1);                     // 3 motifs en largeur, 1 sur la hauteur d'un fond H400
+      perfoM=new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
     }
     for(let m=0;m<L;m++){
-      const xc=x0+m+0.5;
-      if(isDF){
-        addBox(1,Ht-pietH,fondEp,xc,pietH, mEp/2+fondEp/2, fondMat);
-        addBox(1,Ht-pietH,fondEp,xc,pietH,-(mEp/2+fondEp/2),fondMat);
-      } else {
-        addBox(1,Ht-pietH,fondEp,xc,pietH, zMont+mEp/2+fondEp/2, fondMat);
-      }
+      const xc=x0+m+0.5;                      // un fond par travée (1000 mm)
+      let yb=pietH;
+      segsF.forEach(sg=>{
+        const sh=hFond*sg.mm/totMm, mt=sg.perfo?perfoM:panelMat;
+        if(isDF){
+          addBox(1,sh,fondEp,xc,yb, mEp/2+fondEp/2, mt);
+          addBox(1,sh,fondEp,xc,yb,-(mEp/2+fondEp/2),mt);
+        } else {
+          addBox(1,sh,fondEp,xc,yb, zMont+mEp/2+fondEp/2, mt);
+        }
+        yb+=sh;
+      });
     }
 
     // tablettes : base + niveaux intermédiaires répartis régulièrement sur la hauteur utile.
@@ -2021,7 +2043,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     let u8=b64u.dec(m[2]); if(m[1]==="v") u8=await streamBytes(u8,DecompressionStream);
     document.body.classList.add("viewer-mode");
     chargerProjetTexte(new TextDecoder().decode(u8));
-    document.getElementById("d3Title").innerHTML='<img src="'+LOGO_RSL_JPEG+'" alt="RSL" style="height:30px;vertical-align:middle;margin-right:12px">Votre projet de gondoles en 3D <span style="font-weight:500;color:#55677d;font-size:13.5px">(vous pourrez le faire tourner à 360°)</span>';
+    document.getElementById("d3Title").innerHTML='<img src="'+LOGO_RSL_JPEG+'" alt="RSL" style="height:30px;vertical-align:middle;margin-right:12px">Votre projet de gondoles en 3D <span style="font-weight:500;color:#55677d;font-size:13.5px">(vous pourrez le faire tourner à 360° et zoomer avec la molette)</span>';
     document.querySelector(".d3-hint").innerHTML='Glissez pour tourner à 360° · molette ou pincement pour zoomer · double-clic pour recentrer &nbsp;·&nbsp; Une question ? <a href="mailto:'+DEST_EMAIL+'">'+DEST_EMAIL+'</a>';
     window.open3DStore();
   }catch(e){ document.body.classList.remove("viewer-mode"); alert("Lien invalide ou incomplet."); }
