@@ -574,7 +574,7 @@ const REF_L={
 const COLORIS={
   blanc:{label:"Blanc",ral:"RAL 9001",ink:"#1c2430",base:"#fdf4e3",light:"#fffdf6",mid:"#f6ecd9",dark:"#ece0c8",edge:"#dccfb2",metal:"#efe6d2",metalDk:"#cbbd9f",planFill:"#f6ecd9",planEdge:"#dccfb2",planBand:"#a08a5e",swatch:"#fdf4e3"},
   anthracite:{label:"Anthracite",ral:"RAL 7015",ink:"#ffffff",base:"#484d53",light:"#5c6268",mid:"#3f4247",dark:"#2c2f33",edge:"#23262a",metal:"#565b61",metalDk:"#3a3d42",planFill:"#8b9099",planEdge:"#23262a",planBand:"#31353b",swatch:"#484d53"},
-  noir:{label:"Noir",ral:"RAL 9005",ink:"#ffffff",base:"#26282b",light:"#34363a",mid:"#1f2023",dark:"#151618",edge:"#0b0c0d",metal:"#2f3135",metalDk:"#1a1b1e",planFill:"#7d8188",planEdge:"#0b0c0d",planBand:"#1f2023",swatch:"#1c1d1f"},
+  noir:{label:"Noir",ral:"RAL 9005",ink:"#ffffff",base:"#26282b",light:"#34363a",mid:"#1f2023",dark:"#151618",edge:"#0b0c0d",metal:"#2f3135",metalDk:"#1a1b1e",planFill:"#4a4d52",planEdge:"#0b0c0d",planBand:"#16171a",swatch:"#1c1d1f",planText:"#ffffff",planSub:"#d5d9de"},
   gris:{label:"Gris Alu",ral:"RAL 9006",ink:"#1c2430",base:"#c9ced3",light:"#dfe3e7",mid:"#bcc2c8",dark:"#a3abb2",edge:"#8f979f",metal:"#b3bac1",metalDk:"#949ba2",planFill:"#dfe3e7",planEdge:"#8f979f",planBand:"#7d858d",swatch:"#c9ced3"}
 };
 const faceLabel=face=>face==="SF"?"simple-face":"double-face";
@@ -944,9 +944,9 @@ function drawGondole(g){
   // position du texte : décalé dans une moitié pour ne pas être masqué par le fond central (DF)
   let tx=cx,ty=cy;
   if(isDF){ if(horiz) ty=y+h*0.27; else tx=x+w*0.27; }
-  grp.appendChild(E("text",{x:tx,y:ty-2,"text-anchor":"middle","font-size":13,"font-weight":800,fill:"#1c2430","pointer-events":"none"},rp));
+  grp.appendChild(E("text",{x:tx,y:ty-2,"text-anchor":"middle","font-size":13,"font-weight":800,fill:(!isSel&&col.planText)||"#1c2430","pointer-events":"none"},rp));
   const lbl = isDF ? `H.${g.h} · P.2x${g.p}` : `H.${g.h} · P.${g.p}`;
-  grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:"#55677d","pointer-events":"none"},lbl));
+  grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:(!isSel&&col.planSub)||"#55677d","pointer-events":"none"},lbl));
   return grp;
 }
 function renderPlan(){
@@ -1807,7 +1807,8 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
   const fb=document.getElementById("d3Fallback");
   let renderer,scene,camera,group,rafId,orbit,inited=false,bound=false;
 
-  const RAL3D={ blanc:{panel:0xf2e9d5,metal:0xd9cdb2}, gris:{panel:0xd7dce1,metal:0xb7bdc4}, anthracite:{panel:0x4a4f56,metal:0x565b61}, noir:{panel:0x2a2c30,metal:0x34363b} };
+  // Rendu sans éclairage : chaque pièce garde son RAL exact quel que soit l'angle ; "edge" = liseré des arêtes
+  const RAL3D={ blanc:{panel:0xf2e9d5,metal:0xd9cdb2,edge:0xa89c80}, gris:{panel:0xd7dce1,metal:0xb7bdc4,edge:0x858d95}, anthracite:{panel:0x4a4f56,metal:0x565b61,edge:0x8a9098}, noir:{panel:0x2a2c30,metal:0x34363b,edge:0x6a6e75} };
 
   function ensureInit(){
     if(inited) return true;
@@ -1817,14 +1818,9 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
       camera=new THREE.PerspectiveCamera(45,1,0.1,200);
       renderer=new THREE.WebGLRenderer({antialias:true});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-      renderer.shadowMap.enabled=true;
       stageEl.appendChild(renderer.domElement);
-      scene.add(new THREE.HemisphereLight(0xffffff,0x9099a5,0.9));
-      const dir=new THREE.DirectionalLight(0xffffff,0.7); dir.position.set(6,10,7); dir.castShadow=true;
-      dir.shadow.mapSize.set(2048,2048); const s=20; dir.shadow.camera.left=-s;dir.shadow.camera.right=s;dir.shadow.camera.top=s;dir.shadow.camera.bottom=-s;
-      scene.add(dir);
-      const floor=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshStandardMaterial({color:0xe7ecf1,roughness:1}));
-      floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+      const floor=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshBasicMaterial({color:0xe7ecf1}));
+      floor.rotation.x=-Math.PI/2; scene.add(floor);
       scene.add(new THREE.GridHelper(120,120,0xcdd6df,0xe6ebef));
       orbit={target:new THREE.Vector3(0,1,0),radius:8,theta:Math.PI*0.25,phi:Math.PI*0.38,min:1.5,max:80};
       bindControls();
@@ -1845,7 +1841,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
     el.addEventListener("wheel",e=>{e.preventDefault();orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*(e.deltaY<0?0.9:1.1)));applyCam();},{passive:false});
     el.addEventListener("dblclick",()=>frameScene());
   }
-  function mat(hex,r){ return new THREE.MeshStandardMaterial({color:hex,roughness:r==null?0.75:r,metalness:0.05}); }
+  function mat(hex){ return new THREE.MeshBasicMaterial({color:hex}); }
   // Texture de perforations (générée une fois par couleur) : grille de trous sombres
   const perfoTexCache={};
   function perfoTexture(hex){
@@ -1872,14 +1868,14 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
   }
   function perfoMat(hex){
     const t=perfoTexture(hex);
-    return new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
+    return new THREE.MeshBasicMaterial({map:t});
   }
   function boxAt(w,h,d,x,y,z,material){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material); m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true; group.add(m); }
 
   // construit UNE gondole dans le groupe, centrée à (cx,cz) au sol, orientée par rot (0/90/180/270)
   function buildGondole(g,cx,cz){
     const C=RAL3D[g.color]||RAL3D.blanc;
-    const panelMat=mat(C.panel,0.85), metalMat=mat(C.metal,0.5);
+    const panelMat=mat(C.panel), metalMat=mat(C.metal), edgeMat=new THREE.LineBasicMaterial({color:C.edge});
     const tw=(g.m||1000)/1000;              // longueur d'une travée (m)
     const L=g.len*tw, Ht=g.h/1000, D=g.p/1000, isDF=g.face==="DF";
     const mEp=montantEp(g.h)/1000;          // PROFONDEUR du montant (0.06 ou 0.08) — sens de la profondeur
@@ -1923,7 +1919,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
       const t=perfoTexture(C.panel).clone(); t.needsUpdate=true;
       t.wrapS=t.wrapT=THREE.RepeatWrapping;
       t.repeat.set(3*tw, 1);                  // 3 motifs par mètre de largeur, 1 sur la hauteur d'un fond H400
-      perfoM=new THREE.MeshStandardMaterial({map:t,roughness:0.8,metalness:0.05});
+      perfoM=new THREE.MeshBasicMaterial({map:t});
     }
     for(let m=0;m<g.len;m++){
       const xc=x0+(m+0.5)*tw;                      // un fond par travée (longueur de travée)
@@ -1984,10 +1980,11 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
       // dimensions après rotation 90/270 : on échange w<->d
       let w=it.w,d=it.d,x=it.x,z=it.z;
       const rx=x*cosr - z*sinr, rz=x*sinr + z*cosr;
-      const m=new THREE.Mesh(new THREE.BoxGeometry(it.w,it.h,it.d),it.m);
-      m.geometry.rotateY(rot);
+      const geo=new THREE.BoxGeometry(it.w,it.h,it.d); geo.rotateY(rot);
+      const m=new THREE.Mesh(geo,it.m);
       m.position.set(cx+rx, it.y+it.h/2, cz+rz);
-      m.castShadow=true; m.receiveShadow=true; group.add(m);
+      m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat));   // arêtes visibles sans ombrage
+      group.add(m);
     });
   }
 
@@ -2062,7 +2059,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
     if(!ensureInit()) return null;
     const W=1000,H=620;
     const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
-    r.setPixelRatio(1); r.setSize(W,H); r.shadowMap.enabled=true;
+    r.setPixelRatio(1); r.setSize(W,H);
     camera.aspect=W/H; camera.updateProjectionMatrix();
     buildOne({...g,rot:0});
     r.render(scene,camera);
