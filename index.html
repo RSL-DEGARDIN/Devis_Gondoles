@@ -1841,7 +1841,10 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
     el.addEventListener("wheel",e=>{e.preventDefault();orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*(e.deltaY<0?0.9:1.1)));applyCam();},{passive:false});
     el.addEventListener("dblclick",()=>frameScene());
   }
-  function mat(hex){ return new THREE.MeshBasicMaterial({color:hex}); }
+  // polygonOffset : les faces sont légèrement reculées pour que les liserés posés sur une autre pièce
+  // (ex. arrière de tablette contre le fond) restent visibles au lieu d'être masqués par la face
+  const FACE_OFFSET={polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1};
+  function mat(hex){ return new THREE.MeshBasicMaterial({color:hex,...FACE_OFFSET}); }
   // Texture de perforations (générée une fois par couleur) : grille de trous sombres
   const perfoTexCache={};
   function perfoTexture(hex){
@@ -1868,7 +1871,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
   }
   function perfoMat(hex){
     const t=perfoTexture(hex);
-    return new THREE.MeshBasicMaterial({map:t});
+    return new THREE.MeshBasicMaterial({map:t,...FACE_OFFSET});
   }
   function boxAt(w,h,d,x,y,z,material){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material); m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true; group.add(m); }
 
@@ -1919,7 +1922,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
       const t=perfoTexture(C.panel).clone(); t.needsUpdate=true;
       t.wrapS=t.wrapT=THREE.RepeatWrapping;
       t.repeat.set(3*tw, 1);                  // 3 motifs par mètre de largeur, 1 sur la hauteur d'un fond H400
-      perfoM=new THREE.MeshBasicMaterial({map:t});
+      perfoM=new THREE.MeshBasicMaterial({map:t,...FACE_OFFSET});
     }
     for(let m=0;m<g.len;m++){
       const xc=x0+(m+0.5)*tw;                      // un fond par travée (longueur de travée)
