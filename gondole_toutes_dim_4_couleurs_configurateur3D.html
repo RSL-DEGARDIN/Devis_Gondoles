@@ -491,6 +491,7 @@
   <span class="sp"></span>
   <button type="button" class="pb" id="btnPdf">⭳ Devis PDF</button>
   <button type="button" class="pb" id="btnCopy">⊞ Copier ma demande</button>
+  <button type="button" class="pb" id="btnTxt" title="Export .txt pour import dans le logiciel de gestion">⭳ Export .txt</button>
   <a href="#" class="pb pb-primary" id="btnEmail">✉ Envoyer ma demande</a>
 </div>
 <input type="text" id="shareUrl" class="share-url" readonly onclick="this.select()" style="max-width:var(--work-w);margin:-10px auto 12px;width:100%">
@@ -583,6 +584,7 @@
         <tbody id="bomBody"></tbody>
       </table>
       <button type="button" class="btn-copy" id="btnCopyBom" style="margin-top:14px">⊞ Copier la nomenclature pour Excel</button>
+      <button type="button" class="btn-copy" id="btnTxt2" style="margin-top:14px">⭳ Export .txt (import gestion)</button>
     </details>
   </div>
 
@@ -847,7 +849,7 @@ const REF_L={
     fond:{100:["241","Fond lisse 1250x100"],300:["243","Fond lisse 1250x300"],400:["244","Fond lisse 1250x400"]},
     perfo:["6310","Panneau perforé 1250x400 RL"],
     tablette:{300:["2641","Tablette 1250x300"],370:["347","Tablette 1250x370"],470:["5906","Tablette 1250x470"],570:["5907","Tablette 1250x570"],670:["5908","Tablette 1250x670"]},
-    pe:["5610","Porte-étiquettes scanning L1250 H40 jaune"],
+    pe:["5610","Porte-étiquettes scanning L1250 H40 - transparent"],
     plinthe:["294","Plinthe 1250x160"],
     chapiteau:["202","Chapiteau 1250x80 (col.60)"]
   },
@@ -966,7 +968,7 @@ const REF_COL={
 };
 const PE_TRANSP=["S5738D","Porte-étiquettes scanning L1000 H40 - transparent"]; // S5738 (blanc) = RAL 9001 uniquement
 function colRef(color,ref){ if(!ref)return ref; if(ref[0]==="S5738"&&color&&color!=="blanc")return PE_TRANSP;
-  if(color==="blanc"){ return /^S595[89]$/.test(ref[0])?ref:[ref[0],ref[1].replace(/ - Blanc$/,"")+" - Blanc Crème"]; }
+  if(color==="blanc"){ return (/^S595[89]$/.test(ref[0])||/transparent/i.test(ref[1]))?ref:[ref[0],ref[1].replace(/ - Blanc$/,"")+" - Blanc Crème"]; }
   const r=((REF_COL[color]||{})[ref[0]])||ref; let d=r[1];
   if(color==="gris")d=d.replace(/ - (Gris )?RAL 9006/," - Gris Alu"); else if(color==="anthracite")d=d.replace(/ - (Gris )?RAL 7015/," - Gris Anthracite");
   else if(color==="noir"&&!/^S595[89]$/.test(r[0]))d=d.replace(/ - Blanc$/,"")+" - Noir"; // noir : pas de code dédié, on précise la couleur
@@ -977,7 +979,7 @@ function buildBomForGondole(g){
   const ral=(COLORIS[g.color]||COLORIS.blanc).ral;
   const iP=p=>PROFONDEURS.indexOf(Number(p));
   // o = rang d'affichage (montants, piétements, fixations, fonds, tablettes, consoles, porte-étiquettes, plinthes, chapiteaux)
-  const add=(ref,qty,o,ralForce)=>{ if(!ref||qty<=0)return; ref=colRef(g.color,ref); const rr=ref===PE_TRANSP?"Transparent":(ralForce||ral); const code=ref[0]||"à définir"; const key=code+"|"+ref[1]+"|"+rr; const c=map.get(key)||{code,des:ref[1],ral:rr,qty:0,o}; c.qty+=qty; map.set(key,c); };
+  const add=(ref,qty,o,ralForce)=>{ if(!ref||qty<=0)return; ref=colRef(g.color,ref); const rr=/transparent/i.test(ref[1])?"Transparent":(ralForce||ral); const code=ref[0]||"à définir"; const key=code+"|"+ref[1]+"|"+rr; const c=map.get(key)||{code,des:ref[1],ral:rr,qty:0,o}; c.qty+=qty; map.set(key,c); };
   const df=g.face==="DF"?2:1;
   const nbMontants=g.len+1;
   add(REF.montant[g.h],nbMontants,100+HAUTEURS.indexOf(g.h));
@@ -1795,6 +1797,21 @@ document.getElementById("btnCopyBom").addEventListener("click",()=>{
   } else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(fb);} else fb();
 });
 
+
+// Export .txt (modèle DE20605) : tabulations, CRLF, décimales virgule, ANSI (Windows-1252). Prix/remise/poids laissés vides (pas de tarif dans l'outil).
+function exportTxtDevis(){
+  if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
+  const no=prompt("N° de devis (ex. DE20605) :",window._noDevis||"DE"); if(no===null)return; window._noDevis=no.trim();
+  const cl=prompt("N° de client (facultatif) :",window._noClient||""); if(cl===null)return; window._noClient=cl.trim();
+  const d=new Date(),p2=n=>String(n).padStart(2,"0"),date=p2(d.getDate())+p2(d.getMonth()+1)+p2(d.getFullYear()%100);
+  const head=["devis","no devis","reference","designation","quantité","achat","vide","prix tarif","remise","vide","poids (gr)","taxe1","taxe2","depot","date","client","poids total (gr)"];
+  const rows=[head].concat(buildBom().map(it=>["0",window._noDevis,it.code,it.des,it.qty,"0","","","","","","2","","RSL HEILLECOURT ",date,window._noClient,""]));
+  const txt=rows.map(r=>r.join("\t")).join("\r\n")+"\r\n";
+  const u=new Uint8Array(txt.length); for(let i=0;i<txt.length;i++){const c=txt.charCodeAt(i);u[i]=c<256?c:(c===8364?128:63);}
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([u],{type:"text/plain"})); a.download=(window._noDevis||"devis")+".txt";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+["btnTxt","btnTxt2"].forEach(id=>{const e=document.getElementById(id); if(e)e.addEventListener("click",exportTxtDevis);});
 document.getElementById("btnEmail").addEventListener("click",e=>{
   e.preventDefault();
   if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;}
@@ -1997,7 +2014,19 @@ async function genererDevisPDF(){
   });
 
   // -- Dernière page : plan d'implantation 2D complet (mode plan uniquement) --
-  if(!document.body.classList.contains("mode-list")){
+  { // page 3D pleine page
+    let j3=null; try{ j3=window.cfg3dPageJpeg?window.cfg3dPageJpeg(1100,1500):null; }catch(_){}
+    if(j3){
+      doc.addPage(); y=16;
+      doc.setDrawColor(...accent); doc.setLineWidth(0.5); doc.line(M,y,PW-M,y); doc.setLineWidth(0.2); y+=6;
+      doc.setTextColor(...ink); doc.setFont("helvetica","bold"); doc.setFontSize(13);
+      doc.text("Vue 3D de votre projet",M,y); y+=4;
+      const availW=PW-2*M, availH=282-y-2; let ih=availH, iw=ih*1100/1500; if(iw>availW){ iw=availW; ih=iw*1500/1100; }
+      const ix=(PW-iw)/2; doc.setDrawColor(224,229,234); doc.rect(ix-0.3,y-0.3,iw+0.6,ih+0.6);
+      doc.addImage(j3,"JPEG",ix,y,iw,ih);
+    }
+  }
+  {
     const pl=await planPng2D();
     if(pl){
       doc.addPage(); y=16;
@@ -3159,6 +3188,22 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   };
   $("modeCfg").addEventListener("click",open);
   $("chooseCfg").addEventListener("click",()=>{ startWith("plan"); open(); });
+  // capture du projet entier (vue réaliste) en JPEG portrait, pour le PDF
+  window.cfg3dPageJpeg=function(W,H){
+    if(!init()) return null;
+    const sv={t:orbit.theta,p:orbit.phi,r:orbit.radius,tg:orbit.target.clone(),asp:camera.aspect,sel:selId,bay:selBay,seg:selSeg,sz:renderer.getSize(new THREE.Vector2()),lab:S.labels};
+    try{
+      selId=null; selBay=selSeg=null; S.labels=false;
+      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(); orbit.radius*=0.9; applyCam();
+      renderer.render(scene,camera); return renderer.domElement.toDataURL("image/jpeg",0.9);
+    }catch(e){ return null; }
+    finally{
+      selId=sv.sel; selBay=sv.bay; selSeg=sv.seg; S.labels=sv.lab;
+      orbit.theta=sv.t; orbit.phi=sv.p; orbit.radius=sv.r; orbit.target.copy(sv.tg);
+      renderer.setSize(sv.sz.x,sv.sz.y,false); camera.aspect=sv.asp; camera.updateProjectionMatrix(); applyCam();
+      if(root.classList.contains("open")){ build(); updateOutline(); resize(); }
+    }
+  };
   window.cfg3d={S,orbit,applyCam,THREE,get gg(){return ggById;},get cam(){return camera;},get sel(){return {selBay,selSeg};}};
   window.cfg3dState=S;                                   // pilotage pour les tests
 })();
