@@ -17,7 +17,7 @@
   .topnav .brand-logo{height:48px;width:auto;display:block;mix-blend-mode:multiply;}
   .topnav .nav-btn{padding:11px 22px;border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:700;background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(230,63,30,.3);}
   .topnav .nav-btn:hover{background:var(--accent-dark);}
-  .topnav .nav-btn-back{margin-left:auto;background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none;}
+  .topnav .nav-btn-back{background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none;}
   .topnav .nav-btn-back:hover{background:#fdece7;}
   header{max-width:var(--work-w);margin:0 auto 4px;}
   .eyebrow{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;}
@@ -50,6 +50,13 @@
   .choice-t{font-size:16px;font-weight:800;color:var(--steel-900);}
   .choice-d{font-size:12.5px;color:var(--steel-500);line-height:1.5;}
   /* bascule de mode */
+  .page-bar{max-width:var(--work-w);margin:0 auto 18px;display:flex;align-items:center;gap:2px;background:#3c4045;color:#fff;padding:0 8px;min-height:44px;border-radius:6px;flex-wrap:wrap;}
+  .page-bar .sp{flex:1;}
+  .page-bar .pb{background:none;border:0;color:#fff;font:600 13px "Segoe UI",system-ui,-apple-system,sans-serif;height:44px;padding:0 12px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;text-decoration:none;border-radius:0;}
+  .page-bar .pb:hover{background:#4d5258;}
+  .page-bar .pb.done{color:#8fe3a8;}
+  .page-bar .pb-primary{background:#fff;color:#1c2430;height:30px;border-radius:3px;padding:0 14px;margin-left:6px;}
+  .page-bar .pb-primary:hover{background:#e8f4fb;}
   .mode-bar{max-width:var(--work-w);margin:0 auto 18px;}
   .mode-switch{display:inline-flex;gap:0;border:1.5px solid var(--steel-100);border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;}
   .mode-switch button{padding:10px 18px;border:none;background:#fff;font-size:13.5px;font-weight:700;color:var(--steel-500);cursor:pointer;font-family:inherit;}
@@ -110,7 +117,7 @@
   @media (min-width:981px){
     /* la zone de travail est calée à gauche et laisse en permanence la place au configurateur */
     :root{--work-w:min(1360px, calc(100vw - 440px));}
-    .topnav,header,.mode-bar,.app,.wide{margin-left:24px;margin-right:auto;}
+    .topnav,header,.mode-bar,.page-bar,.share-url,.app,.wide{margin-left:24px;margin-right:auto;}
     .det-modal{background:transparent;pointer-events:none;justify-content:flex-end;align-items:flex-start;padding:0;}
     .det-modal.open{display:flex;}
     .det-inner{pointer-events:auto;width:390px;max-height:calc(100vh - 24px);margin:12px 12px 0 0;border-radius:12px;box-shadow:0 12px 40px rgba(28,36,48,.26);border:1px solid var(--steel-100);position:sticky;top:12px;}
@@ -285,6 +292,30 @@
   .welcome-choices.c3{grid-template-columns:repeat(3,1fr);}
   @media (max-width:760px){.welcome-choices.c3{grid-template-columns:1fr;}}
   .mode-switch button.cfg-entry{color:var(--accent);}
+  .topnav .mode-switch{margin:0 0 0 auto;display:inline-flex;border:1.5px solid #1593d1;border-radius:10px;overflow:hidden;background:#fff;}
+  .topnav .mode-switch button{border:0;background:#fff;color:#1593d1;font:800 16px "Segoe UI",system-ui,sans-serif;padding:9px 26px;cursor:pointer;}
+  .topnav .mode-switch button:not(.active):hover{background:#e8f4fb;}
+  .topnav .mode-switch button.active{background:#1593d1;color:#fff;}
+  .topnav .mode-switch button.cfg-entry{color:#1593d1;} .topnav .mode-switch button.cfg-entry.active{color:#fff;}
+  .cfg-modes{display:inline-flex;border:1.5px solid var(--cb);border-radius:10px;overflow:hidden;}
+  .cfg-modes button{border:0;background:#fff;color:var(--cb);font:800 16px "Segoe UI",system-ui,sans-serif;padding:9px 26px;cursor:pointer;}
+  .cfg-modes button:hover{background:#e8f4fb;} .cfg-modes button.on{background:var(--cb);color:#fff;}
+  #cfg.viewer .cfg-modes{display:none;}
+  .cfg-back{display:none!important;}
+  body:not(.cfg-open) #scopeBox,body:not(.cfg-open) #hkBox{display:none;}
+  #scopeBox{background:#fdf1ee;border:1.5px solid #f3c9bd;border-radius:9px;padding:10px 12px;}
+  #scopeBox .chk{font-weight:700;color:var(--steel-900);font-size:13.5px;text-transform:none;letter-spacing:0;margin:0;}
+  .scope-info{margin-top:6px;font-size:12px;line-height:1.45;color:var(--steel-500);display:flex;gap:8px;align-items:flex-start;}
+  .scope-info span{flex:1;} .scope-info button{border:1.5px solid var(--steel-100);background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;color:var(--steel-700);}
+  .scope-info button:hover{border-color:var(--accent);color:var(--accent);}
+  .o-sel{width:100%;padding:9px 8px;border:1.5px solid var(--steel-100);border-radius:7px;font:600 13px inherit;font-family:inherit;background:#fff;color:var(--steel-700);}
+  #cfgPanel .det-inner{width:100%;max-height:none;margin:0;border:0;border-radius:0;box-shadow:none;position:static;overflow:visible;}
+  #cfgPanel .det-view-btn,#cfgPanel .det-ok,#cfgPanel .det-close,#cfgPanel .det-sep,#cfgPanel details.preview,#cfgPanel .btn-3d-full{display:none!important;}
+  #cfgPanel .det-body{overflow:visible;padding:14px 4px 0;}
+  #cfgPanel .det-head{padding:6px 0 10px;} #cfgPanel .det-actions{padding:10px 0;margin-bottom:0;}
+  #cpAdd2{width:100%;margin:0 0 12px;}
+  .cfg-main{grid-template-columns:minmax(0,1fr) 410px!important;}
+  @media (max-width:900px){.cfg-main{grid-template-columns:1fr!important;}}
   #cfg{--cb:#1593d1;--cbd:#0f7ab1;display:none;position:fixed;inset:0;z-index:1500;flex-direction:column;background:#fff;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;color:#1c2430;}
   #cfg.open{display:flex;}
   .cfg-top{display:flex;align-items:center;gap:18px;padding:6px 20px;border-bottom:3px solid var(--cb);background:#fff;flex:0 0 auto;}
@@ -414,7 +445,7 @@
 <script>if(/^#[vj]=/.test(location.hash))document.body.classList.add("viewer-mode");</script>
 
 <!-- ÉCRAN D'ACCUEIL : choix du mode -->
-<div class="welcome" id="welcome">
+<div class="welcome hidden" id="welcome">
   <div class="welcome-box">
     <div class="eyebrow">Rayonnages Services Lorraine</div>
     <h2>Comment souhaitez-vous composer votre demande&nbsp;?</h2>
@@ -446,18 +477,29 @@
   </a>
   <a class="nav-btn" href="https://rsl.eu/demande-de-devis/" target="_blank" rel="noopener">Devis par produits</a>
   <a class="nav-btn nav-btn-back" href="https://rayonnages.eu/gondoles/">← Retour au site</a>
+  <div class="mode-switch">
+    <button id="modeList" type="button">☰ Liste</button>
+    <button id="modePlan" type="button">▦ 2D</button>
+    <button id="modeCfg" type="button" class="cfg-entry">◈ 3D</button>
+  </div>
 </nav>
 
+<div class="page-bar" id="pageBar">
+  <button type="button" class="pb" id="btnSave">💾 Enregistrer</button>
+  <button type="button" class="pb" id="btnOpen">📂 Ouvrir</button>
+  <button type="button" class="pb" id="btnShare" title="Copier un lien pour que le client voie son projet en 3D">🔗 Lien 3D</button>
+  <span class="sp"></span>
+  <button type="button" class="pb" id="btnPdf">⭳ Devis PDF</button>
+  <button type="button" class="pb" id="btnCopy">⊞ Copier ma demande</button>
+  <a href="#" class="pb pb-primary" id="btnEmail">✉ Envoyer ma demande</a>
+</div>
+<input type="text" id="shareUrl" class="share-url" readonly onclick="this.select()" style="max-width:var(--work-w);margin:-10px auto 12px;width:100%">
 <header>
   <div class="eyebrow">Rayonnages Services Lorraine</div>
   <h1>Configurateur &amp; plan d'implantation <span>· gondoles</span></h1>
 </header>
 <div class="mode-bar">
-  <div class="mode-switch">
-    <button id="modeList" type="button">☰ Liste simple</button>
-    <button id="modePlan" type="button">▦ Plan d'implantation</button>
-    <button id="modeCfg" type="button" class="cfg-entry">◈ Configurateur 3D</button>
-  </div>
+
   <p class="intro" id="introTxt"></p>
 </div>
 
@@ -477,8 +519,6 @@
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
       <div class="sep"></div>
       <div class="grp"><button id="btnAdd" class="btn-add-plan">+ Ajouter une gondole</button></div>
-      <div class="sep"></div>
-      <div class="grp"><button id="btn3DPlan" class="btn-3d"><span class="cube3d">3D</span> Magasin</button></div>
       <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom</span>
     </div>
     <div class="plan-caption">Cliquez sur une gondole pour la sélectionner et la modifier</div>
@@ -526,16 +566,7 @@
       <div class="form-field"><label for="cTel">Téléphone</label><input type="tel" id="cTel" placeholder="Facultatif"></div>
       <div class="form-field full"><label for="cMsg">Message (facultatif)</label><textarea id="cMsg" placeholder="Précisions, délai, lieu de livraison…"></textarea></div>
     </div>
-    <div class="send-actions">
-      <a href="#" class="btn-send" id="btnEmail">✉ Envoyer ma demande par email</a>
-      <button type="button" class="btn-copy" id="btnPdf">⭳ Télécharger le devis (PDF)</button>
-      <button type="button" class="btn-copy" id="btnCopy">Copier ma demande</button>
-    </div>
     <div class="save-box">
-      <button type="button" class="btn-copy" id="btnSave">💾 Enregistrer le projet</button>
-      <button type="button" class="btn-copy" id="btnOpen">📂 Ouvrir un projet enregistré</button>
-      <button type="button" class="btn-copy" id="btnShare">🔗 Lien de visualisation 3D</button>
-      <input type="text" id="shareUrl" class="share-url" readonly onclick="this.select()">
       <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
       <p class="save-hint">Le projet (gondoles, plan, coordonnées) est enregistré dans un petit fichier .json, dans le dossier de votre choix. Rouvrez-le un autre jour pour tout retrouver et continuer à modifier. Le lien 3D permet au client de visualiser et faire tourner son projet (sans ses coordonnées).</p>
     </div>
@@ -586,6 +617,7 @@
     <div class="det-body">
       <div id="selForm">
         <div class="field"><label>Type</label><div class="seg" id="dFace"></div></div>
+        <div class="field" id="scopeBox"><label class="chk"><input type="checkbox" id="fScope" checked><span id="fScopeTxt">Modifier tout le linéaire</span></label><div class="scope-info"><span id="fSelInfo"></span><button type="button" id="fBayPrev" title="Travée précédente">◀</button><button type="button" id="fBayNext" title="Travée suivante">▶</button></div></div>
         <div class="field"><label>Longueur de travée (mm)</label><div class="seg g4" id="dM"></div></div>
         <div class="field"><label>Nombre de travées</label>
           <div class="len-ctrl"><button id="lenM">−</button><input type="number" id="lenI" min="1" max="30" value="4"><button id="lenP">+</button><span class="u" id="lenU"></span></div>
@@ -596,6 +628,7 @@
         <div class="field"><label>Hauteur (mm)</label><div class="seg g4" id="dH"></div></div>
         <div class="field"><label>Profondeur (mm)</label><div class="seg g5" id="dP"></div></div>
         <div class="field"><label>Fonds</label><div class="seg g3" id="dF"></div></div>
+        <div class="field" id="hkBox"><label>Crochets <small id="hkU" style="text-transform:none;letter-spacing:0"></small></label><div id="hkHint" class="hint2"><span></span></div><div id="hkCtl"><select id="hkT" class="o-sel"></select><select id="hkL" class="o-sel" style="margin-top:6px"></select><div class="len-ctrl" style="margin-top:8px"><span class="u">par rangée</span><input type="number" id="hkN" min="1" max="40"><span class="u">rangées</span><input type="number" id="hkR" min="1" max="6"></div></div></div>
         <div class="field"><label>Coloris de cette gondole</label><div class="swatches" id="dSwatches"></div></div>
         <div class="field"><label class="chk"><input type="checkbox" id="dPlinthe"><span>Avec plinthes <small id="plintheInfo" style="color:var(--steel-500);font-weight:400"></small></span></label></div>
         <div class="field" id="dChapField"><label class="chk"><input type="checkbox" id="dChap"><span>Avec chapiteaux <small id="chapInfo" style="color:var(--steel-500);font-weight:400"></small></span></label></div>
@@ -647,7 +680,8 @@
     <img src="https://cdn.prod.website-files.com/6a04d6f83bbb1b36119340c1/6a5dc3bfd035020513cb90ac_RSL%20logo.jpg" alt="RSL">
     <span class="t"><b>Configurateur</b> de gondoles</span>
     <span class="sp"></span>
-    <button type="button" class="cfg-back" id="cfgBack">← Retour au plan et à la demande</button>
+    <div class="cfg-modes"><button type="button" id="cfgGoList">☰ Liste</button><button type="button" id="cfgGo2D">▦ 2D</button><button type="button" class="on" id="cfgGo3D">◈ 3D</button></div>
+    <button type="button" class="cfg-back" id="cfgBack">← Retour</button>
   </div>
   <div class="cfg-bar">
     <button type="button" class="cb" id="cfgNew"><span class="ico">▤</span>nouvelle implantation</button>
@@ -684,9 +718,10 @@
     <button type="button" class="cb" id="cfgLight" title="Allumer / éteindre la lumière (ombres)"><span class="ico">💡</span><span id="cfgLightTxt">Lumière</span></button>
     <span class="sp"></span>
     <button type="button" class="cb" id="cfgShare" title="Copier un lien pour que le client voie sa gondole en 3D"><span class="ico">🔗</span>Lien 3D</button>
-    <button type="button" class="cb" id="cfgLoad"><span class="ico">📂</span>Charger</button>
-    <button type="button" class="cb" id="cfgSave"><span class="ico">💾</span>Sauvegarder</button>
-    <button type="button" class="cb cb-primary" id="cfgDevis"><span class="ico">✉</span>Demander un devis</button>
+    <button type="button" class="cb" id="cfgLoad"><span class="ico">📂</span>Ouvrir</button>
+    <button type="button" class="cb" id="cfgSave"><span class="ico">💾</span>Enregistrer</button>
+    <button type="button" class="cb" id="cfgPdf"><span class="ico">⭳</span>Devis PDF</button>
+    <button type="button" class="cb cb-primary" id="cfgDevis"><span class="ico">✉</span>Envoyer ma demande</button>
   </div>
   <div class="cfg-main">
     <div class="cfg-stage" id="cfgStage">
@@ -697,6 +732,8 @@
       <div class="cfg-hint">Glisser : tourner · Clic droit : déplacer · Molette : zoom · Clic : sélectionner</div>
     </div>
     <aside class="cfg-panel" id="cfgPanel">
+      <div id="cpHost"><button type="button" class="btn-add-list" id="cpAdd2">＋ Ajouter une gondole</button><div id="cpEmpty2" class="cp-empty" style="display:none">Aucune gondole sélectionnée : cliquez sur une gondole dans la vue 3D, ou ajoutez-en une.</div></div>
+      <div id="cpOld" style="display:none">
       <div class="cp-title"><b>Gondole</b> <span id="cpSub"></span></div>
       <div class="cp-tabs"><button type="button" id="tabApercu">aperçu</button><button type="button" id="tabGond" class="on">Gondole</button></div>
 
@@ -711,10 +748,6 @@
             <div><span class="cp-l">type</span><div class="cp-sel"><select id="fFace"></select></div></div>
             <div><span class="cp-l">hauteur du montant</span><div class="cp-sel"><select id="fH"></select></div></div>
           </div>
-          <div class="cp-scope">
-            <label class="cp-chk"><input type="checkbox" id="fScope" checked> <span id="fScopeTxt">Modifier tout le linéaire</span></label>
-            <div class="cp-info"><span id="fSelInfo"></span><button type="button" id="fBayPrev" title="Travée précédente">◀</button><button type="button" id="fBayNext" title="Travée suivante">▶</button></div>
-          </div>
           <div class="cp-row">
             <div><span class="cp-l">profondeur</span><div class="cp-sel"><select id="fP"></select></div></div>
             <div><span class="cp-l">longueur de travée</span><div class="cp-sel"><select id="fM"></select></div></div>
@@ -722,14 +755,6 @@
           <span class="cp-l">fonds <small id="fFonU" style="font-weight:400;color:#6b7788"></small></span>
           <div class="cp-sel"><select id="fF"></select></div>
 
-          <div id="hkBox">
-            <span class="cp-l">crochets <small id="hkU" style="font-weight:400;color:#6b7788"></small></span>
-            <div id="hkHint" class="cp-info"><span></span></div>
-            <div id="hkCtl">
-              <div class="cp-row"><div class="cp-sel"><select id="hkT"></select></div><div class="cp-sel"><select id="hkL"></select></div></div>
-              <div class="cp-row" style="margin-top:8px"><div><span class="cp-l" style="margin:0 0 3px">par rangée</span><input type="number" class="cp-num" id="hkN" min="1" max="40"></div><div><span class="cp-l" style="margin:0 0 3px">rangées</span><input type="number" class="cp-num" id="hkR" min="1" max="6"></div></div>
-            </div>
-          </div>
           <span class="cp-l">nombre de travées</span>
           <div class="cp-step"><button type="button" id="fLenM">−</button><input type="number" id="fLen" min="1" max="30"><button type="button" id="fLenP">+</button><span class="u" id="fLenU"></span></div>
 
@@ -760,6 +785,7 @@
         <table class="cp-bom"><thead><tr><th>Réf.</th><th>Désignation</th><th>Qté</th></tr></thead><tbody id="rBom"></tbody></table>
         <button type="button" class="cp-btn" id="rCopy">⊞ Copier la nomenclature pour Excel</button>
         <button type="button" class="cp-btn fill" id="rDevis">✉ Passer à la demande de devis</button>
+      </div>
       </div>
     </aside>
   </div>
@@ -912,13 +938,45 @@ function designationText(g){
   return t;
 }
 
+
+// Références par coloris (liste fournie) : code de base -> [code, désignation]. Non listé = code de base conservé.
+const REF_COL={
+ gris:{
+  S4248D:["S4248D-88","Chapiteau 1000x80 (col.60) - Gris RAL 9006"],S4273D:["S4273D-9006","Montant 1200x60x30 - Gris RAL 9006"],
+  S4274D:["S4274D-9006","Montant 1400x60x30 - RAL 9006"],S4275D:["S4275M-9006","Montant 1600x60x30 - RAL 9006"],
+  S4276D:["S4276D-9006","Montant 1800x60x30 - RAL 9006"],S4277D:["S4277D-9006","Montant 2100x60x30 - RAL 9006"],
+  S1642D:["S1642D-9006","Montant 2500x80x30 - RAL 9006"],S4283D:["S4283-88","Piétement 470x160 - RAL 9006"],
+  S4284D:["S4284D-9006","Piétement 570x160 - RAL 9006"],S4286D:["S4724D-88","Plinthe 1000x160 - Gris RAL 9006"],
+  S4267D:["S4267D-88","Fond lisse 1000x100 - Gris RAL 9006"],S4269D:["S4269M-9006","Fond lisse 1000x300 - Gris RAL 9006"],
+  S4270D:["S4270D-9006","Fond lisse 1000x400 - Gris RAL 9006"],S4281D:["S4281-88","Panneau perforé 1000x400 RL - RAL 9006"],
+  S4290D:["S4290-88","Tablette 1000x370 - RAL 9006"],S4291D:["S4291-88","Tablette 1000x470 - RAL 9006"],
+  S4292D:["S4292D-9006","Tablette 1000x570 - RAL 9006"],S4253D:["S4253-88","Console 370 - 2C (la paire) - RAL 9006"],
+  S4254D:["S4254-88","Console 470 - 2C (la paire) - RAL 9006"]},
+ anthracite:{
+  S4273D:["S4273D-7015","Montant 1200x60x30 - Gris RAL 7015"],S4274D:["S4274D-7015","Montant 1400x60x30 - Gris RAL 7015"],
+  S4275D:["S4275D-7015","Montant 1600x60x30 - RAL 7015"],S4276D:["S4276D-7015","Montant 1800x60x30 - RAL 7015"],
+  S4277D:["S4277D-7015","Montant 2100x60x30 - Gris RAL 7015"],S4282D:["S4282D-7015","Piétement 370x160 - RAL 7015"],
+  S4283D:["S4283D-7015","Piétement 470x160 - Gris RAL 7015"],S4284D:["S4284D-7015","Piétement 570x160 - Gris RAL 7015"],
+  S4286D:["S4724D-7015","Plinthe 1000x160 - Gris RAL 7015"],S4267D:["S4267D-7015","Fond lisse 1000x100 - Gris RAL 7015"],
+  S4269D:["S4269D-7015","Fond lisse 1000x300 - Gris RAL 7015"],S4270D:["S4270D-7015","Fond lisse 1000x400 GL - Gris RAL 7015"],
+  S4281D:["S4281D-7015","Panneau perforé 1000x400 RL - Gris RAL 7015"],S4248D:["S4248D-7015","Chapiteau 1000x80 (col.60) - Gris RAL 7015"],
+  S4290D:["S4290D-7015","Tablette 1000x370 - Gris RAL 7015"],S4291D:["S4291D-7015","Tablette 1000x470 - Gris RAL 7015"],
+  S4292D:["S4292D-7015","Tablette 1000x570 - Gris RAL 7015"],S4253D:["S4253D-7015","Console 370 - 2C (la paire) - RAL 7015"],
+  S4254D:["S4254D-7015","Console 470 - 2C (la paire) - Gris RAL 7015"]}
+};
+const PE_TRANSP=["S5738D","Porte-étiquettes scanning L1000 H40 - transparent"]; // S5738 (blanc) = RAL 9001 uniquement
+function colRef(color,ref){ if(!ref)return ref; if(ref[0]==="S5738"&&color&&color!=="blanc")return PE_TRANSP;
+  const r=((REF_COL[color]||{})[ref[0]])||ref; let d=r[1];
+  if(color==="gris")d=d.replace(/ - (Gris )?RAL 9006/," - Gris Alu"); else if(color==="anthracite")d=d.replace(/ - (Gris )?RAL 7015/," - Gris Anthracite");
+  else if(color==="noir"&&!/^S595[89]$/.test(r[0]))d=d.replace(/ - Blanc$/,"")+" - Noir"; // noir : pas de code dédié, on précise la couleur
+  return d===r[1]?r:[r[0],d]; }
 // Nomenclature d'UNE gondole -> liste [{code,des,ral,qty}]
 function buildBomForGondole(g){
   const map=new Map();
   const ral=(COLORIS[g.color]||COLORIS.blanc).ral;
   const iP=p=>PROFONDEURS.indexOf(Number(p));
   // o = rang d'affichage (montants, piétements, fixations, fonds, tablettes, consoles, porte-étiquettes, plinthes, chapiteaux)
-  const add=(ref,qty,o,ralForce)=>{ if(!ref||qty<=0)return; const rr=ralForce||ral; const code=ref[0]||"à définir"; const key=code+"|"+ref[1]+"|"+rr; const c=map.get(key)||{code,des:ref[1],ral:rr,qty:0,o}; c.qty+=qty; map.set(key,c); };
+  const add=(ref,qty,o,ralForce)=>{ if(!ref||qty<=0)return; ref=colRef(g.color,ref); const rr=ref===PE_TRANSP?"Transparent":(ralForce||ral); const code=ref[0]||"à définir"; const key=code+"|"+ref[1]+"|"+rr; const c=map.get(key)||{code,des:ref[1],ral:rr,qty:0,o}; c.qty+=qty; map.set(key,c); };
   const df=g.face==="DF"?2:1;
   const nbMontants=g.len+1;
   add(REF.montant[g.h],nbMontants,100+HAUTEURS.indexOf(g.h));
@@ -1432,14 +1490,14 @@ function buildSeg(id,items,getV,setV){
 buildSeg("dFace",FACES,()=>sel()?.face,(g,v)=>g.face=v);
 buildSeg("dH",HAUTEURS,()=>sel()?.h,(g,v)=>g.h=Number(v));
 buildSeg("dP",PROFONDEURS,()=>sel()?.p,(g,v)=>{g.p=Number(v);g.tabProfs=g.tabProfs.map(pf=>pf>g.p?g.p:pf);tidyBays(g);});
-buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>g.f=v);
-buildSeg("dM",LONGUEURS,()=>sel()?.m,(g,v)=>{g.m=Number(v);delete g.ms;});
+buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>{ if(window.cfgScope&&cfgScope.on()) cfgScope.setF(g,v); else { g.f=v; delete g.fp; tidyBays(g); } });
+buildSeg("dM",LONGUEURS,()=>sel()?.m,(g,v)=>{ if(window.cfgScope&&cfgScope.on()) cfgScope.setM(g,v); else { g.m=Number(v); delete g.ms; } });
 // coloris gondole
 (function(){const box=document.getElementById("dSwatches");Object.entries(COLORIS).forEach(([k,c])=>{const d=document.createElement("div");d.className="swatch";d.dataset.k=k;d.style.background=c.swatch;d.style.color=c.ink;d.title=c.label+" — "+c.ral;d.textContent=c.ral;d.addEventListener("click",()=>{const g=sel();if(g){g.color=k;detectPlanColor();renderAll();}});box.appendChild(d);});})();
 // longueur
-document.getElementById("lenM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.max(1,g.len-1);renderAll();}});
-document.getElementById("lenP").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){g.len=Math.min(30,g.len+1);renderAll();}});
-document.getElementById("lenI").addEventListener("input",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10);g.len=(isNaN(v)||v<1)?1:Math.min(30,v);renderAll();}});
+document.getElementById("lenM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){ if(window.cfgScope&&cfgScope.open()){ cfgScope.lenMinus(); return; } g.len=Math.max(1,g.len-1);renderAll();}});
+document.getElementById("lenP").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){ if(window.cfgScope&&cfgScope.open()){ cfgScope.lenPlus(); return; } g.len=Math.min(30,g.len+1);renderAll();}});
+document.getElementById("lenI").addEventListener("input",e=>{const g=sel();if(g){const v=parseInt(e.target.value,10); if(window.cfgScope&&cfgScope.open()){ cfgScope.lenSet((isNaN(v)||v<1)?1:v); return; } g.len=(isNaN(v)||v<1)?1:Math.min(30,v);renderAll();}});
 // Nombre d'exemplaires du groupe de g (gondoles identiques)
 function countGroupe(g){
   if(g.grp>0) return gondoles.filter(x=>x.grp===g.grp).length;
@@ -1477,16 +1535,17 @@ document.getElementById("dPlinthe").addEventListener("change",e=>{const g=sel();
 document.getElementById("dChap").addEventListener("change",e=>{const g=sel();if(g){g.chapiteau=e.target.checked;renderAll();}});
 // tablettes niveaux
 function setNbNiveaux(n){const g=sel();if(!g)return;n=Math.max(0,Math.min(8,n));delete g.tb;const cur=g.tabProfs.length;if(n>cur){for(let i=cur;i<n;i++)g.tabProfs.push(g.p);}else if(n<cur){g.tabProfs.length=n;}renderAll();}
-document.getElementById("tabM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setNbNiveaux(g.tabProfs.length-1);});
-document.getElementById("tabP2").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g)setNbNiveaux(g.tabProfs.length+1);});
-document.getElementById("tabI").addEventListener("input",e=>{const v=parseInt(e.target.value,10);setNbNiveaux(isNaN(v)?0:v);});
+document.getElementById("tabM").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){ if(window.cfgScope&&cfgScope.open()) cfgScope.setTabs(cfgScope.tabs(g).length-1); else setNbNiveaux(g.tabProfs.length-1); }});
+document.getElementById("tabP2").addEventListener("click",e=>{e.currentTarget.blur();const g=sel();if(g){ if(window.cfgScope&&cfgScope.open()) cfgScope.setTabs(cfgScope.tabs(g).length+1); else setNbNiveaux(g.tabProfs.length+1); }});
+document.getElementById("tabI").addEventListener("input",e=>{const v=parseInt(e.target.value,10); if(window.cfgScope&&cfgScope.open()) cfgScope.setTabs(isNaN(v)?0:v); else setNbNiveaux(isNaN(v)?0:v);});
 function buildTabLevels(){
   const g=sel();const box=document.getElementById("tabLevels");box.innerHTML="";if(!g)return;
-  g.tabProfs.forEach((prof,idx)=>{
+  const tps=(window.cfgScope&&cfgScope.open())?cfgScope.tabs(g):g.tabProfs;
+  tps.forEach((prof,idx)=>{
     const row=document.createElement("div");row.className="tab-lvl";
     const nm=document.createElement("span");nm.className="lvl-name";nm.textContent="Niveau "+(idx+1);row.appendChild(nm);
     const seg=document.createElement("div");seg.className="lvl-seg";
-    PROFONDEURS.forEach(pf=>{const b=document.createElement("button");b.type="button";b.textContent=pf;const trop=pf>g.p;if(trop)b.classList.add("is-disabled");if(pf===prof)b.classList.add("active");b.addEventListener("click",()=>{if(pf>g.p)return;g.tabProfs[idx]=pf;renderAll();});seg.appendChild(b);});
+    PROFONDEURS.forEach(pf=>{const b=document.createElement("button");b.type="button";b.textContent=pf;const trop=pf>g.p;if(trop)b.classList.add("is-disabled");if(pf===prof)b.classList.add("active");b.addEventListener("click",()=>{if(pf>g.p)return; if(window.cfgScope&&cfgScope.open()) cfgScope.setTabLevel(g,idx,pf); else g.tabProfs[idx]=pf; renderAll();});seg.appendChild(b);});
     row.appendChild(seg);box.appendChild(row);
   });
 }
@@ -1515,7 +1574,7 @@ function renderDetail(){
   if(!g){ closeDetModal(); return; }
   document.getElementById("detTitle").textContent="Gondole "+repereOf(g);
   const mark=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
-  mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);mark("dF",g.f);mark("dM",g.m);
+  mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);mark("dF",window.cfgScope?cfgScope.valF(g):g.f);mark("dM",window.cfgScope?cfgScope.valM(g):g.m);
   document.querySelectorAll("#dSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===(g.color||"blanc")));
   document.getElementById("lenI").value=g.len;
   const qg=countGroupe(g);
@@ -1528,7 +1587,7 @@ function renderDetail(){
   document.getElementById("dChapField").classList.toggle("disabled",!cp);
   document.getElementById("dChap").checked=g.chapiteau&&cp;
   document.getElementById("chapInfo").textContent="("+g.len+" chapiteau"+(g.len>1?"x":"")+")";
-  document.getElementById("tabI").value=g.tabProfs.length;
+  document.getElementById("tabI").value=((window.cfgScope&&cfgScope.open())?cfgScope.tabs(g):g.tabProfs).length;
   buildTabLevels();
   draw(g);
 }
@@ -1982,8 +2041,7 @@ async function genererDevisPDF(){
 
 
 // ===================== Démarrage =====================
-gondoles.push({...newGondole(1,1),face:"DF",len:5,h:2100,p:470});
-gondoles.push({...newGondole(1,3.5),face:"SF",len:4,h:1800,p:370,f:"FP"});
+gondoles.push(newGondole(1,1));   // départ : une gondole simple-face L1000 H2100 P470 lisse
 selId=null;
 detectPlanColor();
 fitView();
@@ -2021,7 +2079,7 @@ function startWith(m){
 }
 document.getElementById("chooseList").addEventListener("click",()=>startWith("list"));
 document.getElementById("choosePlan").addEventListener("click",()=>startWith("plan"));
-setMode("plan");   // état par défaut derrière l'écran d'accueil
+setMode("list");   // on atterrit directement sur le configurateur de base (liste)
 
 // ===================== Enregistrer / rouvrir un projet =====================
 const PROJET_APP="rsl-gondoles", PROJET_VERSION=1;
@@ -2362,7 +2420,7 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
   function close(){ if(document.body.classList.contains("viewer-mode")) return; modal.classList.remove("open"); if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
 
   // les boutons « Vue 3D » du plan ouvrent désormais la vue réaliste du configurateur (l'ancienne vue reste en secours)
-  document.getElementById("btn3DPlan").addEventListener("click",()=>{ if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;} if(window.openCfg3D) window.openCfg3D(); else open("store"); });
+  (document.getElementById("btn3DPlan")||{addEventListener(){}}).addEventListener("click",()=>{ if(gondoles.length===0){alert("Ajoutez au moins une gondole.");return;} if(window.openCfg3D) window.openCfg3D(); else open("store"); });
   document.getElementById("btn3DGond").addEventListener("click",()=>{ if(window.openCfg3D&&sel()) window.openCfg3D(); else open("one"); });
   document.getElementById("detView3D").addEventListener("click",()=>{ if(sel())open("one"); });
   // Rendu 3D hors-écran d'UNE gondole -> image JPEG (pour le PDF)
@@ -2890,6 +2948,19 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     refreshPanel(); updateOutline(); });
   const moveBay=d=>{ const g=sel(); if(!g) return; if(S.scopeAll){ S.scopeAll=false; } selBay=((selBay==null?(d>0?-1:g.len):selBay)+d+g.len)%g.len; selSeg=null; refreshPanel(); updateOutline(); };
   $("fBayPrev").addEventListener("click",()=>moveBay(-1)); $("fBayNext").addEventListener("click",()=>moveBay(1));
+  // interface utilisée par le détail orange (même panneau que la liste / le plan) pour agir sur la gondole ou sur une seule travée
+  window.cfgScope={
+    open:()=>root.classList.contains("open"),
+    on(){ const g=sel(); if(!g||!root.classList.contains("open")) return false; fixSel(g); return !S.scopeAll&&selBay!=null; },
+    valM(g){ return this.on()?baysOf(g)[selBay]:(g.ms?"mix":g.m); },
+    valF(g){ if(this.on()){ const ks=selSeg!=null?[selSeg]:Array.from({length:FONDS_H[g.h][400]},(_,i)=>i), vv=ks.map(k=>perfoAt(g,selBay,k)); return vv.every(x=>x===vv[0])?(vv[0]?"FP":"FL"):"mix"; } return g.fp?"mix":g.f; },
+    setM(g,v){ const a=baysOf(g); a[selBay]=Number(v); g.ms=a; g.m=a[0]; tidyBays(g); },
+    setF(g,v){ const fp=Object.assign({},g.fp); (selSeg!=null?[selSeg]:Array.from({length:FONDS_H[g.h][400]},(_,i)=>i)).forEach(k=>fp[selBay+":"+k]=v); g.fp=fp; tidyBays(g); },
+    tabs(g){ return this.on()?tabsAt(g,selBay):g.tabProfs; },
+    setTabs(n){ setTabs(n); },
+    setTabLevel(g,i,v){ if(this.on()){ const a=tabsAt(g,selBay).slice(); a[i]=v; g.tb=Object.assign({},g.tb,{[selBay]:a}); tidyBays(g); } else { g.tabProfs[i]=v; delete g.tb; } },
+    lenPlus:addBay, lenMinus:subBay, lenSet:setLen
+  };
   // bouton rond rouge : menu d'actions sur la sélection
   $("fabMain").addEventListener("click",e=>{ e.stopPropagation(); $("cfgFab").classList.toggle("open"); });
   $("fabDel").addEventListener("click",()=>{ const g=sel(); if(!g) return; const single=!S.scopeAll&&selBay!=null;
@@ -2904,6 +2975,8 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("fPl").addEventListener("change",e=>{ const g=sel(); if(g){ g.plinthes=e.target.checked; renderAll(); } });
   $("fChap").addEventListener("change",e=>{ const g=sel(); if(g){ g.chapiteau=e.target.checked; renderAll(); } });
   // tablettes intermédiaires : toute la gondole, ou seulement la travée sélectionnée (case décochée)
+  const fixSel=g=>{ if(selOwner!==selId){ selOwner=selId; selBay=null; selSeg=null; } const n4=FONDS_H[g.h][400];
+    if(selBay!=null&&selBay>=g.len) selBay=g.len-1; if(selSeg!=null&&(selSeg>=n4||selBay==null)) selSeg=null; if(!S.scopeAll&&selBay==null) selBay=g.len-1; };
   const setTabs=n=>{ const g=sel(); if(!g) return; n=Math.max(0,Math.min(8,n));
     if(S.scopeAll||selBay==null){ setNbNiveaux(n); return; }
     const b=tgtBay(g), a=tabsAt(g,b).slice(); while(a.length<n) a.push(g.p); a.length=n;
@@ -2991,6 +3064,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
         s.value=pf; s.addEventListener("change",()=>{ if(single){ const a=tabsAt(g,selBay).slice(); a[i]=Number(s.value); g.tb=Object.assign({},g.tb,{[selBay]:a}); tidyBays(g); } else { g.tabProfs[i]=Number(s.value); if(g.tb) delete g.tb; } renderAll(); }); lv.appendChild(r);
       });
     }
+    { const di=document.querySelector("#cfgPanel .det-inner"); if(di) di.style.display=g?"":"none"; $("cpEmpty2").style.display=g?"none":""; }
     renderComp(); renderRecap();
     $("cfgBadge").textContent=S.mode==="real"?"RENDU RÉALISTE":"RENDU TECHNIQUE";
   }
@@ -2998,6 +3072,13 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("tabGond").addEventListener("click",()=>setTab("gond")); $("tabApercu").addEventListener("click",()=>setTab("apercu"));
 
   // ---------- Barre d'outils ----------
+  const detInnerEl=document.querySelector(".det-inner");
+  $("cpAdd2").addEventListener("click",()=>addAfter(sel()||gondoles[gondoles.length-1]));
+  // dupliquer / supprimer du détail : actions propres au configurateur (la gondole dupliquée se place à la suite)
+  $("btnDup").addEventListener("click",e=>{ if(!root.classList.contains("open")) return; e.stopImmediatePropagation(); const g=sel(); if(g){ addAfter(g); flashMsg("Gondole dupliquée"); } },true);
+  $("btnDelSel").addEventListener("click",e=>{ if(!root.classList.contains("open")) return; e.stopImmediatePropagation(); const g=sel(); if(g&&confirm("Supprimer la gondole "+repereOf(g)+" ?")) delG(g.id); },true);
+  $("cfgGoList").addEventListener("click",()=>{ close(); setMode("list"); });
+  $("cfgGo2D").addEventListener("click",()=>{ close(); setMode("plan"); });
   const menus=[...root.querySelectorAll(".cfg-menu")];
   menus.forEach(m=>m.querySelector(".cb").addEventListener("click",e=>{ e.stopPropagation(); const o=m.classList.contains("open"); menus.forEach(x=>x.classList.remove("open")); if(!o) m.classList.add("open"); }));
   root.addEventListener("click",e=>{ if(!e.target.closest(".cfg-menu")) menus.forEach(x=>x.classList.remove("open")); });
@@ -3017,6 +3098,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     const url=await urlVue3D();
     try{ await navigator.clipboard.writeText(url); flashMsg("Lien 3D copié"); }catch(_){ prompt("Copiez ce lien :",url); }
   });
+  $("cfgPdf").addEventListener("click",()=>$("btnPdf").click());
   $("cfgSave").addEventListener("click",()=>enregistrerProjet());
   $("cfgLoad").addEventListener("click",()=>ouvrirProjet());
   $("cfgNew").addEventListener("click",()=>{
@@ -3055,13 +3137,13 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     if(!inited){ root.classList.add("open"); document.body.classList.add("cfg-open"); return; }
     if(!gondoles.length){ const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL",color:planColor||"blanc"}); gondoles.push(g); selId=g.id; }
     if(!sel()) selId=gondoles[0].id;
-    root.classList.add("open"); document.body.classList.add("cfg-open"); fb.style.display="none";
+    closeDetModal(); $("cpHost").appendChild(detInnerEl); root.classList.add("open"); document.body.classList.add("cfg-open"); fb.style.display="none";
     hist=[]; hi=-1; histPush(); updateMenus(); setTab("gond"); detectPlanColor();
     resize(); renderAll(); build(); lastSceneKey=stateKey()+S.mode+S.env+S.products+S.light; frame();
     if(!raf) loop();
   }
   function close(){
-    root.classList.remove("open"); document.body.classList.remove("cfg-open");
+    root.classList.remove("open"); document.body.classList.remove("cfg-open"); detModal.appendChild(detInnerEl);
     if(raf){ cancelAnimationFrame(raf); raf=0; }
     renderAll(); if(typeof fitView==="function") fitView();
   }
