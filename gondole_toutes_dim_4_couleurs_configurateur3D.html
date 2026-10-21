@@ -2015,6 +2015,7 @@ document.getElementById("btnAddList").addEventListener("click",()=>{
 const welcome=document.getElementById("welcome");
 function startWith(m){
   if(m==="list"){ gondoles=[]; selId=null; nextId=1; renderAll(); }  // départ vierge pour le mode liste
+  else { gondoles=[]; nextId=1; nextGrp=1; const g=newGondole(1,1); gondoles.push(g); selId=g.id; renderAll(); }  // plan / 3D : une seule gondole simple-face L1000 H2100 P470 lisse
   setMode(m);
   welcome.classList.add("hidden");
 }
@@ -2649,11 +2650,14 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     if(real){
       scene.background=new THREE.Color(store?0xeeebe5:0xe9ecef); scene.environment=envTex;
       let fm;
-      if(store){ const tt=tileTex().clone(); tt.needsUpdate=true; tt.userData={tmp:true}; tt.repeat.set(FW/0.6,FD/0.6); fm=new THREE.MeshStandardMaterial({map:tt,roughness:.5,metalness:0}); }
+      // mur du fond : seulement si des gondoles simple-face (à fixer au mur) sont adossées au bord arrière du plan ; le carrelage s'arrête au pied du mur
+      const hasWall=store&&gondoles.some(g=>g.face==="SF"&&g.rot===0&&Math.abs(g.y-e.mnz)<0.15);
+      const zB=hasWall?e.mnz-0.012:e.cZ-FD/2, FD2=(e.cZ+FD/2)-zB;
+      if(store){ const tt=tileTex().clone(); tt.needsUpdate=true; tt.userData={tmp:true}; tt.repeat.set(FW/0.6,FD2/0.6); fm=new THREE.MeshStandardMaterial({map:tt,roughness:.5,metalness:0}); }
       else fm=new THREE.MeshStandardMaterial({color:lin(0xe3e5e8),roughness:.85,metalness:0});
-      const floor=new THREE.Mesh(new THREE.PlaneGeometry(FW,FD),fm); floor.rotation.x=-Math.PI/2; floor.position.set(e.cX,0,e.cZ); floor.receiveShadow=true; floor.raycast=()=>{}; scene.add(floor);
+      const floor=new THREE.Mesh(new THREE.PlaneGeometry(FW,FD2),fm); floor.rotation.x=-Math.PI/2; floor.position.set(e.cX,0,zB+FD2/2); floor.receiveShadow=true; floor.raycast=()=>{}; scene.add(floor);
       // mur du fond : seulement si des gondoles simple-face (à fixer au mur) sont adossées au bord arrière du plan
-      if(store&&gondoles.some(g=>g.face==="SF"&&g.rot===0&&Math.abs(g.y-e.mnz)<0.15)){
+      if(hasWall){
         const wall=new THREE.Mesh(new THREE.PlaneGeometry(FW,3.6),new THREE.MeshStandardMaterial({color:lin(0xf3f0ea),roughness:.92}));
         wall.position.set(e.cX,1.8,e.mnz-0.012); wall.receiveShadow=true; wall.raycast=()=>{}; scene.add(wall);
       }
@@ -2914,7 +2918,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     const e=extents(); return {x:e.mxx+(gondoles.length?0.5:0), y:base?base.y:1};
   }
   function addAfter(base){
-    const g=base?{...base,tabProfs:(base.tabProfs||[]).slice(),grp:0}:Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000});
+    const g=base?{...base,tabProfs:(base.tabProfs||[]).slice(),grp:0}:Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL"});
     if(!base) g.color=planColor||"blanc";
     const p=nextPos(base); g.id=nextId++; g.x=p.x; g.y=p.y;
     gondoles.push(g); selId=g.id; detectPlanColor(); renderAll();
@@ -3017,7 +3021,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("cfgLoad").addEventListener("click",()=>ouvrirProjet());
   $("cfgNew").addEventListener("click",()=>{
     if(gondoles.length&&!confirm("Démarrer une nouvelle implantation ? Le travail en cours sera effacé (pensez à « Sauvegarder »).")) return;
-    gondoles=[]; selId=null; hist=[]; hi=-1; const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,color:planColor||"blanc"}); gondoles.push(g); selId=g.id; histPush(); renderAll(); frame();
+    gondoles=[]; selId=null; hist=[]; hi=-1; const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL",color:planColor||"blanc"}); gondoles.push(g); selId=g.id; histPush(); renderAll(); frame();
   });
   function goDevis(){ close(); const h=document.querySelector(".demande-head"); if(h) h.scrollIntoView({behavior:"smooth",block:"start"}); }
   $("cfgDevis").addEventListener("click",goDevis); $("rDevis").addEventListener("click",goDevis);
@@ -3049,7 +3053,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   function open(){
     if(!init()) { fb.style.display="flex"; }
     if(!inited){ root.classList.add("open"); document.body.classList.add("cfg-open"); return; }
-    if(!gondoles.length){ const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,color:planColor||"blanc"}); gondoles.push(g); selId=g.id; }
+    if(!gondoles.length){ const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL",color:planColor||"blanc"}); gondoles.push(g); selId=g.id; }
     if(!sel()) selId=gondoles[0].id;
     root.classList.add("open"); document.body.classList.add("cfg-open"); fb.style.display="none";
     hist=[]; hi=-1; histPush(); updateMenus(); setTab("gond"); detectPlanColor();
@@ -3071,7 +3075,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     open(); selId=null; selBay=selSeg=null; updateOutline(); return true;
   };
   $("modeCfg").addEventListener("click",open);
-  $("chooseCfg").addEventListener("click",()=>{ $("welcome").classList.add("hidden"); setMode("plan"); open(); });
+  $("chooseCfg").addEventListener("click",()=>{ startWith("plan"); open(); });
   window.cfg3d={S,orbit,applyCam,THREE,get gg(){return ggById;},get cam(){return camera;},get sel(){return {selBay,selSeg};}};
   window.cfg3dState=S;                                   // pilotage pour les tests
 })();
