@@ -966,6 +966,7 @@ const REF_COL={
 };
 const PE_TRANSP=["S5738D","Porte-étiquettes scanning L1000 H40 - transparent"]; // S5738 (blanc) = RAL 9001 uniquement
 function colRef(color,ref){ if(!ref)return ref; if(ref[0]==="S5738"&&color&&color!=="blanc")return PE_TRANSP;
+  if(color==="blanc"){ return /^S595[89]$/.test(ref[0])?ref:[ref[0],ref[1].replace(/ - Blanc$/,"")+" - Blanc Crème"]; }
   const r=((REF_COL[color]||{})[ref[0]])||ref; let d=r[1];
   if(color==="gris")d=d.replace(/ - (Gris )?RAL 9006/," - Gris Alu"); else if(color==="anthracite")d=d.replace(/ - (Gris )?RAL 7015/," - Gris Anthracite");
   else if(color==="noir"&&!/^S595[89]$/.test(r[0]))d=d.replace(/ - Blanc$/,"")+" - Noir"; // noir : pas de code dédié, on précise la couleur
