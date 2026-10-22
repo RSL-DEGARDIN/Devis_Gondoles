@@ -173,6 +173,8 @@
   .toolbar .grp{display:flex;align-items:center;gap:6px;}
   .toolbar button{padding:9px 13px;border:1.5px solid var(--steel-100);background:#fff;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--steel-700);cursor:pointer;}
   .toolbar button:hover{border-color:var(--steel-300);}
+  .toolbar button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  #plan.textmode{cursor:text!important;}
   .toolbar .sep{width:1px;height:24px;background:var(--steel-100);}
   .toolbar .hint{font-size:12px;color:var(--steel-300);flex:1 1 100%;}
   .snap-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--steel-700);cursor:pointer;}
@@ -560,6 +562,8 @@
       <div class="grp"><button id="btnZoomOut">−</button><button id="btnZoomIn">+</button><button id="btnFit">Ajuster</button></div>
       <div class="sep"></div>
       <div class="grp"><button id="btnClear">Tout effacer</button></div>
+      <div class="sep"></div>
+      <div class="grp"><button id="btnText" title="Cliquez ensuite sur le plan pour écrire une annotation ; cliquez sur une annotation pour la modifier, glissez-la pour la déplacer">𝐓 Texte</button></div>
       <div class="sep"></div>
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
       <div class="sep"></div>
@@ -1363,11 +1367,35 @@ function drawGondole(g){
   grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:(!isSel&&col.planSub)||"#55677d","pointer-events":"none"},lbl));
   return grp;
 }
+// ---- Annotations texte sur le plan ----
+let notes=[], nextNote=1, textMode=false, noteDrag=null;
+function noteBox(n,fs){ const lines=String(n.t).split("\n"); return {lines,w:Math.max(...lines.map(l=>l.length))*fs*0.58+12,h:lines.length*fs*1.25+8}; }
+function drawNote(n){
+  const[x,y]=worldToPx(n.x,n.y), fs=Math.max(9,Math.min(17,11*view.ppm/52)), b=noteBox(n,fs);
+  const g=E("g",{class:"note","data-id":n.id,style:"cursor:move"});
+  g.appendChild(E("rect",{x,y,width:b.w,height:b.h,rx:4,fill:"#fff7bf",stroke:"#d4b72f","stroke-width":1.2}));
+  b.lines.forEach((l,i)=>g.appendChild(E("text",{x:x+6,y:y+4+fs*(0.95+1.25*i),"font-size":fs,"font-family":"Segoe UI, Arial, sans-serif",fill:"#1c2430"},l)));
+  return g;
+}
+function addNote(wx,wy){
+  const t=prompt("Texte à écrire sur le plan :"); setTextMode(false);
+  if(!t||!t.trim()) return;
+  notes.push({id:nextNote++,x:Math.round(wx*20)/20,y:Math.round(wy*20)/20,t:t.trim()}); renderPlan();
+}
+function editNote(id){
+  const n=notes.find(x=>x.id===id); if(!n) return;
+  const t=prompt("Modifier l'annotation (laisser vide pour la supprimer) :",n.t); if(t===null) return;
+  if(!t.trim()) notes=notes.filter(x=>x.id!==id); else n.t=t.trim();
+  renderPlan();
+}
+function setTextMode(on){ textMode=on; document.getElementById("btnText").classList.toggle("on",on); svg.classList.toggle("textmode",on); }
+document.getElementById("btnText").addEventListener("click",()=>setTextMode(!textMode));
 function renderPlan(){
   svg.innerHTML="";
   svg.appendChild(drawGrid());
   gondoles.filter(g=>g.id!==selId).forEach(g=>svg.appendChild(drawGondole(g)));
   const s=sel(); if(s)svg.appendChild(drawGondole(s));
+  notes.forEach(n=>svg.appendChild(drawNote(n)));
   snapGuides.forEach(gd=>{const[x1,y1]=worldToPx(gd.x1,gd.y1),[x2,y2]=worldToPx(gd.x2,gd.y2);svg.appendChild(E("line",{x1,y1,x2,y2,stroke:"#e63f1e","stroke-width":1.5,"stroke-dasharray":"5 4",opacity:.9}));});
 }
 
@@ -1418,10 +1446,14 @@ function svgPoint(evt){const r=svg.getBoundingClientRect();return[(evt.clientX-r
 svg.addEventListener("contextmenu",e=>e.preventDefault());
 svg.addEventListener("pointerdown",e=>{
   const[sx,sy]=svgPoint(e);const el=e.target.closest(".gondole");const right=e.button===2;
+  const nEl=e.target.closest(".note");
+  if(nEl&&e.button===0){ const n=notes.find(x=>x.id===Number(nEl.dataset.id)); if(n){ const[wx,wy]=pxToWorld(sx,sy); noteDrag={id:n.id,dx:wx-n.x,dy:wy-n.y,moved:false}; svg.setPointerCapture(e.pointerId); return; } }
+  if(textMode&&e.button===0&&!el){ const[wx,wy]=pxToWorld(sx,sy); addNote(wx,wy); return; }
   if(right||(!el&&e.button===0)){ pan={px:sx,py:sy,ox:view.ox,oy:view.oy}; if(!el){selId=null;} svg.setPointerCapture(e.pointerId); svg.style.cursor="grabbing"; renderAll(); return; }
   if(el){ const id=Number(el.dataset.id);selId=id;const g=gondoles.find(x=>x.id===id);const[wx,wy]=pxToWorld(sx,sy);drag={id,dx:wx-g.x,dy:wy-g.y,moved:false};svg.setPointerCapture(e.pointerId);renderAll(); }
 });
 svg.addEventListener("pointermove",e=>{
+  if(noteDrag){ const[sx,sy]=svgPoint(e),[wx,wy]=pxToWorld(sx,sy),n=notes.find(x=>x.id===noteDrag.id); if(n){ n.x=Math.round((wx-noteDrag.dx)*20)/20; n.y=Math.round((wy-noteDrag.dy)*20)/20; noteDrag.moved=true; renderPlan(); } return; }
   if(pan){const[sx,sy]=svgPoint(e);view.ox=pan.ox+(sx-pan.px);view.oy=pan.oy+(sy-pan.py);renderPlan();return;}
   if(!drag)return;
   const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const g=gondoles.find(x=>x.id===drag.id);
@@ -1432,6 +1464,7 @@ svg.addEventListener("pointermove",e=>{
   g.x=nx;g.y=ny;renderPlan();
 });
 svg.addEventListener("pointerup",e=>{
+  if(noteDrag){ const nd=noteDrag; noteDrag=null; try{svg.releasePointerCapture(e.pointerId);}catch(_){} if(!nd.moved) editNote(nd.id); return; }
   const wasClick = drag && !drag.moved;
   drag=null;pan=null;snapGuides=[];svg.style.cursor="crosshair";renderAll();
   try{svg.releasePointerCapture(e.pointerId);}catch(_){}
@@ -1524,7 +1557,7 @@ document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
 document.getElementById("btnZoomOut").addEventListener("click",()=>{view.ppm=Math.max(18,view.ppm*.87);renderPlan();});
 document.getElementById("btnFit").addEventListener("click",fitView);
-document.getElementById("btnClear").addEventListener("click",()=>{if(gondoles.length&&confirm("Effacer tout le plan ?")){gondoles=[];selId=null;renderAll();}});
+document.getElementById("btnClear").addEventListener("click",()=>{if(gondoles.length&&confirm("Effacer tout le plan ?")){gondoles=[];notes=[];selId=null;renderAll();}});
 document.getElementById("snapChk").addEventListener("change",e=>{snapEnabled=e.target.checked;});
 function fitView(){
   if(gondoles.length===0){view={ox:60,oy:60,ppm:52};renderPlan();return;}
@@ -1918,6 +1951,7 @@ function planPng2D(){
     if(!gondoles.length) return resolve(null);
     let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
     gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
+    notes.forEach(n=>{const b=noteBox(n,11);mnX=Math.min(mnX,n.x);mnY=Math.min(mnY,n.y);mxX=Math.max(mxX,n.x+b.w/52);mxY=Math.max(mxY,n.y+b.h/52);});
     const pad=0.6, x0=mnX-pad, y0=mnY-pad, spanX=mxX-mnX+2*pad, spanY=mxY-mnY+2*pad;
     const ppm=Math.min(90,2000/Math.max(spanX,spanY));
     const Wp=Math.round(spanX*ppm), Hp=Math.round(spanY*ppm);
@@ -1929,7 +1963,7 @@ function planPng2D(){
     for(let j=Math.ceil(y0);j<=y0+spanY;j++){const y=(j-y0)*ppm;tmp.appendChild(E("line",{x1:0,y1:y,x2:Wp,y2:y,stroke:"#e6ebf0","stroke-width":1}));}
     const saveView=view, saveSel=selId;
     view={ox:-x0*ppm,oy:-y0*ppm,ppm}; selId=null;
-    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); } finally { view=saveView; selId=saveSel; }
+    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); notes.forEach(n=>tmp.appendChild(drawNote(n))); } finally { view=saveView; selId=saveSel; }
     tmp.appendChild(E("line",{x1:14,y1:Hp-16,x2:14+ppm,y2:Hp-16,stroke:"#55677d","stroke-width":3}));
     tmp.appendChild(E("text",{x:14,y:Hp-24,"font-size":13,fill:"#55677d"},"1 m"));
     const xml=new XMLSerializer().serializeToString(tmp);
@@ -2170,7 +2204,7 @@ function projetVersJson(){
     app:PROJET_APP, version:PROJET_VERSION, savedAt:new Date().toISOString(),
     mode:document.body.classList.contains("mode-list")?"list":"plan",
     client:{nom:val("cNom"),societe:val("cSociete"),email:val("cEmail"),tel:val("cTel"),msg:val("cMsg")},
-    planColor, nextGrp, gondoles
+    planColor, nextGrp, gondoles, notes
   },null,2);
 }
 async function enregistrerProjet(){
@@ -2227,6 +2261,7 @@ function chargerProjetTexte(txt){
   nextId=gondoles.reduce((m,g)=>Math.max(m,g.id),0)+1;
   nextGrp=Math.max(Number(d.nextGrp)||1, gondoles.reduce((m,g)=>Math.max(m,g.grp),0)+1);
   planColor=COLORIS[d.planColor]?d.planColor:"blanc";
+  notes=(Array.isArray(d.notes)?d.notes:[]).filter(n=>n&&typeof n.t==="string"&&isFinite(n.x)&&isFinite(n.y)).map((n,i)=>({id:i+1,x:+n.x,y:+n.y,t:n.t.slice(0,300)})); nextNote=notes.length+1;
   selId=null;
   const c=d.client||{};
   document.getElementById("cNom").value=c.nom||""; document.getElementById("cSociete").value=c.societe||"";
@@ -2533,7 +2568,7 @@ const b64u={
 async function streamBytes(u8,Ctor){ const st=new Blob([u8]).stream().pipeThrough(new Ctor("deflate-raw")); return new Uint8Array(await new Response(st).arrayBuffer()); }
 // le lien ne contient QUE les gondoles (aucune coordonnée client)
 async function fragmentVue3D(){
-  let u8=new TextEncoder().encode(JSON.stringify({app:PROJET_APP,version:PROJET_VERSION,planColor,nextGrp,gondoles,pres:window.cfg3dState?{mode:cfg3dState.mode,env:cfg3dState.env,products:cfg3dState.products,light:cfg3dState.light}:undefined})), tag="j";
+  let u8=new TextEncoder().encode(JSON.stringify({app:PROJET_APP,version:PROJET_VERSION,planColor,nextGrp,gondoles,pres:window.cfg3dState?{mode:cfg3dState.mode,env:cfg3dState.env,products:cfg3dState.products,labels:cfg3dState.labels,light:cfg3dState.light}:undefined})), tag="j";
   if(window.CompressionStream){ u8=await streamBytes(u8,CompressionStream); tag="v"; }
   return tag+"="+b64u.enc(u8);
 }
@@ -2551,7 +2586,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     document.body.classList.add("viewer-mode");
     const txt=new TextDecoder().decode(u8);
     try{ const pr=JSON.parse(txt).pres, S0=window.cfg3dState;   // réglages de « présentation » choisis par RSL
-      if(pr&&S0){ if(pr.mode==="real"||pr.mode==="tech") S0.mode=pr.mode; if(pr.env==="store"||pr.env==="neutral") S0.env=pr.env; S0.products=pr.products!==false; S0.light=pr.light!==false; } }catch(_){}
+      if(pr&&S0){ if(pr.mode==="real"||pr.mode==="tech") S0.mode=pr.mode; if(pr.env==="store"||pr.env==="neutral") S0.env=pr.env; S0.products=pr.products!==false; S0.light=pr.light!==false; S0.labels=pr.labels===true; } }catch(_){}
     chargerProjetTexte(txt);
     document.getElementById("d3Title").innerHTML='<img src="'+LOGO_RSL_JPEG+'" alt="RSL" style="height:30px;vertical-align:middle;margin-right:12px">Votre projet de gondoles en 3D <span style="font-weight:500;color:#55677d;font-size:13.5px">(vous pourrez le faire tourner à 360° et zoomer avec la molette)</span>';
     document.querySelector(".d3-hint").innerHTML='Glissez pour tourner à 360° · molette ou pincement pour zoomer · double-clic pour recentrer &nbsp;·&nbsp; Une question ? <a href="mailto:'+DEST_EMAIL+'">'+DEST_EMAIL+'</a>';
@@ -3188,7 +3223,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   document.getElementById("btnNew").addEventListener("click",()=>{ $("cfgNew").click(); if(typeof fitView==="function") fitView(); });
   $("cfgNew").addEventListener("click",()=>{
     if(gondoles.length&&!confirm("Démarrer une nouvelle implantation ? Le travail en cours sera effacé (pensez à « Sauvegarder »).")) return;
-    gondoles=[]; selId=null; hist=[]; hi=-1; const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL",color:planColor||"blanc"}); gondoles.push(g); selId=g.id; histPush(); renderAll(); frame();
+    gondoles=[]; notes=[]; selId=null; hist=[]; hi=-1; const g=Object.assign(newGondole(1,1),{len:1,face:"SF",m:1000,h:2100,p:470,f:"FL",color:planColor||"blanc"}); gondoles.push(g); selId=g.id; histPush(); renderAll(); frame();
   });
   function goDevis(){ close(); const h=document.querySelector(".demande-head"); if(h) h.scrollIntoView({behavior:"smooth",block:"start"}); }
   $("cfgDevis").addEventListener("click",goDevis); $("rDevis").addEventListener("click",goDevis);
@@ -3236,7 +3271,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   // lien client : même vue réaliste, sans panneau ni barre d'outils (lecture seule)
   window.openCfgViewer=function(){
     if(!init()) return false;
-    root.classList.add("viewer"); S.labels=true;
+    root.classList.add("viewer");
     root.querySelector(".cfg-top .t").innerHTML='<b>Votre projet</b> de gondoles en 3D <span>— glissez pour tourner, molette ou pincement pour zoomer</span>';
     root.querySelector(".cfg-hint").textContent="Glisser : tourner · Clic droit : déplacer · Molette : zoom";
     open(); selId=null; selBay=selSeg=null; updateOutline(); return true;
