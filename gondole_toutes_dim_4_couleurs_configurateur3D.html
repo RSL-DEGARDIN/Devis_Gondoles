@@ -1368,26 +1368,36 @@ function drawGondole(g){
   return grp;
 }
 // ---- Annotations texte sur le plan ----
-let notes=[], nextNote=1, textMode=false, noteDrag=null;
+let notes=[], nextNote=1, textMode=false, noteDrag=null, selNote=null;
 function noteBox(n,fs){ const lines=String(n.t).split("\n"); return {lines,w:Math.max(...lines.map(l=>l.length))*fs*0.58+12,h:lines.length*fs*1.25+8}; }
 function drawNote(n){
   const[x,y]=worldToPx(n.x,n.y), fs=Math.max(9,Math.min(17,11*view.ppm/52)), b=noteBox(n,fs);
   const g=E("g",{class:"note","data-id":n.id,style:"cursor:move"});
-  g.appendChild(E("rect",{x,y,width:b.w,height:b.h,rx:4,fill:"#fff7bf",stroke:"#d4b72f","stroke-width":1.2}));
+  if(n.r) g.setAttribute("transform","rotate("+n.r+" "+(x+b.w/2)+" "+(y+b.h/2)+")");
+  const on=n.id===selNote;
+  g.appendChild(E("rect",{x,y,width:b.w,height:b.h,rx:4,fill:"#fff7bf",stroke:on?"#e63f1e":"#d4b72f","stroke-width":on?2.2:1.2}));
   b.lines.forEach((l,i)=>g.appendChild(E("text",{x:x+6,y:y+4+fs*(0.95+1.25*i),"font-size":fs,"font-family":"Segoe UI, Arial, sans-serif",fill:"#1c2430"},l)));
+  if(on){ // boutons modifier / supprimer de l'annotation sélectionnée
+    [["edit","✎",0],["del","✕",1]].forEach(([a,ch,k])=>{ const bx=x+b.w-34+k*18, by=y-20;
+      const bg=E("g",{"data-act":a,style:"cursor:pointer"});
+      bg.appendChild(E("rect",{x:bx,y:by,width:17,height:17,rx:3,fill:a==="del"?"#e63f1e":"#55677d"}));
+      bg.appendChild(E("text",{x:bx+8.5,y:by+13,"text-anchor":"middle","font-size":12,fill:"#fff","font-family":"Segoe UI, Arial, sans-serif"},ch));
+      g.appendChild(bg); });
+  }
   return g;
 }
 function addNote(wx,wy){
   const t=prompt("Texte à écrire sur le plan :"); setTextMode(false);
   if(!t||!t.trim()) return;
-  notes.push({id:nextNote++,x:Math.round(wx*20)/20,y:Math.round(wy*20)/20,t:t.trim()}); renderPlan();
+  notes.push({id:nextNote++,x:Math.round(wx*20)/20,y:Math.round(wy*20)/20,t:t.trim(),r:0}); selNote=notes[notes.length-1].id; selId=null; renderAll();
 }
 function editNote(id){
   const n=notes.find(x=>x.id===id); if(!n) return;
   const t=prompt("Modifier l'annotation (laisser vide pour la supprimer) :",n.t); if(t===null) return;
-  if(!t.trim()) notes=notes.filter(x=>x.id!==id); else n.t=t.trim();
+  if(!t.trim()){ delNote(id); return; } n.t=t.trim();
   renderPlan();
 }
+function delNote(id){ notes=notes.filter(x=>x.id!==id); if(selNote===id)selNote=null; renderPlan(); }
 function setTextMode(on){ textMode=on; document.getElementById("btnText").classList.toggle("on",on); svg.classList.toggle("textmode",on); }
 document.getElementById("btnText").addEventListener("click",()=>setTextMode(!textMode));
 function renderPlan(){
@@ -1447,7 +1457,10 @@ svg.addEventListener("contextmenu",e=>e.preventDefault());
 svg.addEventListener("pointerdown",e=>{
   const[sx,sy]=svgPoint(e);const el=e.target.closest(".gondole");const right=e.button===2;
   const nEl=e.target.closest(".note");
-  if(nEl&&e.button===0){ const n=notes.find(x=>x.id===Number(nEl.dataset.id)); if(n){ const[wx,wy]=pxToWorld(sx,sy); noteDrag={id:n.id,dx:wx-n.x,dy:wy-n.y,moved:false}; svg.setPointerCapture(e.pointerId); return; } }
+  if(nEl&&e.button===0){ const n=notes.find(x=>x.id===Number(nEl.dataset.id)); if(n){
+    const act=e.target.closest("[data-act]"); if(act){ if(act.dataset.act==="del") delNote(n.id); else editNote(n.id); return; }
+    const[wx,wy]=pxToWorld(sx,sy); noteDrag={id:n.id,dx:wx-n.x,dy:wy-n.y,moved:false,was:selNote===n.id}; selNote=n.id; if(selId!=null){selId=null;renderAll();} else renderPlan(); svg.setPointerCapture(e.pointerId); return; } }
+  if(selNote!=null){ selNote=null; }
   if(textMode&&e.button===0&&!el){ const[wx,wy]=pxToWorld(sx,sy); addNote(wx,wy); return; }
   if(right||(!el&&e.button===0)){ pan={px:sx,py:sy,ox:view.ox,oy:view.oy}; if(!el){selId=null;} svg.setPointerCapture(e.pointerId); svg.style.cursor="grabbing"; renderAll(); return; }
   if(el){ const id=Number(el.dataset.id);selId=id;const g=gondoles.find(x=>x.id===id);const[wx,wy]=pxToWorld(sx,sy);drag={id,dx:wx-g.x,dy:wy-g.y,moved:false};svg.setPointerCapture(e.pointerId);renderAll(); }
@@ -1464,7 +1477,7 @@ svg.addEventListener("pointermove",e=>{
   g.x=nx;g.y=ny;renderPlan();
 });
 svg.addEventListener("pointerup",e=>{
-  if(noteDrag){ const nd=noteDrag; noteDrag=null; try{svg.releasePointerCapture(e.pointerId);}catch(_){} if(!nd.moved) editNote(nd.id); return; }
+  if(noteDrag){ const nd=noteDrag; noteDrag=null; try{svg.releasePointerCapture(e.pointerId);}catch(_){} if(!nd.moved&&nd.was) editNote(nd.id); return; }
   const wasClick = drag && !drag.moved;
   drag=null;pan=null;snapGuides=[];svg.style.cursor="crosshair";renderAll();
   try{svg.releasePointerCapture(e.pointerId);}catch(_){}
@@ -1516,6 +1529,7 @@ window.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&(e.key==="c"||e.key==="C")){ if(copySel())e.preventDefault(); return; }
   if((e.ctrlKey||e.metaKey)&&(e.key==="v"||e.key==="V")){ if(pasteGondole())e.preventDefault(); return; }
   if(modalOpen)return;   // les raccourcis ci-dessous n'agissent que sur le plan
+  if((e.key==="Delete"||e.key==="Backspace")&&selNote!=null){ delNote(selNote); return; }
   if((e.key==="Delete"||e.key==="Backspace")&&selId!=null){gondoles=gondoles.filter(g=>g.id!==selId);selId=null;renderAll();}
   if(e.key==="r"||e.key==="R")rotateSel();
   // * : dupliquer la gondole sélectionnée
@@ -1552,7 +1566,7 @@ function snapToGondoles(g,nx,ny){
 
 // ===================== Barre d'outils =====================
 document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
-function rotateSel(){const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
+function rotateSel(){const n=notes.find(x=>x.id===selNote); if(n){n.r=((n.r||0)+90)%360;renderPlan();return;} const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
 document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
 document.getElementById("btnZoomOut").addEventListener("click",()=>{view.ppm=Math.max(18,view.ppm*.87);renderPlan();});
@@ -1951,7 +1965,7 @@ function planPng2D(){
     if(!gondoles.length) return resolve(null);
     let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
     gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
-    notes.forEach(n=>{const b=noteBox(n,11);mnX=Math.min(mnX,n.x);mnY=Math.min(mnY,n.y);mxX=Math.max(mxX,n.x+b.w/52);mxY=Math.max(mxY,n.y+b.h/52);});
+    notes.forEach(n=>{const b=noteBox(n,11);mnX=Math.min(mnX,n.x);mnY=Math.min(mnY,n.y);const m=Math.max(b.w,b.h)/52;mxX=Math.max(mxX,n.x+m);mxY=Math.max(mxY,n.y+m);});
     const pad=0.6, x0=mnX-pad, y0=mnY-pad, spanX=mxX-mnX+2*pad, spanY=mxY-mnY+2*pad;
     const ppm=Math.min(90,2000/Math.max(spanX,spanY));
     const Wp=Math.round(spanX*ppm), Hp=Math.round(spanY*ppm);
@@ -1961,9 +1975,9 @@ function planPng2D(){
     tmp.appendChild(E("rect",{x:0,y:0,width:Wp,height:Hp,fill:"#ffffff"}));
     for(let i=Math.ceil(x0);i<=x0+spanX;i++){const x=(i-x0)*ppm;tmp.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hp,stroke:"#e6ebf0","stroke-width":1}));}
     for(let j=Math.ceil(y0);j<=y0+spanY;j++){const y=(j-y0)*ppm;tmp.appendChild(E("line",{x1:0,y1:y,x2:Wp,y2:y,stroke:"#e6ebf0","stroke-width":1}));}
-    const saveView=view, saveSel=selId;
-    view={ox:-x0*ppm,oy:-y0*ppm,ppm}; selId=null;
-    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); notes.forEach(n=>tmp.appendChild(drawNote(n))); } finally { view=saveView; selId=saveSel; }
+    const saveView=view, saveSel=selId, saveNote=selNote;
+    view={ox:-x0*ppm,oy:-y0*ppm,ppm}; selId=null; selNote=null;
+    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); notes.forEach(n=>tmp.appendChild(drawNote(n))); } finally { view=saveView; selId=saveSel; selNote=saveNote; }
     tmp.appendChild(E("line",{x1:14,y1:Hp-16,x2:14+ppm,y2:Hp-16,stroke:"#55677d","stroke-width":3}));
     tmp.appendChild(E("text",{x:14,y:Hp-24,"font-size":13,fill:"#55677d"},"1 m"));
     const xml=new XMLSerializer().serializeToString(tmp);
@@ -2261,7 +2275,7 @@ function chargerProjetTexte(txt){
   nextId=gondoles.reduce((m,g)=>Math.max(m,g.id),0)+1;
   nextGrp=Math.max(Number(d.nextGrp)||1, gondoles.reduce((m,g)=>Math.max(m,g.grp),0)+1);
   planColor=COLORIS[d.planColor]?d.planColor:"blanc";
-  notes=(Array.isArray(d.notes)?d.notes:[]).filter(n=>n&&typeof n.t==="string"&&isFinite(n.x)&&isFinite(n.y)).map((n,i)=>({id:i+1,x:+n.x,y:+n.y,t:n.t.slice(0,300)})); nextNote=notes.length+1;
+  notes=(Array.isArray(d.notes)?d.notes:[]).filter(n=>n&&typeof n.t==="string"&&isFinite(n.x)&&isFinite(n.y)).map((n,i)=>({id:i+1,x:+n.x,y:+n.y,t:n.t.slice(0,300),r:[90,180,270].includes(n.r)?n.r:0})); nextNote=notes.length+1;
   selId=null;
   const c=d.client||{};
   document.getElementById("cNom").value=c.nom||""; document.getElementById("cSociete").value=c.societe||"";
