@@ -288,6 +288,7 @@
   body.cfg-open{overflow:hidden;}
   #cfg.viewer .cfg-bar,#cfg.viewer .cfg-panel,#cfg.viewer .cfg-back,#cfg.viewer .cfg-fab,#cfg.viewer .cfg-badge{display:none!important;}
   #cfg.viewer .cfg-main{grid-template-columns:1fr;grid-template-rows:1fr;}
+  #cfg.viewer .cfg-main{grid-template-columns:1fr!important;}
   #cfg.viewer .cfg-top .t span{font-weight:400;color:#55677d;font-size:13px;}
   .welcome-choices.c3{grid-template-columns:repeat(3,1fr);}
   @media (max-width:760px){.welcome-choices.c3{grid-template-columns:1fr;}}
@@ -3235,7 +3236,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   // lien client : même vue réaliste, sans panneau ni barre d'outils (lecture seule)
   window.openCfgViewer=function(){
     if(!init()) return false;
-    root.classList.add("viewer"); S.labels=false;
+    root.classList.add("viewer"); S.labels=true;
     root.querySelector(".cfg-top .t").innerHTML='<b>Votre projet</b> de gondoles en 3D <span>— glissez pour tourner, molette ou pincement pour zoomer</span>';
     root.querySelector(".cfg-hint").textContent="Glisser : tourner · Clic droit : déplacer · Molette : zoom";
     open(); selId=null; selBay=selSeg=null; updateOutline(); return true;
