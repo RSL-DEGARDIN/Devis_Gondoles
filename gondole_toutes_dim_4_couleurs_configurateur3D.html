@@ -612,8 +612,8 @@
       <div class="form-field full"><label for="cMsg">Message (facultatif)</label><textarea id="cMsg" placeholder="Précisions, délai, lieu de livraison…"></textarea></div>
     </div>
     <div class="save-box">
-      <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
-      <p class="save-hint">Le projet (gondoles, plan, coordonnées) est enregistré dans un petit fichier .json, dans le dossier de votre choix. Rouvrez-le un autre jour pour tout retrouver et continuer à modifier. Le lien 3D permet au client de visualiser et faire tourner son projet (sans ses coordonnées).</p>
+      <input type="file" id="fileOpen" accept=".rsl,.json" style="display:none">
+      <p class="save-hint">Le projet (gondoles, plan, coordonnées) est enregistré dans un petit fichier .rsl, dans le dossier de votre choix. Rouvrez-le un autre jour pour tout retrouver et continuer à modifier. Le lien 3D permet au client de visualiser et faire tourner son projet (sans ses coordonnées).</p>
     </div>
     <p class="send-note">Le bouton email ouvre votre messagerie pré-remplie, adressée à RSL. Sinon, « Copier ma demande » et collez dans un email à s.degardin@rsl.eu.</p>
   </div>
@@ -2177,18 +2177,18 @@ async function enregistrerProjet(){
   if(gondoles.length===0 && !confirm("Le projet est vide. L'enregistrer quand même ?")) return;
   const soc=val("cSociete").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_|_$/g,"");
   const d=new Date().toISOString().slice(0,10);
-  const nom="Projet_gondoles"+(soc?"_"+soc:"")+"_"+d+".json";
+  const nom="Projet_gondoles"+(soc?"_"+soc:"")+"_"+d+".rsl";
   const data=projetVersJson();
   // Chrome / Edge : vraie fenêtre « Enregistrer sous » (choix du dossier)
   if(window.showSaveFilePicker){
     try{
-      const h=await window.showSaveFilePicker({suggestedName:nom,types:[{description:"Projet gondoles RSL",accept:{"application/json":[".json"]}}]});
+      const h=await window.showSaveFilePicker({suggestedName:nom,types:[{description:"Projet gondoles RSL",accept:{"application/octet-stream":[".rsl"]}}]});
       const w=await h.createWritable(); await w.write(data); await w.close();
       flashMsg("Projet enregistré"); return;
     }catch(e){ if(e&&e.name==="AbortError") return; /* sinon : repli téléchargement */ }
   }
   const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  a.href=URL.createObjectURL(new Blob([data],{type:"application/octet-stream"}));
   a.download=nom; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   flashMsg("Projet téléchargé dans votre dossier Téléchargements");
