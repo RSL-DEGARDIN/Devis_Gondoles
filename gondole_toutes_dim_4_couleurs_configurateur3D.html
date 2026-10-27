@@ -933,6 +933,7 @@ const fondsLabel=f=>f==="FL"?"lisses":"perforés";
 function fondsTxt(g){ const one=h=>{ const x=fondsTxt0(g,h), n=h.fp?Object.keys(h.fp).length:0; return n?x+" ("+n+" fond"+(n>1?"s":"")+" modifié"+(n>1?"s":"")+" à l'unité)":x; };
   return g.face==="DF"&&g.bk?"avant : "+one(g)+" · arrière : "+one(g.bk):one(g); }
 function fondsTxt0(g,h=g){
+  if(g.hs) return "fonds "+(h.f==="FP"?"perforés":"lisses")+" selon la hauteur de chaque travée";
   const rep=FONDS_H[g.h]; const n=(rep[100]||0)+(rep[300]||0)+rep[400];
   const nP=h.f==="FP"?rep[400]:0;
   if(nP===0) return n+" fond"+(n>1?"s":"")+" lisse"+(n>1?"s":"");
@@ -946,9 +947,16 @@ const montantEp=h=>(h>=2400?80:60);
 // Profondeur hors-tout au sol : SF = profondeur ; DF = 2 profondeurs + l'épaisseur du montant central
 // Profondeur hors-tout au sol : la profondeur (370/470/570) se mesure hors montant,
 // on ajoute donc l'épaisseur du montant : SF = p + montant ; DF = 2p + montant
-const profHorsTout=g=>(g.face==="DF" ? (2*g.p+montantEp(g.h)) : (g.p+montantEp(g.h)));
+const profHorsTout=g=>(g.face==="DF" ? (2*g.p+montantEp(hMax(g))) : (g.p+montantEp(hMax(g))));
 // Longueur totale en mètres = nombre de travées × longueur de travée
 // Travées : g.m = longueur commune ; g.ms = longueurs travée par travée (si elles diffèrent) ; g.fp = fonds H400 modifiés à l'unité {"travée:rang depuis le bas":"FP"|"FL"}
+// Hauteur par travée : g.h = hauteur générale (1re travée), g.hs = hauteurs travée par travée si elles diffèrent. Un montant entre 2 travées prend la plus haute.
+const hOf=(g,b)=>(g.hs&&g.hs[b])||g.h;
+const hAll=g=>Array.from({length:Math.max(1,g.len|0)},(_,b)=>hOf(g,b));
+const hMax=g=>Math.max(...hAll(g));
+const n4Of=(g,b)=>FONDS_H[hOf(g,b)][400];
+const hTxt=g=>[...new Set(hAll(g))].sort((a,b)=>a-b).join("/");
+const poleH=(g,i)=>Math.max(i>0?hOf(g,i-1):0,i<g.len?hOf(g,i):0);
 const baysOf=g=>{const n=Math.max(1,g.len|0),m=g.m||1000;return Array.from({length:n},(_,i)=>(g.ms&&g.ms[i])||m);};
 const longueurM=g=>baysOf(g).reduce((a,b)=>a+b,0)/1000;
 // Crochets pour fonds perforés (entr'axe 25 mm) — catalogue RSL ; g.hk = {"travée:fond":{t:type,l:longueur,n:par rangée,r:rangées}}
@@ -959,7 +967,7 @@ const HOOK_TYPES={
   DPE:{label:"Crochet double avec support PE scanning superposé",lens:[300,400],dia:{300:5,400:5},pe:true,dbl:true,ref:{300:"5749",400:"3540"}},
   SC:{label:"Crochet avec support PE scanning",lens:[320,420],dia:{320:5,420:5},pe:true,dbl:false,ref:{320:"3466",420:"2791"}}
 };
-const hooksOf=g=>{const out=[],n4=FONDS_H[g.h][400];Object.keys(g.hk||{}).forEach(k=>{const[b,sg]=k.split(":").map(Number),c=g.hk[k];if(b<g.len&&sg<n4&&perfoAt(g,b,sg)&&c&&HOOK_TYPES[c.t]&&c.n>0&&c.r>0)out.push({b,k:sg,c});});return out;};
+const hooksOf=g=>{const out=[];Object.keys(g.hk||{}).forEach(k=>{const[b,sg]=k.split(":").map(Number),c=g.hk[k];if(b<g.len&&sg<n4Of(g,b)&&perfoAt(g,b,sg)&&c&&HOOK_TYPES[c.t]&&c.n>0&&c.r>0)out.push({b,k:sg,c});});return out;};
 const hookRef=c=>{const T=HOOK_TYPES[c.t];return [T.ref[c.l],T.label+" L"+c.l+" Ø"+T.dia[c.l]];};
 function shiftBays(m,b,ins){const o={};Object.keys(m||{}).forEach(k=>{const[i,sg]=k.split(":"),n=+i;if(ins){o[(n>b?n+1:n)+":"+sg]=m[k];if(n===b)o[(b+1)+":"+sg]=m[k];}else if(n!==b)o[(n>b?n-1:n)+":"+sg]=m[k];});return o;}
 const tabsAt=(g,b)=>(g.tb&&g.tb[b])||g.tabProfs||[];   // tablettes intermédiaires (profondeurs) de la travée b
@@ -973,17 +981,18 @@ function lenTxt(g,x="x"){const c=new Map();baysOf(g).forEach(m=>c.set(m,(c.get(m
 function tidyBays(g){   // range ms / fp : uniforme -> g.m seul ; supprime les fonds identiques au choix général
   const a=baysOf(g); g.m=a[0];
   if(a.every(v=>v===a[0])) delete g.ms; else g.ms=a;
-  if(g.fp){ const rep=FONDS_H[g.h]?FONDS_H[g.h][400]:0, fp={};
-    Object.keys(g.fp).forEach(k=>{const[b,s]=k.split(":").map(Number); if(b<g.len&&s<rep&&g.fp[k]!==g.f) fp[k]=g.fp[k];});
+  if(g.hs){ const ha=hAll(g); g.h=ha[0]; if(ha.every(v=>v===ha[0])) delete g.hs; else g.hs=ha; }
+  if(g.fp){ const fp={};
+    Object.keys(g.fp).forEach(k=>{const[b,s]=k.split(":").map(Number); if(b<g.len&&s<n4Of(g,b)&&g.fp[k]!==g.f) fp[k]=g.fp[k];});
     if(Object.keys(fp).length) g.fp=fp; else delete g.fp; }
   if(g.face!=="DF") delete g.bk;
-  else if(g.bk){ const b=g.bk, rep=FONDS_H[g.h]?FONDS_H[g.h][400]:0, fp={};
-    Object.keys(b.fp||{}).forEach(k=>{const[i,sg]=k.split(":").map(Number); if(i<g.len&&sg<rep&&b.fp[k]!==b.f) fp[k]=b.fp[k];});
+  else if(g.bk){ const b=g.bk, fp={};
+    Object.keys(b.fp||{}).forEach(k=>{const[i,sg]=k.split(":").map(Number); if(i<g.len&&sg<n4Of(g,i)&&b.fp[k]!==b.f) fp[k]=b.fp[k];});
     if(Object.keys(fp).length) b.fp=fp; else delete b.fp;
     const ka=Object.keys(g.fp||{}).sort().map(k=>k+g.fp[k]).join(), kb=Object.keys(b.fp||{}).sort().map(k=>k+b.fp[k]).join();
     if(b.f===g.f&&ka===kb) delete g.bk; }
-  if(g.hk){ const hk={}, n4=FONDS_H[g.h][400];
-    Object.keys(g.hk).forEach(k=>{ const[b,sg]=k.split(":").map(Number), c=g.hk[k]; if(b<g.len&&sg<n4&&perfoAt(g,b,sg)&&c&&HOOK_TYPES[c.t]) hk[k]=c; });
+  if(g.hk){ const hk={};
+    Object.keys(g.hk).forEach(k=>{ const[b,sg]=k.split(":").map(Number), c=g.hk[k]; if(b<g.len&&sg<n4Of(g,b)&&perfoAt(g,b,sg)&&c&&HOOK_TYPES[c.t]) hk[k]=c; });
     if(Object.keys(hk).length) g.hk=hk; else delete g.hk; }
   if(g.tb){ const tb={}, ref=JSON.stringify(g.tabProfs||[]);
     Object.keys(g.tb).forEach(k=>{ if(+k>=g.len) return; const a=g.tb[k].slice(0,8).map(p=>Math.min(p,g.p)); if(JSON.stringify(a)!==ref) tb[k]=a; });
@@ -1001,7 +1010,7 @@ function tabResume(profs){
 }
 function designationText(g){
   const col=COLORIS[g.color]||COLORIS.blanc;
-  let t=`1 gondole ${faceLabel(g.face)} ${col.label} (${col.ral}) H.${g.h} P.${g.p} L.${lenTxt(g)} - ${fondsTxt(g)}`;
+  let t=`1 gondole ${faceLabel(g.face)} ${col.label} (${col.ral}) H.${hTxt(g)} P.${g.p} L.${lenTxt(g)} - ${fondsTxt(g)}`;
   if(g.plinthes)t+=" - Avec plinthes";
   if(g.chapiteau&&chapiteauPossible(g.face,g.h))t+=" - Avec chapiteaux";
   const rt=tabResume(g.tabProfs); if(rt)t+=" - "+rt;
@@ -1052,12 +1061,13 @@ function buildBomForGondole(g){
   const add=(ref,qty,o,ralForce)=>{ if(!ref||qty<=0)return; ref=colRef(g.color,ref); const rr=/transparent/i.test(ref[1])?"Transparent":(ralForce||ral); const code=ref[0]||"à définir"; const key=code+"|"+ref[1]+"|"+rr; const c=map.get(key)||{code,des:ref[1],ral:rr,qty:0,o}; c.qty+=qty; map.set(key,c); };
   const df=g.face==="DF"?2:1;
   const nbMontants=g.len+1;
-  add(REF.montant[g.h],nbMontants,100+HAUTEURS.indexOf(g.h));
+  { const cH={}; for(let i=0;i<=g.len;i++){ const h=poleH(g,i); cH[h]=(cH[h]||0)+1; }
+    Object.keys(cH).forEach(h=>add(REF.montant[h],cH[h],100+HAUTEURS.indexOf(Number(h)))); }
   add(REF.pietement[g.p],nbMontants*df,200+iP(g.p));
   // Simple-face = à fixer au mur : embouts filetés + vérins de pied (1 par montant)
   if(g.face==="SF"){ add(REF.embout,nbMontants,300,"Alu"); add(REF.verin,nbMontants,310,"Alu"); }
-  const rep=FONDS_H[g.h];
   baysOf(g).forEach((mL,b)=>{                       // articles propres à la longueur de CHAQUE travée
+    const rep=FONDS_H[hOf(g,b)];
     const RL=REF_L[mL]||REF_L[1000], mi=Math.max(0,LONGUEURS.indexOf(mL));
     add(RL.fond[100],rep[100]*df,400+mi);
     add(RL.fond[300],rep[300]*df,410+mi);
@@ -1233,7 +1243,7 @@ function draw(g) {
   viz.appendChild(E("line", {x1:faceX-25, y1:topY, x2:faceX-19, y2:topY, stroke:"#c3ccd5", "stroke-width":1}));
   viz.appendChild(E("line", {x1:faceX-25, y1:groundY, x2:faceX-19, y2:groundY, stroke:"#c3ccd5", "stroke-width":1}));
   const midY = (topY + groundY) / 2;
-  viz.appendChild(E("text", {x:faceX-28, y:midY, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#55677d", transform:`rotate(-90 ${faceX-28} ${midY})`}, `H.${g.h}`));
+  viz.appendChild(E("text", {x:faceX-28, y:midY, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#55677d", transform:`rotate(-90 ${faceX-28} ${midY})`}, `H.${hTxt(g)}`));
   viz.appendChild(E("text", {x:faceX+backW/2, y:topY-(chapActive?20:8), "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":11, fill:"#9fb0c2"}, `L = ${lenTxt(g)}`));
   viz.appendChild(E("text", {x:faceX+backW/2, y:groundY+22, "text-anchor":"middle", "font-family":"Segoe UI, sans-serif", "font-size":10.5, "font-weight":700, fill:"#9fb0c2", "letter-spacing":"1px"}, "VUE DE FACE"));
 
@@ -1316,7 +1326,7 @@ function draw(g) {
   const parts = [
     `<b>${FACES.find(x => x.code === g.face).label}</b>`,
     `<b>${C.label} — ${C.ral}</b>`,
-    `H.${g.h}`, `P.${g.p}`,
+    `H.${hTxt(g)}`, `P.${g.p}`,
     fondsTxt(g),
     `${lenTxt(g,"×")} (1 départ${suites>0 ? ` + ${suites} suite${suites>1?"s":""}` : ""})`
   ];
@@ -1378,7 +1388,7 @@ function drawGondole(g){
   let tx=cx,ty=cy;
   if(isDF){ if(horiz) ty=y+h*0.27; else tx=x+w*0.27; }
   grp.appendChild(E("text",{x:tx,y:ty-2,"text-anchor":"middle","font-size":13,"font-weight":800,fill:(!isSel&&col.planText)||"#1c2430","pointer-events":"none"},rp));
-  const lbl = isDF ? `H.${g.h} · P.2x${g.p}` : `H.${g.h} · P.${g.p}`;
+  const lbl = isDF ? `H.${hTxt(g)} · P.2x${g.p}` : `H.${hTxt(g)} · P.${g.p}`;
   grp.appendChild(E("text",{x:tx,y:ty+11,"text-anchor":"middle","font-size":10,fill:(!isSel&&col.planSub)||"#55677d","pointer-events":"none"},lbl));
   return grp;
 }
@@ -1430,7 +1440,7 @@ function syncGroupe(g){
   if(!g||g.grp===0) return;
   gondoles.forEach(x=>{
     if(x.grp===g.grp && x.id!==g.id){
-      x.face=g.face; x.h=g.h; x.p=g.p; x.f=g.f; x.len=g.len; x.m=g.m; x.ms=g.ms?g.ms.slice():undefined; x.fp=g.fp?{...g.fp}:undefined; x.bk=g.bk?{f:g.bk.f,fp:g.bk.fp?{...g.bk.fp}:undefined}:undefined; x.tb=g.tb?{...g.tb}:undefined; x.hk=g.hk?{...g.hk}:undefined;
+      x.face=g.face; x.h=g.h; x.hs=g.hs?g.hs.slice():undefined; x.p=g.p; x.f=g.f; x.len=g.len; x.m=g.m; x.ms=g.ms?g.ms.slice():undefined; x.fp=g.fp?{...g.fp}:undefined; x.bk=g.bk?{f:g.bk.f,fp:g.bk.fp?{...g.bk.fp}:undefined}:undefined; x.tb=g.tb?{...g.tb}:undefined; x.hk=g.hk?{...g.hk}:undefined;
       x.plinthes=g.plinthes; x.chapiteau=g.chapiteau; x.color=g.color;
       x.tabProfs=(g.tabProfs||[]).slice();
     }
@@ -1604,7 +1614,7 @@ function buildSeg(id,items,getV,setV){
     b.addEventListener("click",()=>{b.blur();const g=sel();if(!g)return;setV(g,b.dataset.v);renderAll();});el.appendChild(b);});
 }
 buildSeg("dFace",FACES,()=>sel()?.face,(g,v)=>g.face=v);
-buildSeg("dH",HAUTEURS,()=>sel()?.h,(g,v)=>g.h=Number(v));
+buildSeg("dH",HAUTEURS,()=>sel()?.h,(g,v)=>{ if(window.cfgScope&&cfgScope.on()) cfgScope.setH(g,v); else { g.h=Number(v); delete g.hs; tidyBays(g); } });
 buildSeg("dP",PROFONDEURS,()=>sel()?.p,(g,v)=>{g.p=Number(v);g.tabProfs=g.tabProfs.map(pf=>pf>g.p?g.p:pf);tidyBays(g);});
 buildSeg("dF",FONDS,()=>sel()?.f,(g,v)=>{ if(window.cfgScope&&cfgScope.on()) cfgScope.setF(g,v); else { const h=fdEdit(g); h.f=v; delete h.fp; tidyBays(g); } });
 buildSeg("dFs",[{code:"0",label:"Face avant"},{code:"1",label:"Face arrière"}],()=>faceSide,(g,v)=>{faceSide=+v;});
@@ -1691,7 +1701,7 @@ function renderDetail(){
   if(!g){ closeDetModal(); return; }
   document.getElementById("detTitle").textContent="Gondole "+repereOf(g);
   const mark=(id,val)=>document.querySelectorAll("#"+id+" button").forEach(b=>b.classList.toggle("active",String(b.dataset.v)===String(val)));
-  mark("dFace",g.face);mark("dH",g.h);mark("dP",g.p);{ const ds=document.getElementById("dFs"); if(g.face!=="DF") faceSide=0; ds.style.display=g.face==="DF"?"":"none"; mark("dFs",faceSide); }
+  mark("dFace",g.face);mark("dH",window.cfgScope?cfgScope.valH(g):g.h);mark("dP",g.p);{ const ds=document.getElementById("dFs"); if(g.face!=="DF") faceSide=0; ds.style.display=g.face==="DF"?"":"none"; mark("dFs",faceSide); }
   mark("dF",window.cfgScope?cfgScope.valF(g):fdView(g).f);mark("dM",window.cfgScope?cfgScope.valM(g):g.m);
   document.querySelectorAll("#dSwatches .swatch").forEach(d=>d.classList.toggle("active",d.dataset.k===(g.color||"blanc")));
   document.getElementById("lenI").value=g.len;
@@ -2051,7 +2061,7 @@ async function genererDevisPDF(){
     doc.setTextColor(...accent); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
     doc.text(rep,M+3,y+4.8);
     doc.setTextColor(...ink); doc.setFontSize(10);
-    doc.text(`${Q} gondole${Q>1?"s":""} ${faceLabel(g.face)} H.${g.h} ${profTxt} L.${lenTxt(g)}  —  ${fmtMl(dev)} ml développé`,M+9,y+4.8);
+    doc.text(`${Q} gondole${Q>1?"s":""} ${faceLabel(g.face)} H.${hTxt(g)} ${profTxt} L.${lenTxt(g)}  —  ${fmtMl(dev)} ml développé`,M+9,y+4.8);
     y+=10;
     // sous-titre descriptif
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...grey);
@@ -2096,7 +2106,7 @@ async function genererDevisPDF(){
     const dev=(g.face==="DF"?2:1)*longueurM(g)*Q; totalDev+=dev;
     if(g.face==="SF")totalSF+=longueurM(g)*Q; else totalDF+=longueurM(g)*Q;
     const profTxt=g.face==="DF"?("P.2x"+g.p):("P."+g.p);
-    return [repereOf(g), String(Q), `${faceLabel(g.face)} H.${g.h} ${profTxt} L.${lenTxt(g)}`, (COLORIS[g.color]||COLORIS.blanc).ral, fmtMl(dev)+" ml"];
+    return [repereOf(g), String(Q), `${faceLabel(g.face)} H.${hTxt(g)} ${profTxt} L.${lenTxt(g)}`, (COLORIS[g.color]||COLORIS.blanc).ral, fmtMl(dev)+" ml"];
   });
   doc.autoTable({
     startY:y, margin:{left:M,right:M},
@@ -2272,6 +2282,7 @@ function nettoyerGondole(o){
     color:COLORIS[o.color]?o.color:"blanc",
     grp:Math.max(0,Math.round(num(o.grp,0)))
   };
+  if(Array.isArray(o.hs)) g.hs=o.hs.slice(0,g.len).map(v=>HAUTEURS.includes(Number(v))?Number(v):g.h);
   if(Array.isArray(o.ms)) g.ms=o.ms.slice(0,g.len).map(v=>LONGUEURS.includes(Number(v))?Number(v):g.m);
   if(o.fp&&typeof o.fp==='object') g.fp=Object.fromEntries(Object.entries(o.fp).filter(([k,v])=>/^\d+:\d+$/.test(k)&&(v==='FP'||v==='FL')));
   if(g.face==="DF"&&o.bk&&typeof o.bk==='object'){ g.bk={f:o.bk.f==="FP"?"FP":"FL"}; if(o.bk.fp&&typeof o.bk.fp==='object') g.bk.fp=Object.fromEntries(Object.entries(o.bk.fp).filter(([k,v])=>/^\d+:\d+$/.test(k)&&(v==='FP'||v==='FL'))); }
@@ -2714,8 +2725,8 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   function buildGondole(g,prods){
     const real=S.mode==="real";
     const bl=baysOf(g).map(v=>v/1000), CUM=[0]; bl.forEach(v=>CUM.push(CUM[CUM.length-1]+v));
-    const L=CUM[g.len], Ht=g.h/1000, D=g.p/1000, isDF=g.face==="DF";
-    const mEp=montantEp(g.h)/1000, mLa=0.03, Dtot=profHorsTout(g)/1000;
+    const L=CUM[g.len], Ht=hMax(g)/1000, HtB=m=>hOf(g,m)/1000, D=g.p/1000, isDF=g.face==="DF";
+    const mEp=montantEp(hMax(g))/1000, mLa=0.03, Dtot=profHorsTout(g)/1000;
     const pietH=0.1, th=0.012, fondEp=0.018, x0=-L/2;
     const zMont=isDF?0:(-Dtot/2+mEp/2), sides=isDF?[1,-1]:[1];
     const zFace=s=>isDF?s*mEp/2:zMont+mEp/2;
@@ -2726,17 +2737,19 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     const place=(x,z)=>[cx+x*c-z*sn, cz+x*sn+z*c];
 
     for(let k=0;k<=g.len;k++){ const x=x0+CUM[k];
-      add(mLa,Ht,mEp,x,0,zMont,M.montant);
+      add(mLa,poleH(g,k)/1000,mEp,x,0,zMont,M.montant);
       sides.forEach(s=>add(mLa,pietH,D,x,0,zFace(s)+s*D/2,M.metal));
     }
     // fond reculé de 8 mm : l'arrière de la tablette ne s'y colle plus (liseré visible)
     // fonds : petit fond lisse (H300 ou H100) en bas, puis fonds H400 (perforés selon le choix général ou le choix propre à la travée)
-    const rep=FONDS_H[g.h], hF=Ht-pietH, segs=[];
-    for(let k=0;k<rep[300];k++)segs.push({mm:300,k:-1});
-    for(let k=0;k<rep[100];k++)segs.push({mm:100,k:-1});
-    for(let k=0;k<rep[400];k++)segs.push({mm:400,k});
-    const tot=segs.reduce((a,x)=>a+x.mm,0)||1, gap=real?0.003:0;
-    for(let m=0;m<g.len;m++){ const tw=bl[m], xc=x0+CUM[m]+tw/2, fw=real?tw-mLa:tw; let yb=pietH;
+    const gap=real?0.003:0;
+    for(let m=0;m<g.len;m++){
+      const rep=FONDS_H[hOf(g,m)], hF=HtB(m)-pietH, segs=[];
+      for(let k=0;k<rep[300];k++)segs.push({mm:300,k:-1});
+      for(let k=0;k<rep[100];k++)segs.push({mm:100,k:-1});
+      for(let k=0;k<rep[400];k++)segs.push({mm:400,k});
+      const tot=segs.reduce((a,x)=>a+x.mm,0)||1;
+      const tw=bl[m], xc=x0+CUM[m]+tw/2, fw=real?tw-mLa:tw; let yb=pietH;
       segs.forEach(sg=>{ const sh=hF*sg.mm/tot;
         sides.forEach(s=>{ const zc=zFace(s)+s*(fondEp/2-0.008), mat=(sg.k>=0&&perfoAt(g,m,sg.k,s<0))?M.perfoFor(tw):M.panel;
           add(fw,sh-gap,fondEp,xc,yb,zc,mat,{fond:1,bay:m,k:sg.k,side:s});
@@ -2747,7 +2760,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     // tablettes : base + intermédiaires réparties sur la hauteur utile (propres à chaque travée)
     const rnd=rng(97+g.id*31), seenC=new Set();
     for(let m=0;m<g.len;m++){
-      const tabs=tabsAt(g,m), niv=[pietH]; tabs.forEach((_,i)=>{ const y=pietH+(Ht-0.1-pietH)*((i+1)/(tabs.length+1)); niv.push(Math.round((y-0.0476)/0.05)*0.05+0.0476); }); // shortcut: arrondi à 50 mm, écart max 25 mm sur la position réelle
+      const tabs=tabsAt(g,m), niv=[pietH]; tabs.forEach((_,i)=>{ const y=pietH+(HtB(m)-0.1-pietH)*((i+1)/(tabs.length+1)); niv.push(Math.round((y-0.0476)/0.05)*0.05+0.0476); }); // shortcut: arrondi à 50 mm, écart max 25 mm sur la position réelle
       const sw=bl[m], xc=x0+CUM[m]+sw/2;
       niv.forEach((yy,idx)=>{
         const prof=(idx===0?g.p:(tabs[idx-1]||g.p))/1000;
@@ -2757,7 +2770,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
           add(sw,th,prof,xc,yy,z0+s*prof/2,M.panel);
           if(real) add(sw,0.04,0.008,xc,yy+th-0.04,zf+s*0.004,M.pe);                      // porte-étiquettes H40
           if(real&&S.products){
-            const top=(idx<niv.length-1?niv[idx+1]-0.07:Ht-0.03)-(yy+th);
+            const top=(idx<niv.length-1?niv[idx+1]-0.07:HtB(m)-0.03)-(yy+th);
             let x=xc-sw/2+0.008; const xe=xc+sw/2-0.008;
             fill: while(true){
               const cyl=rnd()<0.3, w=cyl?0.06+rnd()*0.04:0.07+rnd()*0.09;
@@ -2776,7 +2789,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
         });
       });
     }
-    if(chapOn(g)) add(L,0.02,mEp,0,Ht-0.02,isDF?0:zMont,M.metal);                          // chapiteau (tous types et hauteurs)
+    if(chapOn(g)) for(let m=0;m<g.len;m++) add(bl[m],0.02,mEp,x0+CUM[m]+bl[m]/2,HtB(m)-0.02,isDF?0:zMont,M.metal);                          // chapiteau (tous types et hauteurs)
     if(g.plinthes){ const tP=0.012;
       for(let m=0;m<g.len;m++){ const tw=bl[m], xc=x0+CUM[m]+tw/2;
         sides.forEach(s=>{ const zf=zFace(s)+s*(fondEp+D); add(real?tw-0.002:tw,pietH,tP,xc,0,zf-s*tP/2,M.panel); });
@@ -2911,8 +2924,9 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
       if(!boxes.length){
         let xa=lb.x0, xb=lb.x1;
         if(!S.scopeAll&&bayOn){ xa=U.x0+U.CUM[selBay]-0.015; xb=U.x0+U.CUM[selBay+1]+0.015; }
-        boxes.push({x:(xa+xb)/2,y:cy,z:cz,w:xb-xa+pad*2,h:lb.y1-lb.y0+pad*2,d:lb.z1-lb.z0+pad*2});
-        top={x:xa+0.03,y:lb.y1+pad,z:cz};
+        const yT=(!S.scopeAll&&bayOn)?Math.min(lb.y1,hOf(g,selBay)/1000):lb.y1;
+        boxes.push({x:(xa+xb)/2,y:(lb.y0+yT)/2,z:cz,w:xb-xa+pad*2,h:yT-lb.y0+pad*2,d:lb.z1-lb.z0+pad*2});
+        top={x:xa+0.03,y:yT+pad,z:cz};
       }
       outline=new THREE.Group(); outline.position.copy(gg.position); outline.rotation.y=gg.rotation.y;
       boxes.forEach(b=>{ const ls=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.w,b.h,b.d)),outMat); ls.position.set(b.x,b.y,b.z); ls.renderOrder=10; ls.raycast=()=>{}; outline.add(ls); });
@@ -3053,11 +3067,11 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("hkN").addEventListener("change",e=>setHk(c=>{ c.n=Math.max(1,Math.min(40,parseInt(e.target.value)||1)); }));
   $("hkR").addEventListener("change",e=>setHk(c=>{ c.r=Math.max(1,Math.min(6,parseInt(e.target.value)||1)); }));
   fill("fFace",FACES); fill("fH",HAUTEURS,h=>h+" mm"); fill("fP",PROFONDEURS,p=>p+" mm"); fill("fM",LONGUEURS,m=>m+" mm"); fill("fF",FONDS);
-  [["fM","Longueurs mixtes"],["fF","Mixtes (modifiés à l'unité)"]].forEach(([id,t])=>{ const o=document.createElement("option"); o.value="mix"; o.textContent=t; o.disabled=true; o.hidden=true; $(id).appendChild(o); });
+  [["fH","Hauteurs mixtes"],["fM","Longueurs mixtes"],["fF","Mixtes (modifiés à l'unité)"]].forEach(([id,t])=>{ const o=document.createElement("option"); o.value="mix"; o.textContent=t; o.disabled=true; o.hidden=true; $(id).appendChild(o); });
   const onSel=(id,fn)=>$(id).addEventListener("change",e=>{ const g=sel(); if(!g) return; fn(g,e.target.value); renderAll(); });
   onSel("fCol",(g,k)=>{ if($("fAll").checked){ gondoles.forEach(x=>x.color=k); planColor=k; } else g.color=k; detectPlanColor(); });
   onSel("fFace",(g,v)=>g.face=v);
-  onSel("fH",(g,v)=>g.h=Number(v));
+  onSel("fH",(g,v)=>{ if(v==="mix") return; if(!S.scopeAll&&selBay!=null) cfgScope.setH(g,v); else { g.h=Number(v); delete g.hs; tidyBays(g); } });
   onSel("fP",(g,v)=>{ g.p=Number(v); g.tabProfs=(g.tabProfs||[]).map(pf=>Math.min(pf,g.p)); tidyBays(g); });
   // --- travée / fond propres à une travée (case « tout le linéaire » décochée) ---
   const tgtBay=g=>{ if(selBay==null||selBay>=g.len) selBay=g.len-1; return selBay; };
@@ -3068,11 +3082,11 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   onSel("fF",(g,v)=>{ if(v==="mix") return;
     const h=fdEdit(g);
     if(S.scopeAll){ h.f=v; delete h.fp; tidyBays(g); }
-    else { const b=tgtBay(g), n4=FONDS_H[g.h][400], fp=Object.assign({},h.fp);
+    else { const b=tgtBay(g), n4=n4Of(g,b), fp=Object.assign({},h.fp);
       (selSeg!=null?[selSeg]:Array.from({length:n4},(_,i)=>i)).forEach(k=>fp[b+":"+k]=v); h.fp=fp; tidyBays(g); } });
   function insertAfter(g,b){   // copie la travée b juste après elle (longueur + fonds modifiés)
     if(g.len>=30) return false;
-    const a=baysOf(g), fp={}; a.splice(b+1,0,a[b]);
+    const a=baysOf(g), fp={}; a.splice(b+1,0,a[b]); if(g.hs){ const ha=hAll(g); ha.splice(b+1,0,ha[b]); g.hs=ha; }
     Object.keys(g.fp||{}).forEach(k=>{ const[i,sg]=k.split(":"), n=+i; fp[(n>b?n+1:n)+":"+sg]=g.fp[k]; if(n===b) fp[(b+1)+":"+sg]=g.fp[k]; });
     if(g.tb){ const tb={}; Object.keys(g.tb).forEach(k=>{ const n=+k; tb[n>b?n+1:n]=g.tb[k]; if(n===b) tb[b+1]=g.tb[k]; }); g.tb=tb; }
     if(g.hk) g.hk=shiftBays(g.hk,b,true);
@@ -3081,7 +3095,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   }
   function removeAt(g,b){
     if(g.len<=1) return false;
-    const a=baysOf(g), fp={}; a.splice(b,1);
+    const a=baysOf(g), fp={}; a.splice(b,1); if(g.hs){ const ha=hAll(g); ha.splice(b,1); g.hs=ha; }
     Object.keys(g.fp||{}).forEach(k=>{ const[i,sg]=k.split(":"), n=+i; if(n===b) return; fp[(n>b?n-1:n)+":"+sg]=g.fp[k]; });
     if(g.tb){ const tb={}; Object.keys(g.tb).forEach(k=>{ const n=+k; if(n===b) return; tb[n>b?n-1:n]=g.tb[k]; }); g.tb=tb; }
     if(g.hk) g.hk=shiftBays(g.hk,b,false);
@@ -3105,10 +3119,12 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   window.cfgScope={
     open:()=>root.classList.contains("open"),
     on(){ const g=sel(); if(!g||!root.classList.contains("open")) return false; fixSel(g); return !S.scopeAll&&selBay!=null; },
+    valH(g){ return this.on()?hOf(g,selBay):(g.hs?"mix":g.h); },
+    setH(g,v){ const a=hAll(g); a[selBay]=Number(v); g.hs=a; g.h=a[0]; tidyBays(g); },
     valM(g){ return this.on()?baysOf(g)[selBay]:(g.ms?"mix":g.m); },
-    valF(g){ if(this.on()){ const ks=selSeg!=null?[selSeg]:Array.from({length:FONDS_H[g.h][400]},(_,i)=>i), vv=ks.map(k=>perfoAt(g,selBay,k,faceSide)); return vv.every(x=>x===vv[0])?(vv[0]?"FP":"FL"):"mix"; } const h=fdView(g); return h.fp?"mix":h.f; },
+    valF(g){ if(this.on()){ const ks=selSeg!=null?[selSeg]:Array.from({length:n4Of(g,selBay)},(_,i)=>i), vv=ks.map(k=>perfoAt(g,selBay,k,faceSide)); return vv.every(x=>x===vv[0])?(vv[0]?"FP":"FL"):"mix"; } const h=fdView(g); return h.fp?"mix":h.f; },
     setM(g,v){ const a=baysOf(g); a[selBay]=Number(v); g.ms=a; g.m=a[0]; tidyBays(g); },
-    setF(g,v){ const h=fdEdit(g), fp=Object.assign({},h.fp); (selSeg!=null?[selSeg]:Array.from({length:FONDS_H[g.h][400]},(_,i)=>i)).forEach(k=>fp[selBay+":"+k]=v); h.fp=fp; tidyBays(g); },
+    setF(g,v){ const h=fdEdit(g), fp=Object.assign({},h.fp); (selSeg!=null?[selSeg]:Array.from({length:n4Of(g,selBay)},(_,i)=>i)).forEach(k=>fp[selBay+":"+k]=v); h.fp=fp; tidyBays(g); },
     tabs(g){ return this.on()?tabsAt(g,selBay):g.tabProfs; },
     setTabs(n){ setTabs(n); },
     setTabLevel(g,i,v){ if(this.on()){ const a=tabsAt(g,selBay).slice(); a[i]=v; g.tb=Object.assign({},g.tb,{[selBay]:a}); tidyBays(g); } else { g.tabProfs[i]=v; delete g.tb; } },
@@ -3128,8 +3144,8 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("fPl").addEventListener("change",e=>{ const g=sel(); if(g){ g.plinthes=e.target.checked; renderAll(); } });
   $("fChap").addEventListener("change",e=>{ const g=sel(); if(g){ g.chapiteau=e.target.checked; renderAll(); } });
   // tablettes intermédiaires : toute la gondole, ou seulement la travée sélectionnée (case décochée)
-  const fixSel=g=>{ if(selOwner!==selId){ selOwner=selId; selBay=null; selSeg=null; } const n4=FONDS_H[g.h][400];
-    if(selBay!=null&&selBay>=g.len) selBay=g.len-1; if(selSeg!=null&&(selSeg>=n4||selBay==null)) selSeg=null; if(!S.scopeAll&&selBay==null) selBay=g.len-1; };
+  const fixSel=g=>{ if(selOwner!==selId){ selOwner=selId; selBay=null; selSeg=null; }
+    if(selBay!=null&&selBay>=g.len) selBay=g.len-1; const n4=selBay!=null?n4Of(g,selBay):FONDS_H[hMax(g)][400]; if(selSeg!=null&&(selSeg>=n4||selBay==null)) selSeg=null; if(!S.scopeAll&&selBay==null) selBay=g.len-1; };
   const setTabs=n=>{ const g=sel(); if(!g) return; n=Math.max(0,Math.min(8,n));
     if(S.scopeAll||selBay==null){ setNbNiveaux(n); return; }
     const b=tgtBay(g), a=tabsAt(g,b).slice(); while(a.length<n) a.push(g.p); a.length=n;
@@ -3160,7 +3176,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     const box=$("cpList"); box.innerHTML="";
     gondoles.forEach((g,i)=>{
       const row=document.createElement("div"); row.className="cp-item"+(g.id===selId?" on":"");
-      row.innerHTML=`<span class="n">${esc(repereOf(g))}</span><span class="nm">Gondole ${esc(repereOf(g))}<small>${g.face==="DF"?"Double-face":"Simple-face"} · H.${g.h} · P.${g.p} · ${lenTxt(g,"×")} (${fmtMl(longueurM(g))} ml)</small></span><span class="ac"><button type="button" title="Dupliquer" data-a="dup">⧉</button><button type="button" title="Supprimer" data-a="del">🗑</button></span>`;
+      row.innerHTML=`<span class="n">${esc(repereOf(g))}</span><span class="nm">Gondole ${esc(repereOf(g))}<small>${g.face==="DF"?"Double-face":"Simple-face"} · H.${hTxt(g)} · P.${g.p} · ${lenTxt(g,"×")} (${fmtMl(longueurM(g))} ml)</small></span><span class="ac"><button type="button" title="Dupliquer" data-a="dup">⧉</button><button type="button" title="Supprimer" data-a="del">🗑</button></span>`;
       row.addEventListener("click",e=>{
         const a=e.target.closest("button");
         if(a&&a.dataset.a==="dup"){ addAfter(g); flashMsg("Gondole dupliquée"); return; }
@@ -3181,8 +3197,8 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     if(g){
       $("fCol").value=g.color||"blanc"; $("wCol").querySelector(".chip").style.background=COLORIS[g.color||"blanc"].swatch; $("colTxt").textContent=COLORIS[g.color||"blanc"].label+" ("+COLORIS[g.color||"blanc"].ral+")"; $("colList").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.k===(g.color||"blanc")));
       if(selOwner!==selId){ selOwner=selId; selBay=null; selSeg=null; }
-      const n4=FONDS_H[g.h][400];
       if(selBay!=null&&selBay>=g.len) selBay=g.len-1;
+      const n4=selBay!=null?n4Of(g,selBay):FONDS_H[hMax(g)][400];
       if(selSeg!=null&&(selSeg>=n4||selBay==null)) selSeg=null;
       if(!S.scopeAll&&selBay==null) selBay=g.len-1;
       const bays=baysOf(g), single=!S.scopeAll&&selBay!=null;
@@ -3191,7 +3207,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
       $("fSelInfo").textContent=single
         ? "Travée n°"+(selBay+1)+" sur "+g.len+" ("+bays[selBay]+" mm)"+(selSeg!=null?" · fond n°"+(selSeg+1)+" en partant du bas":" — cliquez sur un fond dans la vue 3D pour ne changer que celui-ci")+". Longueur, fonds, tablettes intermédiaires et + / − ne concernent que cette travée."
         : "Longueur de travée, fonds et nombre de travées s'appliquent à tout le linéaire ("+g.len+" travée"+(g.len>1?"s":"")+"). Décochez pour agir sur une seule travée, ou cliquez sur un élément dans la vue 3D.";
-      $("fFace").value=g.face; $("fH").value=g.h; $("fP").value=g.p;
+      $("fFace").value=g.face; $("fH").value=single?hOf(g,selBay):(g.hs?"mix":g.h); $("fP").value=g.p;
       $("fM").value=single?String(bays[selBay]):(g.ms?"mix":String(g.m));
       if(g.face!=="DF") faceSide=0; let fv=g.f; if(single){ const ks=selSeg!=null?[selSeg]:Array.from({length:n4},(_,i)=>i), vv=ks.map(k=>perfoAt(g,selBay,k,faceSide)); fv=vv.every(x=>x===vv[0])?(vv[0]?"FP":"FL"):"mix"; } else { const h=fdView(g); fv=h.fp?"mix":h.f; }
       $("fF").value=fv;
