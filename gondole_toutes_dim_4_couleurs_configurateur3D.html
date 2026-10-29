@@ -112,6 +112,7 @@
   @media (max-width:600px){
     .det-modal{padding:0;}
     .det-inner{width:100vw;height:100vh;max-height:100vh;border-radius:0;}
+    .det-modal{z-index:1000;}
   }
   /* ORDI : panneau ancré à droite, superposé — la zone de travail ne bouge pas */
   @media (min-width:981px){
@@ -327,6 +328,14 @@
   body{padding:0 0 48px;}
   #topWrap{position:sticky;top:0;z-index:950;margin:0 0 18px;background:#fff;}
   #topWrap .topnav{max-width:none;margin:0;padding:6px 20px;border-bottom:3px solid #1593d1;background:#fff;gap:18px;}
+  @media (max-width:760px){   /* téléphone : la barre se replie, le sélecteur Liste / 2D / 3D passe sur sa propre ligne */
+    #topWrap .topnav{flex-wrap:wrap;padding:6px 10px;gap:6px 10px;}
+    #topWrap .topnav .nav-t{flex:1 1 auto;min-width:0;}
+    #topWrap .topnav .nav-btn{padding:6px 10px;font-size:12px;white-space:nowrap;}
+    #topWrap .topnav .re-link{display:none;}
+    #topWrap .topnav .mode-switch{order:9;flex:0 0 100%;margin:0;width:100%;}
+    #topWrap .topnav .mode-switch button{flex:1;padding:9px 0;font-size:15px;}
+  }
   #topWrap .topnav .brand-logo{height:40px;}
   #topWrap .nav-t{font-size:17px;font-weight:300;letter-spacing:.2px;color:#2e3a4a;}
   #topWrap .nav-t b{font-weight:800;color:#1593d1;}
@@ -497,7 +506,19 @@
     .cfg-panel{border-left:0;border-top:1px solid #dfe5ea;}
     .cfg-hint,.cfg-top .t{display:none;}
     .cfg-bar{overflow-x:auto;}
-    .cfg-drop{position:fixed;left:8px;top:auto;margin-top:0;}
+    .cfg-drop{position:fixed;left:8px;top:auto;margin-top:0;}  }
+  @media (max-width:760px){
+    .cfg-top{flex-wrap:wrap;padding:6px 10px;gap:6px 10px;}
+    .cfg-top .sp,#cfg .cfg-top .re-link{display:none;}
+    .cfg-top .cfg-modes{order:9;flex:0 0 100%;display:flex;}
+    .cfg-top .cfg-modes button{flex:1;}
+    #cfg .cfg-top .nav-btn{padding:6px 10px;font-size:12px;white-space:nowrap;}
+    .cfg-view{gap:4px;flex-wrap:wrap;right:8px;}
+    .cfg-view button,.cfg-view button{width:56px;padding:3px;}
+    .cfg-view .ck{width:12px;height:12px;}
+    .cfg-view .vi{height:34px;}
+    .cfg-view .vA{font-size:22px;}
+    .cfg-view button .dimsvg{width:34px;margin:0;}
   }
 </style>
 </head>
@@ -1390,7 +1411,7 @@ function drawGondole(g){
     else{grp.appendChild(E("line",{x1:l0,y1:c-off,x2:l1,y2:c-off,stroke:fondCol,"stroke-width":1.6}));grp.appendChild(E("line",{x1:l0,y1:c+off,x2:l1,y2:c+off,stroke:fondCol,"stroke-width":1.6}));}}
   if(horiz){let c;if(isDF)c=y+h/2;else c=(g.rot===0)?(y+fondEp/2+1):(y+h-fondEp/2-1);band(false,x+2,x+w-2,c);}
   else{let c;if(isDF)c=x+w/2;else c=(g.rot===90)?(x+w-fondEp/2-1):(x+fondEp/2+1);band(true,y+2,y+h-2,c);}
-  const cbs=baysOf(g),totB=cbs.reduce((a,b)=>a+b,0);let accB=0;for(let m=1;m<g.len;m++){accB+=cbs[m-1];const t=accB/totB;if(horiz){const mx=x+t*w;grp.appendChild(E("line",{x1:mx,y1:y,x2:mx,y2:y+h,stroke:col.planEdge,"stroke-width":.8,opacity:.6}));}else{const my=y+t*h;grp.appendChild(E("line",{x1:x,y1:my,x2:x+w,y2:my,stroke:col.planEdge,"stroke-width":.8,opacity:.6}));}}
+  const cbs=baysOf(g),totB=cbs.reduce((a,b)=>a+b,0);let accB=0;for(let m=1;m<g.len;m++){accB+=cbs[m-1];const t=accB/totB;if(horiz){const mx=x+t*w;grp.appendChild(E("line",{x1:mx,y1:y,x2:mx,y2:y+h,stroke:isSel?"#e63f1e":col.planEdge,"stroke-width":1.5}));}else{const my=y+t*h;grp.appendChild(E("line",{x1:x,y1:my,x2:x+w,y2:my,stroke:isSel?"#e63f1e":col.planEdge,"stroke-width":1.5}));}}
   const cx=x+w/2,cy=y+h/2;
   const rp=repereOf(g);
   // position du texte : décalé dans une moitié pour ne pas être masqué par le fond central (DF)
@@ -1525,6 +1546,18 @@ svg.addEventListener("pointerup",e=>{
   try{svg.releasePointerCapture(e.pointerId);}catch(_){}
   if(wasClick) openDetModal();   // clic simple sur une gondole (sans déplacement) => ouvre le détail
 });
+// ---- zoom à deux doigts sur le plan 2D ----
+{ const tp=new Map(); let pd=0,pm=null;
+  const mid=()=>{const [a,b]=[...tp.values()];return [(a[0]+b[0])/2,(a[1]+b[1])/2];};
+  const dist=()=>{const [a,b]=[...tp.values()];return Math.hypot(a[0]-b[0],a[1]-b[1]);};
+  svg.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return; tp.set(e.pointerId,[e.clientX,e.clientY]);
+    if(tp.size===2){ drag=null;pan=null;noteDrag=null;snapGuides=[]; pd=dist(); pm=mid(); e.stopImmediatePropagation(); } },true);
+  svg.addEventListener("pointermove",e=>{ if(!tp.has(e.pointerId)) return; tp.set(e.pointerId,[e.clientX,e.clientY]);
+    if(tp.size>=2){ e.stopImmediatePropagation(); const d=dist(), m=mid(); if(pd>0&&d>0&&pm){ const r=svg.getBoundingClientRect(), k=W/r.width, kk=Hn/r.height,
+      [wx,wy]=pxToWorld((pm[0]-r.left)*k,(pm[1]-r.top)*kk);
+      view.ppm=Math.max(18,Math.min(120,view.ppm*d/pd)); view.ox=(m[0]-r.left)*k-wx*view.ppm; view.oy=(m[1]-r.top)*kk-wy*view.ppm; renderPlan(); } pd=d; pm=m; } },true);
+  const up=e=>{ if(!tp.delete(e.pointerId)) return; if(tp.size<2) pd=0; };
+  svg.addEventListener("pointerup",up,true); svg.addEventListener("pointercancel",up,true); }
 svg.addEventListener("wheel",e=>{e.preventDefault();const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const f=e.deltaY<0?1.1:.9;view.ppm=Math.max(18,Math.min(120,view.ppm*f));view.ox=sx-wx*view.ppm;view.oy=sy-wy*view.ppm;renderPlan();},{passive:false});
 // ---- Copier / Coller une gondole (Ctrl+C / Ctrl+V) ----
 let clipGondole=null;          // copie interne
@@ -2378,10 +2411,11 @@ window.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="s"||
   }
   function bindControls(){
     if(bound) return; bound=true;
-    const el=renderer.domElement; let drag=false,lx=0,ly=0;
-    el.addEventListener("pointerdown",e=>{drag=true;lx=e.clientX;ly=e.clientY;el.setPointerCapture(e.pointerId);});
-    el.addEventListener("pointermove",e=>{if(!drag)return;orbit.theta-=(e.clientX-lx)*0.008;orbit.phi-=(e.clientY-ly)*0.008;lx=e.clientX;ly=e.clientY;applyCam();});
-    el.addEventListener("pointerup",e=>{drag=false;try{el.releasePointerCapture(e.pointerId);}catch(_){}});
+    const el=renderer.domElement; let drag=false,lx=0,ly=0; const ptrs=new Map(); let pd=0,pmid=null; const pmidf=()=>{const [a,b]=[...ptrs.values()];return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};}; el.style.touchAction="none";
+    const pdist=()=>{const [a,b]=[...ptrs.values()];return Math.hypot(a.x-b.x,a.y-b.y);};
+    el.addEventListener("pointerdown",e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});drag=ptrs.size===1;if(ptrs.size===2){pd=pdist();pmid=pmidf();}lx=e.clientX;ly=e.clientY;el.setPointerCapture(e.pointerId);});
+    el.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size>=2){const d=pdist();const m=pmidf();if(pd>0&&d>0){orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*pd/d));const k=orbit.radius*0.0016,right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0);orbit.target.addScaledVector(right,-(m.x-pmid.x)*k);orbit.target.y=Math.max(0,orbit.target.y+(m.y-pmid.y)*k);applyCam();}pd=d;pmid=m;return;}if(!drag)return;orbit.theta-=(e.clientX-lx)*0.008;orbit.phi-=(e.clientY-ly)*0.008;lx=e.clientX;ly=e.clientY;applyCam();});
+    el.addEventListener("pointerup",e=>{ptrs.delete(e.pointerId);drag=false;pd=0;try{el.releasePointerCapture(e.pointerId);}catch(_){}});
     el.addEventListener("wheel",e=>{e.preventDefault();orbit.radius=Math.max(orbit.min,Math.min(orbit.max,orbit.radius*(e.deltaY<0?0.9:1.1)));applyCam();},{passive:false});
     el.addEventListener("dblclick",()=>frameScene());
   }
@@ -3018,16 +3052,16 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     return {id:U.gid,bay,seg:ud.fond?ud.k:-1,back:ud.side<0};
   }
   function bindControls(){
-    const el=renderer.domElement, ptrs=new Map(); let mode=null,moved=0,last=null,pinch=0;
+    const el=renderer.domElement, ptrs=new Map(); let mode=null,moved=0,last=null,pinch=0,pmid=null;
     el.addEventListener("contextmenu",e=>e.preventDefault());
     el.addEventListener("pointerdown",e=>{
       ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); el.setPointerCapture(e.pointerId);
       if(ptrs.size===1){ mode=(e.button===2||e.shiftKey)?"pan":"rot"; moved=0; last={x:e.clientX,y:e.clientY}; }
-      else { mode="pinch"; const [a,b]=[...ptrs.values()]; pinch=Math.hypot(a.x-b.x,a.y-b.y); }
+      else { mode="pinch"; const [a,b]=[...ptrs.values()]; pinch=Math.hypot(a.x-b.x,a.y-b.y); pmid={x:(a.x+b.x)/2,y:(a.y+b.y)/2}; }
     });
     el.addEventListener("pointermove",e=>{
       if(!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(mode==="pinch"&&ptrs.size>=2){ const [a,b]=[...ptrs.values()], d=Math.hypot(a.x-b.x,a.y-b.y); if(pinch>0){ orbit.radius=Math.max(0.8,Math.min(60,orbit.radius*pinch/d)); applyCam(); } pinch=d; return; }
+      if(mode==="pinch"&&ptrs.size>=2){ const [a,b]=[...ptrs.values()], d=Math.hypot(a.x-b.x,a.y-b.y); const mx=(a.x+b.x)/2,my=(a.y+b.y)/2; if(pinch>0){ orbit.radius=Math.max(0.8,Math.min(60,orbit.radius*pinch/d)); const k=orbit.radius*0.0016, right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0); orbit.target.addScaledVector(right,-(mx-pmid.x)*k); orbit.target.y=Math.max(0,orbit.target.y+(my-pmid.y)*k); applyCam(); } pinch=d; pmid={x:mx,y:my}; return; }
       if(!last) return; const dx=e.clientX-last.x, dy=e.clientY-last.y; moved+=Math.abs(dx)+Math.abs(dy); last={x:e.clientX,y:e.clientY};
       if(mode==="rot"){ orbit.theta-=dx*0.007; orbit.phi-=dy*0.007; applyCam(); }
       else if(mode==="pan"){ const k=orbit.radius*0.0016, right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0); orbit.target.addScaledVector(right,-dx*k); orbit.target.y=Math.max(0,orbit.target.y+dy*k); applyCam(); }
