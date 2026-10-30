@@ -179,6 +179,8 @@
   .toolbar .sep{width:1px;height:24px;background:var(--steel-100);}
   .toolbar .hint{font-size:12px;color:var(--steel-300);flex:1 1 100%;}
   .snap-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+.grid-step{margin-left:8px;font:600 13px inherit;color:var(--steel-700);border:1px solid #cfd8e2;border-radius:6px;padding:4px 6px;background:#fff;cursor:pointer;}
+.grid-step:disabled{opacity:.45;cursor:default;}
   .snap-toggle input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
   .plan-caption{padding:9px 16px 3px;font-size:12.5px;color:var(--steel-500);}
   #plan{display:block;width:100%;height:auto;background:#fbfcfd;touch-action:none;cursor:crosshair;border-radius:0 0 var(--radius) var(--radius);}
@@ -614,6 +616,7 @@
       <div class="grp"><button id="btnText" title="Cliquez ensuite sur le plan pour écrire une annotation ; cliquez sur une annotation pour la modifier, glissez-la pour la déplacer">𝐓 Texte</button></div>
       <div class="sep"></div>
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
+      <div class="grp"><label class="snap-toggle"><input type="checkbox" id="gridChk" checked> Grille</label><select id="gridStep" class="grid-step" aria-label="Pas de la grille" title="Pas de la grille"><option value="0.01">10 mm</option><option value="0.05">50 mm</option><option value="0.1">100 mm</option><option value="0.25" selected>250 mm</option><option value="0.5">500 mm</option><option value="1">1 m</option></select></div>
       <div class="sep"></div>
       <div class="grp"><button id="btnAdd" class="btn-add-plan">+ Ajouter une gondole</button></div>
       <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom</span>
@@ -1408,6 +1411,9 @@ function drawGrid(){
   const g=E("g",{});
   const maxX=(W-view.ox)/view.ppm+2,maxY=(Hn-view.oy)/view.ppm+2;
   const minX=Math.floor(-view.ox/view.ppm)-1,minY=Math.floor(-view.oy/view.ppm)-1;
+  if(gridOn&&gridStep<1&&gridStep*view.ppm>=8){ const n=Math.round(1/gridStep);
+    for(let i=Math.floor(minX/gridStep);i<=maxX/gridStep;i++){ if(i%n===0) continue; const[x]=worldToPx(i*gridStep,0); g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke:"#e9eef3","stroke-width":.5})); }
+    for(let j=Math.floor(minY/gridStep);j<=maxY/gridStep;j++){ if(j%n===0) continue; const[,y]=worldToPx(0,j*gridStep); g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke:"#e9eef3","stroke-width":.5})); } }
   for(let i=minX;i<=maxX;i++){const[x]=worldToPx(i,0);g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke:i%5===0?"#d7dee6":"#eef2f6","stroke-width":i%5===0?1:.7}));}
   for(let j=minY;j<=maxY;j++){const[,y]=worldToPx(0,j);g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke:j%5===0?"#d7dee6":"#eef2f6","stroke-width":j%5===0?1:.7}));}
   const[sx]=worldToPx(0,0);
@@ -1476,6 +1482,49 @@ function batimentImage(){
   if(!batimentURI) return null; const b=batimentBox(),[x,y]=worldToPx(b.x0,b.y0);
   return E("image",{href:batimentURI,x,y,width:(b.x1-b.x0)*view.ppm,height:(b.y1-b.y0)*view.ppm,preserveAspectRatio:"none","pointer-events":"none"});
 }
+// Obstacles (m) : faces des murs et poteaux au niveau du sol + contours des autres gondoles
+let batSegs=[], batSegsRev=-1;
+function obstacleSegs(exId){
+  if(batSegsRev!==batimentRev){ batSegsRev=batimentRev; batSegs=[];
+    if(batiment) batiment.solids.forEach(s=>{ if(s.z0>0) return; const P=s.pts.map(p=>[p[0]/1000,p[1]/1000]); P.forEach((p,i)=>batSegs.push([p,P[(i+1)%P.length]])); }); }
+  const out=batSegs.slice();
+  gondoles.forEach(o=>{ if(o.id===exId) return; const f=footprint(o), c=[[o.x,o.y],[o.x+f.w,o.y],[o.x+f.w,o.y+f.h],[o.x,o.y+f.h]]; c.forEach((p,i)=>out.push([p,c[(i+1)%4]])); });
+  return out;
+}
+// segment AB rogné à la bande x ≥ sx, ya ≤ y ≤ yb (Liang-Barsky)
+function clipBande(A,B,sx,ya,yb){
+  let t0=0,t1=1; const dx=B[0]-A[0], dy=B[1]-A[1];
+  for(const [p,q] of [[-dx,A[0]-sx],[-dy,A[1]-ya],[dy,yb-A[1]]]){
+    if(Math.abs(p)<1e-12){ if(q<0) return null; continue; }
+    const t=q/p; if(p<0){ if(t>t1) return null; if(t>t0) t0=t; } else { if(t<t0) return null; if(t<t1) t1=t; }
+  }
+  return [[A[0]+dx*t0,A[1]+dy*t0],[A[0]+dx*t1,A[1]+dy*t1]];
+}
+// distance libre depuis un côté de la gondole : chaque direction est ramenée à +X par un changement de repère
+function ecarts(g){
+  const fp=footprint(g), R={x0:g.x,y0:g.y,x1:g.x+fp.w,y1:g.y+fp.h}, segs=obstacleSegs(g.id), e=0.001, res=[];
+  [[p=>p,p=>p,R.x1,R.y0,R.y1],[p=>[-p[0],p[1]],p=>[-p[0],p[1]],-R.x0,R.y0,R.y1],
+   [p=>[p[1],p[0]],p=>[p[1],p[0]],R.y1,R.x0,R.x1],[p=>[-p[1],p[0]],p=>[p[1],-p[0]],-R.y0,R.x0,R.x1]].forEach(([f,b,sx,ya,yb])=>{
+    const yc=(ya+yb)/2; let best=null;
+    segs.forEach(([a,c])=>{ const A=f(a),C=f(c),k=clipBande(A,C,sx,ya+e,yb-e); if(!k) return;
+      const cand=k.slice(); const [P0,P1]=k; if((P0[1]-yc)*(P1[1]-yc)<0) cand.push([P0[0]+(P1[0]-P0[0])*(yc-P0[1])/(P1[1]-P0[1]),yc]);
+      cand.forEach(q=>{ if(!best||q[0]<best[0]-1e-6||(Math.abs(q[0]-best[0])<=1e-6&&Math.abs(q[1]-yc)<Math.abs(best[1]-yc))) best=q; }); });
+    if(best&&best[0]-sx>=0.005) res.push({a:b([sx,best[1]]),b:b(best),d:best[0]-sx});
+  });
+  return res;
+}
+function drawEcarts(g){
+  const grp=E("g",{"pointer-events":"none"}), col="#1b6ec2";
+  ecarts(g).forEach(({a,b,d})=>{
+    const [x1,y1]=worldToPx(a[0],a[1]),[x2,y2]=worldToPx(b[0],b[1]), hor=Math.abs(y2-y1)<Math.abs(x2-x1), t=4;
+    grp.appendChild(E("line",{x1,y1,x2,y2,stroke:col,"stroke-width":1.2,"stroke-dasharray":"4 3"}));
+    [[x1,y1],[x2,y2]].forEach(([x,y])=>grp.appendChild(E("line",{...(hor?{x1:x,y1:y-t,x2:x,y2:y+t}:{x1:x-t,y1:y,x2:x+t,y2:y}),stroke:col,"stroke-width":1.4})));
+    const txt=String(Math.round(d*1000)).replace(/\B(?=(\d{3})+(?!\d))/g," "), mx=(x1+x2)/2, my=(y1+y2)/2, w=txt.length*6.6+8;
+    grp.appendChild(E("rect",{x:mx-w/2,y:my-8,width:w,height:16,rx:3,fill:"#fff",stroke:col,"stroke-width":1}));
+    grp.appendChild(E("text",{x:mx,y:my+4,"text-anchor":"middle","font-size":11,"font-weight":600,fill:col},txt));
+  });
+  return grp;
+}
 function importerBatiment(d){
   const b=nettoyerBatiment(d); if(!b){ alert("Ce fichier PlanCoté ne contient pas de bâtiment exploitable."); return; }
   if(batiment&&!confirm("Remplacer le bâtiment actuel par « "+(b.name||"PlanCoté")+" » ?")) return;
@@ -1521,6 +1570,7 @@ function renderPlan(){
   gondoles.filter(g=>g.id!==selId).forEach(g=>svg.appendChild(drawGondole(g)));
   const s=sel(); if(s)svg.appendChild(drawGondole(s));
   notes.forEach(n=>svg.appendChild(drawNote(n)));
+  { const sg=sel(); if(sg) svg.appendChild(drawEcarts(sg)); }   // écarts live, y compris pendant le déplacement
   snapGuides.forEach(gd=>{const[x1,y1]=worldToPx(gd.x1,gd.y1),[x2,y2]=worldToPx(gd.x2,gd.y2);svg.appendChild(E("line",{x1,y1,x2,y2,stroke:"#e63f1e","stroke-width":1.5,"stroke-dasharray":"5 4",opacity:.9}));});
 }
 
@@ -1567,6 +1617,8 @@ function gondolesGroupees(){
 
 // ===================== Interaction plan =====================
 let drag=null,pan=null,snapEnabled=true,snapGuides=[];const SNAP_M=0.18;
+let gridOn=true, gridStep=0.25;   // grille : position arrondie au pas (m) ; sans grille, au millimètre
+const snapG=v=>Math.round((gridOn?Math.round(v/gridStep)*gridStep:v)*1000)/1000;
 function svgPoint(evt){const r=svg.getBoundingClientRect();return[(evt.clientX-r.left)*(W/r.width),(evt.clientY-r.top)*(Hn/r.height)];}
 svg.addEventListener("contextmenu",e=>e.preventDefault());
 svg.addEventListener("pointerdown",e=>{
@@ -1585,7 +1637,7 @@ svg.addEventListener("pointermove",e=>{
   if(pan){const[sx,sy]=svgPoint(e);view.ox=pan.ox+(sx-pan.px);view.oy=pan.oy+(sy-pan.py);renderPlan();return;}
   if(!drag)return;
   const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const g=gondoles.find(x=>x.id===drag.id);
-  let nx=Math.round((wx-drag.dx)*4)/4,ny=Math.round((wy-drag.dy)*4)/4;
+  let nx=snapG(wx-drag.dx),ny=snapG(wy-drag.dy);
   snapGuides=[];
   if(snapEnabled){const r=snapToGondoles(g,nx,ny);nx=r.x;ny=r.y;snapGuides=r.guides;}
   if(nx!==g.x||ny!==g.y)drag.moved=true;
@@ -1629,8 +1681,8 @@ function pasteGondole(){
   const c={...clipGondole, id:nextId++, grp:0, tabProfs:(clipGondole.tabProfs||[]).slice()};
   if(lastMouseWorld){                       // coller sous la souris si elle est sur le plan
     const fp=footprint(c);
-    c.x=Math.round((lastMouseWorld[0]-fp.w/2)*4)/4;
-    c.y=Math.round((lastMouseWorld[1]-fp.h/2)*4)/4;
+    c.x=snapG(lastMouseWorld[0]-fp.w/2);
+    c.y=snapG(lastMouseWorld[1]-fp.h/2);
   } else {                                   // sinon, décalage par rapport à l'original
     c.x=clipGondole.x+0.5; c.y=clipGondole.y+0.5;
   }
@@ -1692,7 +1744,7 @@ function snapToGondoles(g,nx,ny){
 }
 
 // ===================== Barre d'outils =====================
-document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
+document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(snapG(wx),snapG(wy));gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
 function rotateSel(){const n=notes.find(x=>x.id===selNote); if(n){n.r=((n.r||0)+90)%360;renderPlan();return;} const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
 document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
@@ -1700,6 +1752,8 @@ document.getElementById("btnZoomOut").addEventListener("click",()=>{view.ppm=Mat
 document.getElementById("btnFit").addEventListener("click",fitView);
 document.getElementById("btnClear").addEventListener("click",()=>{if(gondoles.length&&confirm("Effacer tout le plan ?")){gondoles=[];notes=[];selId=null;renderAll();}});
 document.getElementById("snapChk").addEventListener("change",e=>{snapEnabled=e.target.checked;});
+document.getElementById("gridChk").addEventListener("change",e=>{gridOn=e.target.checked;document.getElementById("gridStep").disabled=!gridOn;renderPlan();});
+document.getElementById("gridStep").addEventListener("change",e=>{gridStep=+e.target.value||0.25;renderPlan();});
 function fitView(){
   const bb=batimentBox();
   if(gondoles.length===0&&!bb){view={ox:60,oy:60,ppm:52};renderPlan();return;}
@@ -2327,7 +2381,7 @@ document.getElementById("modePlan").addEventListener("click",()=>setMode("plan")
 // bouton Ajouter du bloc "Ma demande" (utile surtout en mode liste)
 document.getElementById("btnAddList").addEventListener("click",()=>{
   const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);
-  const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
+  const g=newGondole(snapG(wx),snapG(wy));
   gondoles.push(g); selId=g.id; renderAll(); openDetModal(true);
 });
 
