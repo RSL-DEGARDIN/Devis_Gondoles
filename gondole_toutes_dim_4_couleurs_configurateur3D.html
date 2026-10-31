@@ -179,6 +179,8 @@
   .toolbar .sep{width:1px;height:24px;background:var(--steel-100);}
   .toolbar .hint{font-size:12px;color:var(--steel-300);flex:1 1 100%;}
   .snap-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--steel-700);cursor:pointer;}
+.grid-step{margin-left:8px;font:600 13px inherit;color:var(--steel-700);border:1px solid #cfd8e2;border-radius:6px;padding:4px 6px;background:#fff;cursor:pointer;}
+.grid-step:disabled{opacity:.45;cursor:default;}
   .snap-toggle input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
   .plan-caption{padding:9px 16px 3px;font-size:12.5px;color:var(--steel-500);}
   #plan{display:block;width:100%;height:auto;background:#fbfcfd;touch-action:none;cursor:crosshair;border-radius:0 0 var(--radius) var(--radius);}
@@ -392,6 +394,11 @@
   .cfg-drop button{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;text-align:left;font:500 13.5px "Segoe UI",system-ui,sans-serif;padding:8px 14px;cursor:pointer;color:inherit;}
   .cfg-drop button:hover{background:#eef6fb;}
   .cfg-drop button .ck{width:16px;color:var(--cb);font-weight:800;}
+.cfg-drop .wallcol{display:flex;flex-direction:column;gap:6px;padding:8px 14px 10px;border-top:1px solid #e3e8ee;font:500 13.5px "Segoe UI",system-ui,sans-serif;}
+.cfg-drop .wallcol .wsw{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.cfg-drop .wallcol button{display:inline-block;width:24px;height:24px;padding:0;border:1px solid #9aa4b0;border-radius:4px;cursor:pointer;}
+.cfg-drop .wallcol button.on{outline:2px solid var(--cb);outline-offset:1px;}
+.cfg-drop .wallcol input{width:30px;height:26px;padding:0;border:1px solid #9aa4b0;border-radius:4px;background:none;cursor:pointer;}
   .cfg-drop hr{border:0;border-top:1px solid #e2e8ee;margin:5px 0;}
   .cfg-drop .help{padding:10px 14px;font-size:13px;line-height:1.55;max-width:340px;color:#2e3a4a;}
   .cfg-drop .help kbd{font:700 11px Consolas,monospace;border:1px solid #cfd6dd;border-bottom-width:2px;border-radius:3px;padding:0 4px;background:#f5f7f9;}
@@ -571,6 +578,8 @@
 <div class="page-bar" id="pageBar">
   <button type="button" class="pb" id="btnSave">💾 Enregistrer</button>
   <button type="button" class="pb" id="btnOpen">📂 Ouvrir</button>
+  <button type="button" class="pb" id="btnBat" title="Importer le plan du bâtiment dessiné dans PlanCoté (fichier « … - batiment.json »)">🏢 Bâtiment</button>
+  <button type="button" class="pb" id="btnBatDel" title="Retirer le plan du bâtiment" style="display:none">✕ Bâtiment</button>
   <button type="button" class="pb" id="btnShare" title="Copier un lien pour que le client voie son projet en 3D">🔗 Lien 3D</button>
   <button type="button" class="pb" id="btnNew">▤ nouvelle implantation</button>
   <span class="sp"></span>
@@ -607,6 +616,7 @@
       <div class="grp"><button id="btnText" title="Cliquez ensuite sur le plan pour écrire une annotation ; cliquez sur une annotation pour la modifier, glissez-la pour la déplacer">𝐓 Texte</button></div>
       <div class="sep"></div>
       <div class="grp"><label class="snap-toggle"><input type="checkbox" id="snapChk" checked> Aimanter</label></div>
+      <div class="grp"><label class="snap-toggle"><input type="checkbox" id="gridChk" checked> Grille</label><select id="gridStep" class="grid-step" aria-label="Pas de la grille" title="Pas de la grille"><option value="0.01">10 mm</option><option value="0.05">50 mm</option><option value="0.1">100 mm</option><option value="0.25" selected>250 mm</option><option value="0.5">500 mm</option><option value="1">1 m</option></select></div>
       <div class="sep"></div>
       <div class="grp"><button id="btnAdd" class="btn-add-plan">+ Ajouter une gondole</button></div>
       <span class="hint">Glissez une gondole pour la déplacer · clic droit ou fond + glisser = déplacer la vue · molette = zoom</span>
@@ -789,6 +799,18 @@
       <div class="cfg-drop">
         <button type="button" data-env="store"><span class="ck"></span>Magasin (sol carrelé et mur)</button>
         <button type="button" data-env="neutral"><span class="ck"></span>Fond neutre</button>
+        <button type="button" data-walls="glass"><span class="ck"></span>Bâtiment transparent</button>
+        <button type="button" data-walls="full"><span class="ck"></span>Bâtiment plein</button>
+        <button type="button" data-walls="trace"><span class="ck"></span>Bâtiment tracé au sol</button>
+        <button type="button" data-walls="none"><span class="ck"></span>Sans bâtiment</button>
+        <div class="wallcol" data-wallrow><span>Couleur des murs</span><span class="wsw">
+          <button type="button" data-wallcol="#c8cdd3" title="Gris clair" style="background:#c8cdd3"></button>
+          <button type="button" data-wallcol="#e9e4da" title="Blanc cassé" style="background:#e9e4da"></button>
+          <button type="button" data-wallcol="#9ea3a8" title="Gris béton" style="background:#9ea3a8"></button>
+          <button type="button" data-wallcol="#4f545a" title="Anthracite" style="background:#4f545a"></button>
+          <button type="button" data-wallcol="#d9c3a5" title="Beige" style="background:#d9c3a5"></button>
+          <button type="button" data-wallcol="#5b7fa8" title="Bleu" style="background:#5b7fa8"></button>
+          <input type="color" data-wallpick title="Autre couleur" aria-label="Autre couleur des murs"></span></div>
       </div>
     </div>
     <div class="cfg-menu" id="mHelp">
@@ -1389,6 +1411,9 @@ function drawGrid(){
   const g=E("g",{});
   const maxX=(W-view.ox)/view.ppm+2,maxY=(Hn-view.oy)/view.ppm+2;
   const minX=Math.floor(-view.ox/view.ppm)-1,minY=Math.floor(-view.oy/view.ppm)-1;
+  if(gridOn&&gridStep<1&&gridStep*view.ppm>=8){ const n=Math.round(1/gridStep);
+    for(let i=Math.floor(minX/gridStep);i<=maxX/gridStep;i++){ if(i%n===0) continue; const[x]=worldToPx(i*gridStep,0); g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke:"#e9eef3","stroke-width":.5})); }
+    for(let j=Math.floor(minY/gridStep);j<=maxY/gridStep;j++){ if(j%n===0) continue; const[,y]=worldToPx(0,j*gridStep); g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke:"#e9eef3","stroke-width":.5})); } }
   for(let i=minX;i<=maxX;i++){const[x]=worldToPx(i,0);g.appendChild(E("line",{x1:x,y1:0,x2:x,y2:Hn,stroke:i%5===0?"#d7dee6":"#eef2f6","stroke-width":i%5===0?1:.7}));}
   for(let j=minY;j<=maxY;j++){const[,y]=worldToPx(0,j);g.appendChild(E("line",{x1:0,y1:y,x2:W,y2:y,stroke:j%5===0?"#d7dee6":"#eef2f6","stroke-width":j%5===0?1:.7}));}
   const[sx]=worldToPx(0,0);
@@ -1432,6 +1457,81 @@ function drawGondole(g){
 }
 // ---- Annotations texte sur le plan ----
 let notes=[], nextNote=1, textMode=false, noteDrag=null, selNote=null;
+// ===================== Bâtiment importé de PlanCoté =====================
+let batiment=null, batimentURI="", batimentRev=0;
+function nettoyerBatiment(d){
+  if(!d||typeof d!=="object") return null;
+  const b=d.bounds, num=v=>v!==null&&v!==""&&Number.isFinite(+v), pt=p=>Array.isArray(p)&&num(p[0])&&num(p[1]), poly=a=>Array.isArray(a)&&a.length>=3&&a.length<=2000&&a.every(pt);
+  if(!b||![b.x0,b.y0,b.x1,b.y1].every(num)||+b.x1<=+b.x0||+b.y1<=+b.y0) return null;
+  return { app:"PlanCoté", kind:"batiment", name:String(d.name||"").slice(0,80), bounds:{x0:+b.x0,y0:+b.y0,x1:+b.x1,y1:+b.y1},
+    svg: typeof d.svg==="string"&&d.svg.startsWith("<svg")&&d.svg.length<3e6 ? d.svg : "",
+    solids:(Array.isArray(d.solids)?d.solids:[]).filter(x=>x&&poly(x.pts)).slice(0,5000)
+      .map(x=>({kind:x.kind==="poteau"?"poteau":"mur",pts:x.pts.map(p=>[+p[0],+p[1]]),z0:Math.max(0,+x.z0||0),z1:Math.max(0,+x.z1||0),color:/^#[0-9a-f]{6}$/i.test(x.color)?x.color:""})).filter(x=>x.z1>x.z0),
+    wallColor:/^#[0-9a-f]{6}$/i.test(d.wallColor)?d.wallColor:"#c8cdd3",
+    zones:(Array.isArray(d.zones)?d.zones:[]).filter(z=>z&&poly(z.pts)).slice(0,1000)
+      .map(z=>({pts:z.pts.map(p=>[+p[0],+p[1]]),color:/^#[0-9a-f]{6}$/i.test(z.color)?z.color:"#e5e7eb"})) };
+}
+function setBatiment(b){
+  batiment=b; batimentRev++;
+  // le fond de plan passe par une <image> : son SVG ne peut exécuter aucun script
+  batimentURI=b&&b.svg?"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(b.svg):"";
+  const del=document.getElementById("btnBatDel"); if(del) del.style.display=b?"":"none";
+}
+function batimentBox(){ if(!batiment) return null; const b=batiment.bounds; return {x0:b.x0/1000,y0:b.y0/1000,x1:b.x1/1000,y1:b.y1/1000}; }
+function batimentImage(){
+  if(!batimentURI) return null; const b=batimentBox(),[x,y]=worldToPx(b.x0,b.y0);
+  return E("image",{href:batimentURI,x,y,width:(b.x1-b.x0)*view.ppm,height:(b.y1-b.y0)*view.ppm,preserveAspectRatio:"none","pointer-events":"none"});
+}
+// Obstacles (m) : faces des murs et poteaux au niveau du sol + contours des autres gondoles
+let batSegs=[], batSegsRev=-1;
+function obstacleSegs(exId){
+  if(batSegsRev!==batimentRev){ batSegsRev=batimentRev; batSegs=[];
+    if(batiment) batiment.solids.forEach(s=>{ if(s.z0>0) return; const P=s.pts.map(p=>[p[0]/1000,p[1]/1000]); P.forEach((p,i)=>batSegs.push([p,P[(i+1)%P.length]])); }); }
+  const out=batSegs.slice();
+  gondoles.forEach(o=>{ if(o.id===exId) return; const f=footprint(o), c=[[o.x,o.y],[o.x+f.w,o.y],[o.x+f.w,o.y+f.h],[o.x,o.y+f.h]]; c.forEach((p,i)=>out.push([p,c[(i+1)%4]])); });
+  return out;
+}
+// segment AB rogné à la bande x ≥ sx, ya ≤ y ≤ yb (Liang-Barsky)
+function clipBande(A,B,sx,ya,yb){
+  let t0=0,t1=1; const dx=B[0]-A[0], dy=B[1]-A[1];
+  for(const [p,q] of [[-dx,A[0]-sx],[-dy,A[1]-ya],[dy,yb-A[1]]]){
+    if(Math.abs(p)<1e-12){ if(q<0) return null; continue; }
+    const t=q/p; if(p<0){ if(t>t1) return null; if(t>t0) t0=t; } else { if(t<t0) return null; if(t<t1) t1=t; }
+  }
+  return [[A[0]+dx*t0,A[1]+dy*t0],[A[0]+dx*t1,A[1]+dy*t1]];
+}
+// distance libre depuis un côté de la gondole : chaque direction est ramenée à +X par un changement de repère
+function ecarts(g){
+  const fp=footprint(g), R={x0:g.x,y0:g.y,x1:g.x+fp.w,y1:g.y+fp.h}, segs=obstacleSegs(g.id), e=0.001, res=[];
+  [[p=>p,p=>p,R.x1,R.y0,R.y1],[p=>[-p[0],p[1]],p=>[-p[0],p[1]],-R.x0,R.y0,R.y1],
+   [p=>[p[1],p[0]],p=>[p[1],p[0]],R.y1,R.x0,R.x1],[p=>[-p[1],p[0]],p=>[p[1],-p[0]],-R.y0,R.x0,R.x1]].forEach(([f,b,sx,ya,yb])=>{
+    const yc=(ya+yb)/2; let best=null;
+    segs.forEach(([a,c])=>{ const A=f(a),C=f(c),k=clipBande(A,C,sx,ya+e,yb-e); if(!k) return;
+      const cand=k.slice(); const [P0,P1]=k; if((P0[1]-yc)*(P1[1]-yc)<0) cand.push([P0[0]+(P1[0]-P0[0])*(yc-P0[1])/(P1[1]-P0[1]),yc]);
+      cand.forEach(q=>{ if(!best||q[0]<best[0]-1e-6||(Math.abs(q[0]-best[0])<=1e-6&&Math.abs(q[1]-yc)<Math.abs(best[1]-yc))) best=q; }); });
+    if(best&&best[0]-sx>=0.005) res.push({a:b([sx,best[1]]),b:b(best),d:best[0]-sx});
+  });
+  return res;
+}
+function drawEcarts(g){
+  const grp=E("g",{"pointer-events":"none"}), col="#1b6ec2";
+  ecarts(g).forEach(({a,b,d})=>{
+    const [x1,y1]=worldToPx(a[0],a[1]),[x2,y2]=worldToPx(b[0],b[1]), hor=Math.abs(y2-y1)<Math.abs(x2-x1), t=4;
+    grp.appendChild(E("line",{x1,y1,x2,y2,stroke:col,"stroke-width":1.2,"stroke-dasharray":"4 3"}));
+    [[x1,y1],[x2,y2]].forEach(([x,y])=>grp.appendChild(E("line",{...(hor?{x1:x,y1:y-t,x2:x,y2:y+t}:{x1:x-t,y1:y,x2:x+t,y2:y}),stroke:col,"stroke-width":1.4})));
+    const txt=String(Math.round(d*1000)).replace(/\B(?=(\d{3})+(?!\d))/g," "), mx=(x1+x2)/2, my=(y1+y2)/2, w=txt.length*6.6+8;
+    grp.appendChild(E("rect",{x:mx-w/2,y:my-8,width:w,height:16,rx:3,fill:"#fff",stroke:col,"stroke-width":1}));
+    grp.appendChild(E("text",{x:mx,y:my+4,"text-anchor":"middle","font-size":11,"font-weight":600,fill:col},txt));
+  });
+  return grp;
+}
+function importerBatiment(d){
+  const b=nettoyerBatiment(d); if(!b){ alert("Ce fichier PlanCoté ne contient pas de bâtiment exploitable."); return; }
+  if(batiment&&!confirm("Remplacer le bâtiment actuel par « "+(b.name||"PlanCoté")+" » ?")) return;
+  setBatiment(b); document.getElementById("welcome").classList.add("hidden");
+  if(!document.body.classList.contains("cfg-open")) setMode("plan");
+  renderAll(); fitView(); flashMsg("Bâtiment importé : "+(b.name||"PlanCoté"));
+}
 function noteBox(n,fs){ const lines=String(n.t).split("\n"); return {lines,w:Math.max(...lines.map(l=>l.length))*fs*0.58+12,h:lines.length*fs*1.25+8}; }
 function drawNote(n){
   const[x,y]=worldToPx(n.x,n.y), fs=Math.max(9,Math.min(17,11*view.ppm/52)), b=noteBox(n,fs);
@@ -1466,9 +1566,11 @@ document.getElementById("btnText").addEventListener("click",()=>setTextMode(!tex
 function renderPlan(){
   svg.innerHTML="";
   svg.appendChild(drawGrid());
+  { const im=batimentImage(); if(im) svg.appendChild(im); }
   gondoles.filter(g=>g.id!==selId).forEach(g=>svg.appendChild(drawGondole(g)));
   const s=sel(); if(s)svg.appendChild(drawGondole(s));
   notes.forEach(n=>svg.appendChild(drawNote(n)));
+  { const sg=sel(); if(sg) svg.appendChild(drawEcarts(sg)); }   // écarts live, y compris pendant le déplacement
   snapGuides.forEach(gd=>{const[x1,y1]=worldToPx(gd.x1,gd.y1),[x2,y2]=worldToPx(gd.x2,gd.y2);svg.appendChild(E("line",{x1,y1,x2,y2,stroke:"#e63f1e","stroke-width":1.5,"stroke-dasharray":"5 4",opacity:.9}));});
 }
 
@@ -1515,6 +1617,8 @@ function gondolesGroupees(){
 
 // ===================== Interaction plan =====================
 let drag=null,pan=null,snapEnabled=true,snapGuides=[];const SNAP_M=0.18;
+let gridOn=true, gridStep=0.25;   // grille : position arrondie au pas (m) ; sans grille, au millimètre
+const snapG=v=>Math.round((gridOn?Math.round(v/gridStep)*gridStep:v)*1000)/1000;
 function svgPoint(evt){const r=svg.getBoundingClientRect();return[(evt.clientX-r.left)*(W/r.width),(evt.clientY-r.top)*(Hn/r.height)];}
 svg.addEventListener("contextmenu",e=>e.preventDefault());
 svg.addEventListener("pointerdown",e=>{
@@ -1533,7 +1637,7 @@ svg.addEventListener("pointermove",e=>{
   if(pan){const[sx,sy]=svgPoint(e);view.ox=pan.ox+(sx-pan.px);view.oy=pan.oy+(sy-pan.py);renderPlan();return;}
   if(!drag)return;
   const[sx,sy]=svgPoint(e);const[wx,wy]=pxToWorld(sx,sy);const g=gondoles.find(x=>x.id===drag.id);
-  let nx=Math.round((wx-drag.dx)*4)/4,ny=Math.round((wy-drag.dy)*4)/4;
+  let nx=snapG(wx-drag.dx),ny=snapG(wy-drag.dy);
   snapGuides=[];
   if(snapEnabled){const r=snapToGondoles(g,nx,ny);nx=r.x;ny=r.y;snapGuides=r.guides;}
   if(nx!==g.x||ny!==g.y)drag.moved=true;
@@ -1577,8 +1681,8 @@ function pasteGondole(){
   const c={...clipGondole, id:nextId++, grp:0, tabProfs:(clipGondole.tabProfs||[]).slice()};
   if(lastMouseWorld){                       // coller sous la souris si elle est sur le plan
     const fp=footprint(c);
-    c.x=Math.round((lastMouseWorld[0]-fp.w/2)*4)/4;
-    c.y=Math.round((lastMouseWorld[1]-fp.h/2)*4)/4;
+    c.x=snapG(lastMouseWorld[0]-fp.w/2);
+    c.y=snapG(lastMouseWorld[1]-fp.h/2);
   } else {                                   // sinon, décalage par rapport à l'original
     c.x=clipGondole.x+0.5; c.y=clipGondole.y+0.5;
   }
@@ -1640,7 +1744,7 @@ function snapToGondoles(g,nx,ny){
 }
 
 // ===================== Barre d'outils =====================
-document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
+document.getElementById("btnAdd").addEventListener("click",()=>{const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);const g=newGondole(snapG(wx),snapG(wy));gondoles.push(g);selId=g.id;renderAll();openDetModal(true);});
 function rotateSel(){const n=notes.find(x=>x.id===selNote); if(n){n.r=((n.r||0)+90)%360;renderPlan();return;} const g=sel();if(!g)return;g.rot=(g.rot+90)%360;renderAll();}
 document.getElementById("btnRotate").addEventListener("click",rotateSel);
 document.getElementById("btnZoomIn").addEventListener("click",()=>{view.ppm=Math.min(120,view.ppm*1.15);renderPlan();});
@@ -1648,10 +1752,14 @@ document.getElementById("btnZoomOut").addEventListener("click",()=>{view.ppm=Mat
 document.getElementById("btnFit").addEventListener("click",fitView);
 document.getElementById("btnClear").addEventListener("click",()=>{if(gondoles.length&&confirm("Effacer tout le plan ?")){gondoles=[];notes=[];selId=null;renderAll();}});
 document.getElementById("snapChk").addEventListener("change",e=>{snapEnabled=e.target.checked;});
+document.getElementById("gridChk").addEventListener("change",e=>{gridOn=e.target.checked;document.getElementById("gridStep").disabled=!gridOn;renderPlan();});
+document.getElementById("gridStep").addEventListener("change",e=>{gridStep=+e.target.value||0.25;renderPlan();});
 function fitView(){
-  if(gondoles.length===0){view={ox:60,oy:60,ppm:52};renderPlan();return;}
+  const bb=batimentBox();
+  if(gondoles.length===0&&!bb){view={ox:60,oy:60,ppm:52};renderPlan();return;}
   let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
   gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
+  if(bb){mnX=Math.min(mnX,bb.x0);mnY=Math.min(mnY,bb.y0);mxX=Math.max(mxX,bb.x1);mxY=Math.max(mxY,bb.y1);}
   const pad=1,spanX=(mxX-mnX)+2*pad,spanY=(mxY-mnY)+2*pad;
   view.ppm=Math.max(18,Math.min(120,Math.min(W/spanX,Hn/spanY)));
   view.ox=(W-(mxX+mnX)*view.ppm)/2;view.oy=(Hn-(mxY+mnY)*view.ppm)/2;renderPlan();
@@ -2042,6 +2150,7 @@ function planPng2D(){
     if(!gondoles.length) return resolve(null);
     let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
     gondoles.forEach(g=>{const fp=footprint(g);mnX=Math.min(mnX,g.x);mnY=Math.min(mnY,g.y);mxX=Math.max(mxX,g.x+fp.w);mxY=Math.max(mxY,g.y+fp.h);});
+    { const bb=batimentBox(); if(bb){mnX=Math.min(mnX,bb.x0);mnY=Math.min(mnY,bb.y0);mxX=Math.max(mxX,bb.x1);mxY=Math.max(mxY,bb.y1);} }
     notes.forEach(n=>{const b=noteBox(n,11);mnX=Math.min(mnX,n.x);mnY=Math.min(mnY,n.y);const m=Math.max(b.w,b.h)/52;mxX=Math.max(mxX,n.x+m);mxY=Math.max(mxY,n.y+m);});
     const pad=0.6, x0=mnX-pad, y0=mnY-pad, spanX=mxX-mnX+2*pad, spanY=mxY-mnY+2*pad;
     const ppm=Math.min(90,2000/Math.max(spanX,spanY));
@@ -2054,7 +2163,7 @@ function planPng2D(){
     for(let j=Math.ceil(y0);j<=y0+spanY;j++){const y=(j-y0)*ppm;tmp.appendChild(E("line",{x1:0,y1:y,x2:Wp,y2:y,stroke:"#e6ebf0","stroke-width":1}));}
     const saveView=view, saveSel=selId, saveNote=selNote;
     view={ox:-x0*ppm,oy:-y0*ppm,ppm}; selId=null; selNote=null;
-    try{ gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); notes.forEach(n=>tmp.appendChild(drawNote(n))); } finally { view=saveView; selId=saveSel; selNote=saveNote; }
+    try{ { const im=batimentImage(); if(im) tmp.appendChild(im); } gondoles.forEach(g=>tmp.appendChild(drawGondole(g))); notes.forEach(n=>tmp.appendChild(drawNote(n))); } finally { view=saveView; selId=saveSel; selNote=saveNote; }
     tmp.appendChild(E("line",{x1:14,y1:Hp-16,x2:14+ppm,y2:Hp-16,stroke:"#55677d","stroke-width":3}));
     tmp.appendChild(E("text",{x:14,y:Hp-24,"font-size":13,fill:"#55677d"},"1 m"));
     const xml=new XMLSerializer().serializeToString(tmp);
@@ -2272,7 +2381,7 @@ document.getElementById("modePlan").addEventListener("click",()=>setMode("plan")
 // bouton Ajouter du bloc "Ma demande" (utile surtout en mode liste)
 document.getElementById("btnAddList").addEventListener("click",()=>{
   const[wx,wy]=pxToWorld(W*0.4,Hn*0.4);
-  const g=newGondole(Math.round(wx*4)/4,Math.round(wy*4)/4);
+  const g=newGondole(snapG(wx),snapG(wy));
   gondoles.push(g); selId=g.id; renderAll(); openDetModal(true);
 });
 
@@ -2295,7 +2404,7 @@ function projetVersJson(){
     app:PROJET_APP, version:PROJET_VERSION, savedAt:new Date().toISOString(),
     mode:document.body.classList.contains("mode-list")?"list":"plan",
     client:{nom:val("cNom"),societe:val("cSociete"),email:val("cEmail"),tel:val("cTel"),msg:val("cMsg")},
-    planColor, nextGrp, gondoles, notes
+    planColor, nextGrp, gondoles, notes, batiment
   },null,2);
 }
 async function enregistrerProjet(){
@@ -2345,6 +2454,7 @@ function nettoyerGondole(o){
 }
 function chargerProjetTexte(txt){
   let d; try{ d=JSON.parse(txt); }catch(e){ alert("Ce fichier n'est pas un projet valide."); return; }
+  if(d&&d.app==="PlanCoté"){ if(d.kind==="batiment") importerBatiment(d); else alert("Dans PlanCoté, exportez le plan au format « Bâtiment pour le plan gondoles »."); return; }
   if(!d||d.app!==PROJET_APP||!Array.isArray(d.gondoles)){ alert("Ce fichier n'est pas un projet gondoles RSL."); return; }
   if(gondoles.length && document.getElementById("welcome").classList.contains("hidden")){
     if(!confirm("Ouvrir ce projet remplacera le travail en cours. Continuer ?")) return;
@@ -2355,6 +2465,7 @@ function chargerProjetTexte(txt){
   nextGrp=Math.max(Number(d.nextGrp)||1, gondoles.reduce((m,g)=>Math.max(m,g.grp),0)+1);
   planColor=COLORIS[d.planColor]?d.planColor:"blanc";
   notes=(Array.isArray(d.notes)?d.notes:[]).filter(n=>n&&typeof n.t==="string"&&isFinite(n.x)&&isFinite(n.y)).map((n,i)=>({id:i+1,x:+n.x,y:+n.y,t:n.t.slice(0,300),r:[90,180,270].includes(n.r)?n.r:0})); nextNote=notes.length+1;
+  setBatiment(nettoyerBatiment(d.batiment));
   selId=null;
   const c=d.client||{};
   document.getElementById("cNom").value=c.nom||""; document.getElementById("cSociete").value=c.societe||"";
@@ -2372,6 +2483,8 @@ fileOpen.addEventListener("change",()=>{
   const r=new FileReader(); r.onload=()=>chargerProjetTexte(String(r.result)); r.readAsText(f);
 });
 document.getElementById("btnSave").addEventListener("click",enregistrerProjet);
+document.getElementById("btnBat").addEventListener("click",ouvrirProjet);
+document.getElementById("btnBatDel").addEventListener("click",()=>{ if(batiment&&confirm("Retirer le plan du bâtiment ? Les gondoles restent en place.")){ setBatiment(null); renderAll(); fitView(); } });
 document.getElementById("btnOpen").addEventListener("click",ouvrirProjet);
 document.getElementById("chooseResume").addEventListener("click",ouvrirProjet);
 // Ctrl+S = enregistrer le projet
@@ -2659,7 +2772,7 @@ const b64u={
 async function streamBytes(u8,Ctor){ const st=new Blob([u8]).stream().pipeThrough(new Ctor("deflate-raw")); return new Uint8Array(await new Response(st).arrayBuffer()); }
 // le lien ne contient QUE les gondoles (aucune coordonnée client)
 async function fragmentVue3D(){
-  let u8=new TextEncoder().encode(JSON.stringify({app:PROJET_APP,version:PROJET_VERSION,planColor,nextGrp,gondoles,pres:window.cfg3dState?{mode:cfg3dState.mode,env:cfg3dState.env,products:cfg3dState.products,labels:cfg3dState.labels,light:cfg3dState.light}:undefined})), tag="j";
+  let u8=new TextEncoder().encode(JSON.stringify({app:PROJET_APP,version:PROJET_VERSION,planColor,nextGrp,gondoles,batiment:batiment?{...batiment,svg:""}:null,pres:window.cfg3dState?{mode:cfg3dState.mode,env:cfg3dState.env,products:cfg3dState.products,labels:cfg3dState.labels,light:cfg3dState.light}:undefined})), tag="j";
   if(window.CompressionStream){ u8=await streamBytes(u8,CompressionStream); tag="v"; }
   return tag+"="+b64u.enc(u8);
 }
@@ -2915,8 +3028,49 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   function extents(){
     let mnx=Infinity,mnz=Infinity,mxx=-Infinity,mxz=-Infinity;
     gondoles.forEach(g=>{const fp=footprint(g);mnx=Math.min(mnx,g.x);mnz=Math.min(mnz,g.y);mxx=Math.max(mxx,g.x+fp.w);mxz=Math.max(mxz,g.y+fp.h);});
-    if(!gondoles.length){mnx=mnz=0;mxx=mxz=2;}
+    { const bb=batimentBox(); if(bb){mnx=Math.min(mnx,bb.x0);mnz=Math.min(mnz,bb.y0);mxx=Math.max(mxx,bb.x1);mxz=Math.max(mxz,bb.y1);} }
+    if(!Number.isFinite(mnx)){mnx=mnz=0;mxx=mxz=2;}
     return {mnx,mnz,mxx,mxz,cX:(mnx+mxx)/2,cZ:(mnz+mxz)/2};
+  }
+  // Bâtiment PlanCoté : murs et poteaux (coupés à 1,20 m sauf « hauteur réelle »), zones au sol
+  // « tracé au sol » : le dessin PlanCoté (même image que le plan 2D) posé à plat sur le sol
+  let traceTex=null, traceRev=-1;
+  function traceTexture(){
+    if(traceRev===batimentRev) return traceTex; traceRev=batimentRev;
+    const b=batiment.bounds, W0=b.x1-b.x0, H0=b.y1-b.y0, sc=Math.min(4096/W0,4096/H0,0.2);   // ≤ 0,2 px/mm (5 mm par pixel)
+    const cv=document.createElement("canvas"); cv.width=Math.max(2,Math.round(W0*sc)); cv.height=Math.max(2,Math.round(H0*sc));
+    traceTex=new THREE.CanvasTexture(cv); traceTex.anisotropy=8;
+    const img=new Image(); img.onload=()=>{ cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); traceTex.needsUpdate=true; dirty=true; }; img.src=batimentURI;
+    return traceTex;
+  }
+  const OPACITE_MURS=0.3;   // bâtiment transparent : murs à 30 % (70 % de transparence), les gondoles restent lisibles
+  function batiment3D(real){
+    const grp=new THREE.Group(), k=1/1000, glass=(S.walls||"glass")==="glass";
+    const M=c=>real?new THREE.MeshStandardMaterial({color:lin(c),roughness:.9,metalness:0}):new THREE.MeshBasicMaterial({color:c});
+    const hex=c=>parseInt(c.slice(1),16), pots={}, potM=c=>pots[c]||(pots[c]=M(c?hex(c):0xc4c0b8));
+    const mur=M(hex(batiment.wallColor)), edge=new THREE.LineBasicMaterial({color:0x7d8794});
+    if(glass) Object.assign(mur,{transparent:true,opacity:OPACITE_MURS,depthWrite:false});
+    if(S.walls==="trace"){
+      const b=batiment.bounds, flat=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.rotation.x=-Math.PI/2; m.position.y=0.004; m.raycast=()=>{}; grp.add(m); return m; };
+      if(batimentURI){ const t=traceTexture(); t.encoding=real?THREE.sRGBEncoding:THREE.LinearEncoding;
+        flat(new THREE.PlaneGeometry((b.x1-b.x0)*k,(b.y1-b.y0)*k),new THREE.MeshBasicMaterial({map:t,transparent:true})).position.set((b.x0+b.x1)/2*k,0.004,(b.y0+b.y1)/2*k); }
+      else batiment.solids.filter(s=>s.z0===0).forEach(s=>flat(new THREE.ShapeGeometry(new THREE.Shape(s.pts.map(p=>new THREE.Vector2(p[0]*k,-p[1]*k)))),s.kind==="poteau"?potM(s.color):mur));   // lien 3D client : pas d'image, empreintes seules
+      return grp;
+    }
+    batiment.solids.forEach(s=>{
+      const z0=s.z0*k, z1=s.z1*k, verre=glass&&s.kind!=="poteau";   // les poteaux restent pleins : fins, ils gardent leur couleur
+      const geo=new THREE.ExtrudeGeometry(new THREE.Shape(s.pts.map(p=>new THREE.Vector2(p[0]*k,-p[1]*k))),{depth:z1-z0,bevelEnabled:false});
+      const m=new THREE.Mesh(geo,s.kind==="poteau"?potM(s.color):mur); m.rotation.x=-Math.PI/2; m.position.y=z0;
+      m.castShadow=!verre; m.receiveShadow=true; m.raycast=()=>{}; if(verre) m.renderOrder=2;
+      if(!real||verre) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),edge));
+      grp.add(m);
+    });
+    batiment.zones.forEach(z=>{
+      const m=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(z.pts.map(p=>new THREE.Vector2(p[0]*k,-p[1]*k)))),
+        real?new THREE.MeshStandardMaterial({color:lin(parseInt(z.color.slice(1),16)),roughness:.8,transparent:true,opacity:.75}):new THREE.MeshBasicMaterial({color:z.color,transparent:true,opacity:.6}));
+      m.rotation.x=-Math.PI/2; m.position.y=0.003; m.receiveShadow=true; m.raycast=()=>{}; grp.add(m);
+    });
+    return grp;
   }
   function build(){
     disposeScene(); scene=new THREE.Scene(); ggById={};
@@ -2930,7 +3084,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
       scene.background=new THREE.Color(store?0xeeebe5:0xe9ecef); scene.environment=envTex;
       let fm;
       // mur du fond : seulement si des gondoles simple-face (à fixer au mur) sont adossées au bord arrière du plan ; le carrelage s'arrête au pied du mur
-      const hasWall=store&&gondoles.some(g=>g.face==="SF"&&g.rot===0&&Math.abs(g.y-e.mnz)<0.15);
+      const hasWall=store&&!batiment&&gondoles.some(g=>g.face==="SF"&&g.rot===0&&Math.abs(g.y-e.mnz)<0.15);
       const zB=hasWall?e.mnz-0.012:e.cZ-FD/2, FD2=(e.cZ+FD/2)-zB;
       if(store){ const tt=tileTex().clone(); tt.needsUpdate=true; tt.userData={tmp:true}; tt.repeat.set(FW/0.6,FD2/0.6); fm=new THREE.MeshStandardMaterial({map:tt,roughness:.5,metalness:0}); }
       else fm=new THREE.MeshStandardMaterial({color:lin(0xe3e5e8),roughness:.85,metalness:0});
@@ -2950,6 +3104,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
       const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0xe7ecf1})); floor.rotation.x=-Math.PI/2; floor.raycast=()=>{}; scene.add(floor);
       const grid=new THREE.GridHelper(200,200,0xcdd6df,0xe6ebef); grid.raycast=()=>{}; scene.add(grid);
     }
+    if(batiment&&S.walls!=="none") scene.add(batiment3D(real));
     gGroup=new THREE.Group(); const prods=[];
     gondoles.forEach(g=>{ const gg=buildGondole(g,prods); ggById[g.id]=gg; gGroup.add(gg); });
     if(real&&S.products) addProducts(gGroup,prods);
@@ -3008,10 +3163,10 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     camera.position.set(orbit.target.x+r*Math.sin(p)*Math.sin(t),orbit.target.y+r*Math.cos(p),orbit.target.z+r*Math.sin(p)*Math.cos(t));
     camera.lookAt(orbit.target); dirty=true;
   }
-  function frame(th){
+  function frame(){
     if(!gGroup) return;
     const box=new THREE.Box3().setFromObject(gGroup);
-    orbit.theta=th==null?.62:th; orbit.phi=1.12;
+    orbit.theta=.62; orbit.phi=1.12;
     if(box.isEmpty()){ orbit.target.set(1,.8,1); orbit.radius=6; applyCam(); return; }
     const pts=[]; [box.min.x,box.max.x].forEach(x=>[box.min.y,box.max.y].forEach(y=>[box.min.z,box.max.z].forEach(z=>pts.push(new THREE.Vector3(x,y,z)))));
     orbit.target.copy(box.getCenter(new THREE.Vector3()));
@@ -3315,11 +3470,18 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   root.addEventListener("click",e=>{ if(!e.target.closest(".cfg-menu")) menus.forEach(x=>x.classList.remove("open")); });
   function updateMenus(){
     root.querySelectorAll("[data-env]").forEach(b=>b.querySelector(".ck").textContent=b.dataset.env===S.env?"✓":"");
+    root.querySelectorAll("[data-wallrow]").forEach(r=>{ r.style.display=batiment?"":"none"; });
+    if(batiment){ root.querySelectorAll("[data-wallcol]").forEach(b=>b.classList.toggle("on",b.dataset.wallcol===batiment.wallColor)); root.querySelectorAll("[data-wallpick]").forEach(i=>i.value=batiment.wallColor); }
+    root.querySelectorAll("[data-walls]").forEach(b=>{ b.style.display=batiment?"":"none"; b.querySelector(".ck").textContent=b.dataset.walls===(S.walls||"glass")?"✓":""; });
     { const cur=S.mode==="tech"?"tech":(S.products?"prod":"real"); root.querySelectorAll("[data-view]").forEach(b=>b.querySelector(".ck").classList.toggle("on",b.dataset.view===cur)); }
     root.querySelectorAll("[data-tog]").forEach(b=>b.querySelector(".ck").classList.toggle("on",!!S[b.dataset.tog]));
     const lb=$("cfgLight"); lb.classList.toggle("off",!S.light); lb.disabled=S.mode!=="real"; $("cfgLightTxt").textContent=S.light?"Lumière allumée":"Lumière éteinte";
   }
   root.querySelectorAll("[data-env]").forEach(b=>b.addEventListener("click",()=>{ S.env=b.dataset.env; menus.forEach(x=>x.classList.remove("open")); updateMenus(); sync(true); }));
+  const setWallColor=c=>{ if(!batiment||!/^#[0-9a-f]{6}$/i.test(c)) return; batiment.wallColor=c; updateMenus(); sync(true); };   // le menu reste ouvert pour comparer
+  root.querySelectorAll("[data-wallcol]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); setWallColor(b.dataset.wallcol); }));
+  root.querySelectorAll("[data-wallpick]").forEach(i=>{ i.addEventListener("click",e=>e.stopPropagation()); i.addEventListener("input",()=>setWallColor(i.value)); });
+  root.querySelectorAll("[data-walls]").forEach(b=>b.addEventListener("click",()=>{ S.walls=b.dataset.walls; menus.forEach(x=>x.classList.remove("open")); updateMenus(); sync(true); }));
   root.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{ S.mode=b.dataset.mode; menus.forEach(x=>x.classList.remove("open")); updateMenus(); sync(true); }));
   root.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>{ const v=b.dataset.view; S.mode=v==="tech"?"tech":"real"; S.products=v==="prod"; updateMenus(); sync(true); }));
   root.querySelectorAll("[data-tog]").forEach(b=>b.addEventListener("click",()=>{ const k=b.dataset.tog; S[k]=!S[k]; if(k==="products"&&S.products) S.mode="real"; updateMenus(); if(k==="products") sync(true); else { dirty=true; } }));
@@ -3360,7 +3522,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     if(!restoring) histPush();
     $("cfgUndo").disabled=hi<=0; $("cfgRedo").disabled=hi>=hist.length-1;
     refreshPanel();
-    const key=stateKey()+S.mode+S.env+S.products+S.light;
+    const key=stateKey()+S.mode+S.env+S.products+S.light+batimentRev+S.walls;
     if(force||key!==lastSceneKey){ lastSceneKey=key; if(!rebuildQ){ rebuildQ=true; requestAnimationFrame(()=>{ rebuildQ=false; if(root.classList.contains("open")) build(); }); } }
     else updateOutline();
   }
@@ -3374,7 +3536,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     if(!sel()) selId=gondoles[0].id;
     closeDetModal(); $("cpHost").appendChild(detInnerEl); root.classList.add("open"); document.body.classList.add("cfg-open"); fb.style.display="none";
     hist=[]; hi=-1; histPush(); updateMenus(); setTab("gond"); detectPlanColor();
-    resize(); renderAll(); build(); lastSceneKey=stateKey()+S.mode+S.env+S.products+S.light; frame();
+    resize(); renderAll(); build(); lastSceneKey=stateKey()+S.mode+S.env+S.products+S.light+batimentRev+S.walls; frame();
     if(!raf) loop();
   }
   function close(){
@@ -3397,10 +3559,10 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   window.cfg3dPageJpeg=function(W,H,only){
     if(!init()) return null;
     const allG=gondoles, sm=S.mode, sp=S.products; if(only){ gondoles=[only]; S.mode="tech"; S.products=false; }   // page détail du PDF : une gondole, rendu filaire   // une seule gondole (page détail du PDF)
-    const sv={t:orbit.theta,p:orbit.phi,r:orbit.radius,tg:orbit.target.clone(),asp:camera.aspect,sel:selId,bay:selBay,seg:selSeg,sz:renderer.getSize(new THREE.Vector2()),lab:S.labels,dm:S.dims};
+    const sv={t:orbit.theta,p:orbit.phi,r:orbit.radius,tg:orbit.target.clone(),asp:camera.aspect,sel:selId,bay:selBay,seg:selSeg,sz:renderer.getSize(new THREE.Vector2()),lab:S.labels,dm:S.dims,wl:S.walls};
     try{
-      selId=null; selBay=selSeg=null; if(only){ S.labels=false; S.dims=false; }   // page projet : repères et cotes comme cochés dans la vue 3D
-      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(only?.62-(((only.rot||0)%360)*Math.PI/180):undefined); orbit.radius*=only?1.1:0.9; applyCam();
+      selId=null; selBay=selSeg=null; S.walls="none"; if(only){ S.labels=false; S.dims=false; }   // page projet : repères et cotes comme cochés dans la vue 3D
+      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(); orbit.radius*=only?1.1:0.9; applyCam();
       renderer.render(scene,camera);
       if(only||!S.labels) return renderer.domElement.toDataURL("image/jpeg",0.9);
       const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const c2=cv.getContext("2d"); c2.drawImage(renderer.domElement,0,0,W,H);   // repères imprimés sur l'image
@@ -3411,7 +3573,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     }catch(e){ return null; }
     finally{
       gondoles=allG; S.mode=sm; S.products=sp;
-      selId=sv.sel; selBay=sv.bay; selSeg=sv.seg; S.labels=sv.lab; S.dims=sv.dm;
+      selId=sv.sel; selBay=sv.bay; selSeg=sv.seg; S.labels=sv.lab; S.dims=sv.dm; S.walls=sv.wl;
       orbit.theta=sv.t; orbit.phi=sv.p; orbit.radius=sv.r; orbit.target.copy(sv.tg);
       renderer.setSize(sv.sz.x,sv.sz.y,false); camera.aspect=sv.asp; camera.updateProjectionMatrix(); applyCam();
       if(root.classList.contains("open")){ build(); updateOutline(); resize(); }
