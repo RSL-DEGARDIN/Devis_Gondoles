@@ -520,18 +520,29 @@ function renderOverlay(){
   if(typed&&cur.inside)s+=label(add(cur.p,[0,22*U]),'⌨ '+typed,U);
   gO.innerHTML=s;
 }
+/* Angle du segment a→p : 0° = horizontale vers la droite, positif vers le haut (sens trigonométrique). */
+const angleOf=(a,p)=>{const d=sub(p,a);return -Math.atan2(d[1],d[0])*180/Math.PI};
+const angTxt=g=>(Math.round(g*10)/10).toFixed(1).replace('.',',').replace(/,0$/,'')+'°';
+const orthoOn=()=>settings.ortho!==keys.shift;   // en ortho, l'angle (0/90/180°) n'apporte rien : on ne l'affiche pas
+const lenAng=(a,p)=>fmt(len(sub(p,a)))+' mm'+(orthoOn()?'':' · '+angTxt(angleOf(a,p)));
+function angleArc(a,p,U){
+  const L=len(sub(p,a)),g=angleOf(a,p);if(orthoOn()||L<1e-6||Math.abs(g)<0.05)return '';
+  const R=Math.min(45*U,L*0.6),t=g*Math.PI/180,e=[a[0]+R*Math.cos(t),a[1]-R*Math.sin(t)];
+  return `<path d="M${P(a)}h${r(R*1.35)}" stroke="${ACC}" stroke-width="${r(U)}" stroke-dasharray="${r(3*U)} ${r(3*U)}" opacity=".7"/>`+
+    `<path d="M${r(a[0]+R)} ${r(a[1])}A${r(R)} ${r(R)} 0 0 ${g>0?0:1} ${P(e)}" fill="none" stroke="${ACC}" stroke-width="${r(1.2*U)}"/>`;
+}
 function toolPreview(U){
   const p=cur.p;let s='';
   if(draft&&(draft.type==='wall'||draft.type==='line')){const pts=draft.pts.concat([p]);
     if(draft.type==='wall')s+=`<g opacity=".55">${drawItem({type:'wall',pts,closed:false,...defaults.wall},{u:U,font:UIF})}</g>`;
     else s+=`<path d="${polyD(pts,false)}" fill="none" stroke="${defaults.line.color}" stroke-width="${r(defaults.line.width*U)}" opacity=".7"/>`;
     const a=pts[pts.length-2];s+=`<path d="M${P(a)}L${P(p)}" stroke="${ACC}" stroke-width="${r(U)}" stroke-dasharray="${r(4*U)} ${r(3*U)}"/>`;
-    s+=label(p,fmt(len(sub(p,a)))+' mm',U)}
+    s+=angleArc(a,p,U)+label(p,lenAng(a,p),U)}
   else if(draft&&draft.type==='rect'){const a=draft.a,x=Math.min(a[0],p[0]),y=Math.min(a[1],p[1]),w=Math.abs(p[0]-a[0]),h=Math.abs(p[1]-a[1]);
     s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${defaults.rect.fill==='none'?'none':defaults.rect.fill}" fill-opacity=".6" stroke="${defaults.rect.color}" stroke-width="${r(defaults.rect.width*U)}"/>`;
     s+=label(p,`${fmt(w)} × ${fmt(h)}`,U)}
   else if(draft&&draft.type==='dim'){
-    if(!draft.b){s+=`<path d="M${P(draft.a)}L${P(p)}" stroke="${defaults.dim.color}" stroke-width="${r(U)}"/>`+label(p,fmt(len(sub(p,draft.a)))+' mm',U)}
+    if(!draft.b){s+=`<path d="M${P(draft.a)}L${P(p)}" stroke="${defaults.dim.color}" stroke-width="${r(U)}"/>`+angleArc(draft.a,p,U)+label(p,lenAng(draft.a,p),U)}
     else s+=dimSVG(draft.a,draft.b,dimOff(draft.a,draft.b,cur.raw),defaults.dim.color,+defaults.dim.size||state.textSize,U,UIF)}
   else if(['door','gap','window'].includes(tool)){const d=defaults[tool],h=hostAt(cur.raw,d.width);
     if(h){const tmp={id:'_tmp',type:'opening',kind:kindFor(tool),...h,width:d.width,hinge:1,color:ACC};s+=drawOpening(tmp,U)+openingDims(tmp,U)}}
@@ -542,7 +553,7 @@ function toolPreview(U){
 function renderStatus(){
   const p=cur.p;$('#stXY').textContent=`X ${fmt(p[0])} · Y ${fmt(p[1])}`;
   let L='';const from=draftFrom();
-  if(from){const d=sub(p,from);L=`L ${fmt(len(d))} mm · ${Math.round(-Math.atan2(d[1],d[0])*180/Math.PI)}°`}
+  if(from)L='L '+lenAng(from,p);
   $('#stLen').textContent=L;
   $('#stTyped').textContent=typed?`Saisie : ${typed} ↵`:'';
   $('#stZoom').textContent=`Écran ≈ 1:${fmt(1/(view.z*.2646))}`;
@@ -1009,7 +1020,8 @@ function examplePlan(){
   console.assert(Math.abs(o[0][0]+100)<1e-6&&Math.abs(o[0][1]+100)<1e-6,'offsetPolyline: angle extérieur',o[0]);
   console.assert(fmt(6035)==='6 035'&&fmt(12)==='12'&&fmt(1253000)==='1 253 000','fmt');
   console.assert(Math.abs(polyArea(sq)-1e6)<1e-6&&fmtArea(36e6)==='36,0 m²','surface');
-  const x=segX([0,500],[1000,500],[300,0],[300,1000]);console.assert(x&&x[0]===300&&x[1]===500&&!segX([0,0],[100,0],[200,-50],[200,50]),'croisement')})();
+  const x=segX([0,500],[1000,500],[300,0],[300,1000]);console.assert(x&&x[0]===300&&x[1]===500&&!segX([0,0],[100,0],[200,-50],[200,50]),'croisement');
+  console.assert(angTxt(angleOf([0,0],[1000,-1000]))==='45°'&&angTxt(angleOf([0,0],[0,500]))==='-90°'&&angTxt(angleOf([0,0],[1000,-577.35]))==='30°'&&angTxt(angleOf([0,0],[1000,-600]))==='31°','angle')})();
 
 new ResizeObserver(()=>{W=sheet.clientWidth||800;H=sheet.clientHeight||600;setView()}).observe(sheet);
 buildTools();syncSettings();
