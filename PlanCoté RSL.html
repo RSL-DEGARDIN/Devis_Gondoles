@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}[hidden]{display:none!important}img{max-width:100%}</style></head><body>
 <title>PlanCoté RSL</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -570,7 +570,7 @@ function undo(){if(!hist.length)return;fut.push(lastSnap);lastSnap=hist.pop();re
 function redo(){if(!fut.length)return;hist.push(lastSnap);lastSnap=fut.pop();restore(lastSnap)}
 let draftTimer=0;
 function saveDraft(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>store.set('plancote.draft',{state,unsaved}),400)}
-function renderSaveState(){const el=$('#saveState');el.className=unsaved?'dirty':'';el.textContent=unsaved?'● Non enregistré':(state.cloudId?'Enregistré':'')}
+function renderSaveState(){const el=$('#saveState');el.className=unsaved?'dirty':'';el.textContent=unsaved?'● Non enregistré':(state.cloudId||savedLocal?'Enregistré':'')}
 
 /* ================= création d'éléments ================= */
 function addItem(it){it.id=it.id||uid();state.items.push(it);commit();return it}
@@ -852,7 +852,7 @@ dlg.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)retu
 
 function loadPlan(d,cloudId=null){
   state={name:d.name||'Sans titre',textSize:+d.textSize||150,items:clone(d.items||[]).filter(it=>it&&TYPE_NAME[it.type]).map(it=>({...it,id:it.id||uid()})),cloudId};
-  sel.clear();draft=null;typed='';hist=[];fut=[];lastSnap=snapshot();unsaved=false;
+  sel.clear();draft=null;typed='';hist=[];fut=[];lastSnap=snapshot();unsaved=false;fileHandle=null;savedLocal=false;
   $('#planName').value=state.name;saveDraft();refreshPanel();fit();renderSaveState();
 }
 async function newPlan(){if(unsaved&&state.items.length&&!await ask('Le plan actuel contient des modifications non enregistrées. Commencer un nouveau plan ?','Nouveau plan'))return;
@@ -861,8 +861,23 @@ async function newPlan(){if(unsaved&&state.items.length&&!await ask('Le plan act
 /* --- enregistrement en ligne : métadonnées dans plans/<id>, contenu dans plandata/<id> --- */
 const getCap=n=>window.claude&&window.claude.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
 let plans=null,plansErr='',plansUnsub=null,pendingDel=null;
+const planJSON=()=>JSON.stringify({app:'PlanCoté',version:1,name:state.name,textSize:state.textSize,items:state.items},null,1);
+const fileBase=()=>(state.name||'plan').replace(/[\\/:*?"<>|]+/g,'-').trim()||'plan';
+let fileHandle=null,savedLocal=false;
+/* Hors de claude.ai, « Enregistrer » écrit un fichier .json sur l'ordinateur.
+   Chrome/Edge : on choisit l'emplacement une fois, puis Ctrl+S réécrit ce même fichier. Autres navigateurs : téléchargement. */
+async function saveLocal(asNew){
+  if(asNew)fileHandle=null;
+  const data=planJSON();let ok=false;
+  if(window.showSaveFilePicker){
+    try{if(!fileHandle)fileHandle=await window.showSaveFilePicker({suggestedName:fileBase()+'.json',types:[{description:'Plan PlanCoté',accept:{'application/json':['.json']}}]});
+      const w=await fileHandle.createWritable();await w.write(data);await w.close();ok=true}
+    catch(e){if(e&&e.name==='AbortError')return;fileHandle=null}}
+  if(!ok&&!await saveFile(fileBase()+'.json',data))return;
+  savedLocal=true;unsaved=false;saveDraft();renderSaveState();toast('Plan enregistré : '+(fileHandle?fileHandle.name:fileBase()+'.json'));
+}
 async function saveCloud(asNew){
-  const db=await getCap('db');if(!db){toast('Enregistrement en ligne indisponible ici. Utilisez Exporter → Fichier .json.');return}
+  const db=await getCap('db');if(!db)return saveLocal(asNew);
   const data={name:state.name,textSize:state.textSize,items:state.items};
   if(JSON.stringify(data).length>240000){toast('Plan trop lourd pour l\'enregistrement en ligne. Exportez-le en .json.');return}
   const id=(!asNew&&state.cloudId)||Date.now().toString(36)+uid();
@@ -874,12 +889,12 @@ async function saveCloud(asNew){
 async function openPlans(){
   renderPlans();
   const db=await getCap('db');
-  if(!db){plansErr='L\'enregistrement en ligne n\'est pas disponible dans cette vue. Vous pouvez toujours importer ou exporter un fichier .json.';renderPlans();return}
+  if(!db){plansErr='Ici, vos plans s\'enregistrent en fichiers .json sur votre ordinateur avec le bouton « Enregistrer ». Pour reprendre un plan, cliquez sur « Ouvrir un fichier .json ».';renderPlans();return}
   if(!plansUnsub)plansUnsub=db.collection('plans').orderBy('updatedAt','desc').limit(500).onSnapshot(s=>{plans=s.docs.map(d=>({id:d.id,...d.data()}));if(!$('#modal').hidden&&dlg.dataset.view==='plans')renderPlans()},e=>{plansErr='Liste indisponible ('+e.code+').';renderPlans()});
 }
 function renderPlans(){
   const list=plansErr?`<div class="empty">${plansErr}</div>`:plans===null?'<div class="empty">Chargement…</div>':plans.length?plans.map(p=>`<div class="it"><span class="nm" title="${esc(p.name)}">${esc(p.name)}${p.id===state.cloudId?' · <small>ouvert</small>':''}</span><span class="dt">${p.updatedAt?new Date(p.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):''}</span>${pendingDel===p.id?`<button class="btn danger" data-m="delok" data-id="${p.id}">Confirmer</button>`:`<button class="btn" data-m="del" data-id="${p.id}" aria-label="Supprimer ${esc(p.name)}">Supprimer</button>`}<button class="btn primary" data-m="open" data-id="${p.id}">Ouvrir</button></div>`).join(''):'<div class="empty">Aucun plan enregistré. Cliquez sur « Enregistrer » pour garder le plan en cours.</div>';
-  showModal(`<h2>Mes plans</h2><div class="plist">${list}</div><div class="foot"><button class="btn" data-m="import">Importer un .json</button><button class="btn" data-m="saveas">Enregistrer une copie</button><button class="btn" data-m="no">Fermer</button></div>`);
+  showModal(`<h2>Mes plans</h2><div class="plist">${list}</div><div class="foot"><button class="btn" data-m="import">Ouvrir un fichier .json</button><button class="btn" data-m="saveas">Enregistrer une copie</button><button class="btn" data-m="no">Fermer</button></div>`);
   dlg.dataset.view='plans';
 }
 function askDelete(b){pendingDel=b.dataset.id;renderPlans()}
@@ -966,13 +981,16 @@ function renderExport(){
 dlg.addEventListener('change',e=>{if(dlg.dataset.view!=='export')return;const t=e.target;if(t.name)exp[t.name]=t.value;if(t.id==='expScale')exp.scale=t.value;store.set('plancote.export',exp);renderExport()});
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s)})}
 async function saveFile(filename,data){
-  const dl=await getCap('downloads');if(!dl){toast('Le téléchargement n\'est pas disponible dans cette vue.');return}
-  try{await dl.save({filename,data})}catch(e){if(e&&e.code!=='declined')toast(e&&e.code==='rate_limited'?'Un téléchargement est déjà en attente.':'Téléchargement impossible ('+(e&&e.code||'erreur')+').')}
+  const dl=await getCap('downloads');
+  if(!dl){ // page ouverte hors de claude.ai : téléchargement classique du navigateur
+    const url=URL.createObjectURL(data instanceof Blob?data:new Blob([data])),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);return true}
+  try{await dl.save({filename,data});return true}catch(e){if(e&&e.code!=='declined')toast(e&&e.code==='rate_limited'?'Un téléchargement est déjà en attente.':'Téléchargement impossible ('+(e&&e.code||'erreur')+').');return false}
 }
 async function doExport(){
   const base=(state.name||'plan').replace(/[\\/:*?"<>|]+/g,'-').trim()||'plan';
   if(exp.fmt==='bat'){closeModal();return saveFile(base+' - batiment.json',JSON.stringify(buildingExport(state.items)))}
-  if(exp.fmt==='json'){closeModal();return saveFile(base+'.json',JSON.stringify({app:'PlanCoté',version:1,name:state.name,textSize:state.textSize,items:state.items},null,1))}
+  if(exp.fmt==='json'){closeModal();return saveFile(base+'.json',planJSON())}
   const L=sheetLayout(),svgStr=sheetSVG(L),fn=`${base} 1-${L.scale}`;
   const b=dlg.querySelector('[data-m="doexport"]');b.disabled=true;b.textContent='Préparation…';
   try{
