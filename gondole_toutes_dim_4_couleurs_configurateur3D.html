@@ -3163,10 +3163,10 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     camera.position.set(orbit.target.x+r*Math.sin(p)*Math.sin(t),orbit.target.y+r*Math.cos(p),orbit.target.z+r*Math.sin(p)*Math.cos(t));
     camera.lookAt(orbit.target); dirty=true;
   }
-  function frame(){
+  function frame(th){
     if(!gGroup) return;
     const box=new THREE.Box3().setFromObject(gGroup);
-    orbit.theta=.62; orbit.phi=1.12;
+    orbit.theta=th==null?.62:th; orbit.phi=1.12;
     if(box.isEmpty()){ orbit.target.set(1,.8,1); orbit.radius=6; applyCam(); return; }
     const pts=[]; [box.min.x,box.max.x].forEach(x=>[box.min.y,box.max.y].forEach(y=>[box.min.z,box.max.z].forEach(z=>pts.push(new THREE.Vector3(x,y,z)))));
     orbit.target.copy(box.getCenter(new THREE.Vector3()));
@@ -3562,7 +3562,7 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     const sv={t:orbit.theta,p:orbit.phi,r:orbit.radius,tg:orbit.target.clone(),asp:camera.aspect,sel:selId,bay:selBay,seg:selSeg,sz:renderer.getSize(new THREE.Vector2()),lab:S.labels,dm:S.dims,wl:S.walls};
     try{
       selId=null; selBay=selSeg=null; S.walls="none"; if(only){ S.labels=false; S.dims=false; }   // page projet : repères et cotes comme cochés dans la vue 3D
-      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(); orbit.radius*=only?1.1:0.9; applyCam();
+      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(only?.62-(((only.rot||0)%360)*Math.PI/180):undefined); orbit.radius*=only?1.1:0.9; applyCam();
       renderer.render(scene,camera);
       if(only||!S.labels) return renderer.domElement.toDataURL("image/jpeg",0.9);
       const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const c2=cv.getContext("2d"); c2.drawImage(renderer.domElement,0,0,W,H);   // repères imprimés sur l'image
