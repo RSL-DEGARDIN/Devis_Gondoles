@@ -2301,7 +2301,7 @@ async function genererDevisPDF(){
 
   // -- Dernière page : plan d'implantation 2D complet (mode plan uniquement) --
   { // page 3D pleine page
-    let j3=null; try{ j3=window.cfg3dPageJpeg?window.cfg3dPageJpeg(1100,1500):null; }catch(_){}
+    let j3=null; try{ if(window.cfg3dReady) await window.cfg3dReady(); j3=window.cfg3dPageJpeg?window.cfg3dPageJpeg(1100,1500):null; }catch(_){}
     if(j3){
       doc.addPage(); y=16;
       doc.setDrawColor(...accent); doc.setLineWidth(0.5); doc.line(M,y,PW-M,y); doc.setLineWidth(0.2); y+=6;
@@ -3034,13 +3034,13 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   }
   // Bâtiment PlanCoté : murs et poteaux (coupés à 1,20 m sauf « hauteur réelle »), zones au sol
   // « tracé au sol » : le dessin PlanCoté (même image que le plan 2D) posé à plat sur le sol
-  let traceTex=null, traceRev=-1;
+  let traceTex=null, traceRev=-1, traceDone=Promise.resolve();
   function traceTexture(){
     if(traceRev===batimentRev) return traceTex; traceRev=batimentRev;
     const b=batiment.bounds, W0=b.x1-b.x0, H0=b.y1-b.y0, sc=Math.min(4096/W0,4096/H0,0.2);   // ≤ 0,2 px/mm (5 mm par pixel)
     const cv=document.createElement("canvas"); cv.width=Math.max(2,Math.round(W0*sc)); cv.height=Math.max(2,Math.round(H0*sc));
     traceTex=new THREE.CanvasTexture(cv); traceTex.anisotropy=8;
-    const img=new Image(); img.onload=()=>{ cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); traceTex.needsUpdate=true; dirty=true; }; img.src=batimentURI;
+    const img=new Image(); traceDone=new Promise(ok=>{ img.onload=()=>{ cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); traceTex.needsUpdate=true; dirty=true; ok(); }; img.onerror=ok; }); img.src=batimentURI;
     return traceTex;
   }
   const OPACITE_MURS=0.3;   // bâtiment transparent : murs à 30 % (70 % de transparence), les gondoles restent lisibles
@@ -3163,9 +3163,10 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
     camera.position.set(orbit.target.x+r*Math.sin(p)*Math.sin(t),orbit.target.y+r*Math.cos(p),orbit.target.z+r*Math.sin(p)*Math.cos(t));
     camera.lookAt(orbit.target); dirty=true;
   }
-  function frame(th){
+  function frame(th,withBat){
     if(!gGroup) return;
     const box=new THREE.Box3().setFromObject(gGroup);
+    if(withBat&&batiment&&S.walls!=="none"){ const b=batiment.bounds; box.expandByPoint(new THREE.Vector3(b.x0/1000,0,b.y0/1000)); box.expandByPoint(new THREE.Vector3(b.x1/1000,2.5,b.y1/1000)); }   // PDF : le bâtiment tracé doit tenir dans l'image
     orbit.theta=th==null?.62:th; orbit.phi=1.12;
     if(box.isEmpty()){ orbit.target.set(1,.8,1); orbit.radius=6; applyCam(); return; }
     const pts=[]; [box.min.x,box.max.x].forEach(x=>[box.min.y,box.max.y].forEach(y=>[box.min.z,box.max.z].forEach(z=>pts.push(new THREE.Vector3(x,y,z)))));
@@ -3556,13 +3557,14 @@ document.getElementById("btnShare").addEventListener("click",async()=>{
   $("modeCfg").addEventListener("click",open);
   $("chooseCfg").addEventListener("click",()=>{ startWith("plan"); open(); });
   // capture du projet entier (vue réaliste) en JPEG portrait, pour le PDF
+  window.cfg3dReady=async function(){ if(!init()) return; if(batiment&&batimentURI&&S.walls==="trace"){ traceTexture(); await traceDone; } };   // à attendre avant cfg3dPageJpeg : le tracé au sol se charge en asynchrone
   window.cfg3dPageJpeg=function(W,H,only){
     if(!init()) return null;
     const allG=gondoles, sm=S.mode, sp=S.products; if(only){ gondoles=[only]; S.mode="tech"; S.products=false; }   // page détail du PDF : une gondole, rendu filaire   // une seule gondole (page détail du PDF)
     const sv={t:orbit.theta,p:orbit.phi,r:orbit.radius,tg:orbit.target.clone(),asp:camera.aspect,sel:selId,bay:selBay,seg:selSeg,sz:renderer.getSize(new THREE.Vector2()),lab:S.labels,dm:S.dims,wl:S.walls};
     try{
-      selId=null; selBay=selSeg=null; S.walls="none"; if(only){ S.labels=false; S.dims=false; }   // page projet : repères et cotes comme cochés dans la vue 3D
-      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(only?.62-(((only.rot||0)%360)*Math.PI/180):undefined); orbit.radius*=only?1.1:0.9; applyCam();
+      selId=null; selBay=selSeg=null; if(only){ S.walls="none"; S.labels=false; S.dims=false; }   // page projet : repères et cotes comme cochés dans la vue 3D
+      build(); renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix(); frame(only?.62-(((only.rot||0)%360)*Math.PI/180):undefined,!only); orbit.radius*=only?1.1:0.9; applyCam();
       renderer.render(scene,camera);
       if(only||!S.labels) return renderer.domElement.toDataURL("image/jpeg",0.9);
       const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const c2=cv.getContext("2d"); c2.drawImage(renderer.domElement,0,0,W,H);   // repères imprimés sur l'image
