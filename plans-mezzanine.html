@@ -9,7 +9,7 @@
   --bg: #edf0f4; --surface: #ffffff; --paper: #fbfcfe; --ink: #172031; --muted: #5a6577; --line: #d4dae3;
   --rsl: #1f4fa3; --rsl-soft: #e3ebf8;
   --steel: #dde3ea; --steel-ink: #3a4553; --solive: #4c8b5b; --gc: #e06c17; --stair: #8a5728; --cote: #1f4fa3; --croix: #2445c4; --dxf: #d3336c;
-  --ok: #2c7a51; --ok-soft: #e2f3ea; --warn: #9a6512; --warn-soft: #fbf0d9; --ground: #e2e7ee; --cote3d: #d42a2a;
+  --ok: #2c7a51; --ok-soft: #e2f3ea; --warn: #9a6512; --warn-soft: #fbf0d9; --ground: #e2e7ee; --cote3d: #d42a2a; --bulb: #f6c445; --bulb-ink: #a77a07;
   --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
@@ -18,16 +18,19 @@
   --bg: #0f141b; --surface: #171f29; --paper: #131a23; --ink: #e6ebf2; --muted: #98a4b5; --line: #2a3543;
   --rsl: #84a7ff; --rsl-soft: #1c2a45;
   --steel: #2a3441; --steel-ink: #c0cad7; --solive: #78c08b; --gc: #ff8f3f; --stair: #dd9d5e; --cote: #8fb0ff; --croix: #8da4ff; --dxf: #ff6d9c;
-  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; color-scheme: dark;
+  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; --bulb: #ffd45c; --bulb-ink: #ffd45c; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #0f141b; --surface: #171f29; --paper: #131a23; --ink: #e6ebf2; --muted: #98a4b5; --line: #2a3543;
   --rsl: #84a7ff; --rsl-soft: #1c2a45;
   --steel: #2a3441; --steel-ink: #c0cad7; --solive: #78c08b; --gc: #ff8f3f; --stair: #dd9d5e; --cote: #8fb0ff; --croix: #8da4ff; --dxf: #ff6d9c;
-  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; color-scheme: dark;
+  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; --bulb: #ffd45c; --bulb-ink: #ffd45c; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 #cot3d { accent-color: var(--cote3d); }
+#light3d { padding: 5px 9px; }
+#light3d .glass { fill: none; }
+#light3d[aria-pressed="true"] .glass { fill: var(--bulb); stroke: var(--bulb-ink); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
 .seg button { font: 600 15px var(--f-display); letter-spacing: .03em; padding: 7px 16px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
@@ -163,6 +166,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
           <label class="toggle internal" id="ov-wrap"><input id="ov" type="checkbox"><span>Superposer le plan fournisseur (DXF)</span></label>
           <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
           <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
+          <button class="ghost" id="light3d" type="button" aria-pressed="true" aria-label="Ombres" title="Ombres affichées"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M9.5 18.5h5M10.5 21h3"/></svg></button>
           <button class="ghost" id="re3d" type="button">Recentrer</button>
           <button class="ghost" id="rot2d" type="button" aria-label="Tourner le plan de 90°"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tourner 90°</button>
         </div>
@@ -934,7 +938,7 @@ function init3D() {
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(38, 1, 0.05, 500), ctl = new THREE.OrbitControls(cam, r.domElement);
   ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI - 0.05; // on peut passer sous le sol : vu de dessous, le sol (face unique) devient transparent
   const sun = new THREE.DirectionalLight('#ffffff', 0.8);
-  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
+  sun.castShadow = $('light3d').getAttribute('aria-pressed') === 'true'; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
   scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground); // lumière d'en bas assez claire pour voir un dessous blanc
@@ -1000,7 +1004,7 @@ function setMode(m) {
   try { localStorage.setItem('mezz-vue', m); } catch (err) {}
   $('vw-3d').setAttribute('aria-pressed', m === '3d'); $('vw-plan').setAttribute('aria-pressed', m === 'plan');
   $('planbox').hidden = $('legend').hidden = $('ov-wrap').hidden = $('rot2d').hidden = m === '3d';
-  $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = m !== '3d';
+  $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
 $('vw-3d').onclick = () => setMode('3d');
@@ -1013,6 +1017,17 @@ $('cot3d').onchange = () => {
   try { localStorage.setItem('mezz-cotes', $('cot3d').checked ? '1' : '0'); } catch (err) {}
 };
 $('re3d').onclick = fit3D;
+// Ampoule : ombres portées affichées ou masquées (le choix est retenu sur cet appareil)
+function setShadows(on) {
+  $('light3d').setAttribute('aria-pressed', on); $('light3d').title = on ? 'Ombres affichées' : 'Ombres masquées';
+  if (V3.sun) V3.sun.castShadow = on; // three recompile les matières tout seul quand le nombre d'ombres change
+}
+try { setShadows(localStorage.getItem('mezz-ombres') !== '0'); } catch (err) {}
+$('light3d').onclick = () => {
+  const on = $('light3d').getAttribute('aria-pressed') !== 'true';
+  setShadows(on);
+  try { localStorage.setItem('mezz-ombres', on ? '1' : '0'); } catch (err) {}
+};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme3D);
 new MutationObserver(theme3D).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
