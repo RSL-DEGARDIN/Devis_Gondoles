@@ -358,7 +358,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
   const code5 = s => { const m = /T(\d{5})/.exec(s || ''); return m ? +m[1] : null; };
 
   function buildPlan(J, D) {
-    const env = J.environement || {}, S = J.structure || {}, warn = [];
+    let env = J.environement || {};
+    const S = J.structure || {}, warn = [];
 
     const poles = {};
     for (const p of S.poteaux || []) {
@@ -488,6 +489,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     }
 
     const ep = code5(env.plancher), maxHt = Math.max(0, ...L.map(l => l.ht));
+    // « souslisse » vrai : la hauteur saisie est le dégagement sous lisse, on la ramène au dessus du plancher (PEP2611-04 : 2200 sous lisse → 2538, escalier 38° comme le DXF)
+    if (env.souslisse && env.hauteur && ep != null) env = { ...env, hauteur: env.hauteur + maxHt + ep };
     const sousLisse = env.hauteur && ep != null && L.length ? env.hauteur - maxHt - ep : null;
     const gcAcc = (J.accessoires || []).find(a => /^P.29T/.test(a.codearticle || '')); // shortcut: garde-corps = article P?29T…, constaté sur 3 projets
     const gcModules = gc.reduce((s, g) => s + g.modules, 0);
@@ -729,8 +732,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       for (const [a, b] of M.landing.gc) rail(a, b, H, mat('rambardes'));
     }
 
-    // Plancher : caillebotis (code …CB…) ajouré, sinon panneau aggloméré
-    const cb = /CB/.test(M.env.plancher || ''), floor = new T.Group();
+    // Plancher : caillebotis (code …T00030C…) ajouré, sinon panneau aggloméré
+    const cb = /T\d{5}C/.test(M.env.plancher || ''), floor = new T.Group();
     const fm = cb ? grating(T) : chipboard(T);
     // sous-face peinte en blanc : matière non éclairée, sinon elle sort grise (aucune lumière ne vient d'en bas)
     const under = !cb && opt.dessous === 'blanc' ? new T.MeshBasicMaterial({ color: '#f4f3ef' }) : fm;
@@ -1109,7 +1112,7 @@ function caracRows(M) {
     ['Hauteur sous lisse', M.sousLisse != null ? `${M.sousLisse} mm` : '—'],
     ['Charge de service', `${e.charge} kg/m²`],
     ['Flèche maximale', `1/${e.fleche}e`],
-    ['Plancher', `${/CB/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2000 × 1000'}, ép. ${M.ep} mm`],
+    ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2000 × 1000'}, ép. ${M.ep} mm`],
     ['Stabilité', stab],
     esc0 && ['Escalier', [s0 && `${Math.round(Math.atan2(e.hauteur, s0.L) * 180 / Math.PI)}°`, w && `passage ${+w[1]} mm`, M.landing && 'avec palier'].filter(Boolean).join(', ')],
     gcml && ['Garde-corps', `hauteur 1100 mm, ${n(gcml, 1)} ml en bord de plateforme`],
@@ -1118,14 +1121,15 @@ function caracRows(M) {
   return rows.filter(Boolean);
 }
 const DESSOUS = { bois: { code: 'Bois', css: '#b98f5e' }, blanc: { code: 'Blanc', css: '#f4f3ef' } };
-// shortcut: le champ du JSON qui portera la couleur du dessous n'est pas encore connu : on lit une couleur dont le nom contient « dessous » ou « sous-face ». À brancher sur le vrai champ dès qu'un export en contient un.
-const dessousDe = e => /BLANC|WHITE|RAL ?90(01|03|10|16)/i.test(Object.entries(e.couleurs || {}).find(([k]) => /dessous|sous.?face/i.test(k))?.[1] || '') ? 'blanc' : 'bois';
+// Lettre qui suit l'épaisseur dans le code plancher : A dessous bois, B dessous blanc, C caillebotis.
+// shortcut: déduit de deux exports (PEP2610-846 « 38ACA » bois, PEP2611-04 « 38BCA » blanc) ; revoir si un autre code apparaît.
+const dessousDe = e => /T\d{5}B/.test(e.plancher || '') ? 'blanc' : 'bois';
 function colorRows(e) {
   const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
   const rows = Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
     .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
   // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis)
-  if (!/CB/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
+  if (!/T\d{5}C/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
   return rows;
 }
 
@@ -1304,7 +1308,7 @@ const pipeZ = async (u8, Ctor) => new Uint8Array(await new Response(new Blob([u8
 function clientPayload(p, nom, projet) {
   const J = JSON.parse(JSON.stringify(p.json)), c = J.client || {}, env = J.environement || {}, code = s => (/T(\d{5})/.exec(s || '') || [])[1];
   J.client = { reference_interne: c.reference_interne, date: c.date, code_region: c.code_region, contact: { prenom: c.contact?.prenom, nom: c.contact?.nom } };
-  env.plancher = `T${code(env.plancher) || '00030'}${/CB/.test(env.plancher || '') ? 'CB' : ''}`;
+  env.plancher = (/T\d{5}[A-Z]?/.exec(env.plancher || '') || ['T00030'])[0]; // garde la lettre (dessous blanc / caillebotis), pas le reste du code article
   (J.structure?.escalier || []).forEach(s => { s.modele = `T${code(s.modele) || '00800'}`; });
   delete J.accessoires;
   let dxf = null;
