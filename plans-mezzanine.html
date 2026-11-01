@@ -1,0 +1,1106 @@
+<title>Plans mezzanine RSL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : bandeau outil (marque + projets), puis plan sur fond papier à gauche et fiche projet à droite ; une colonne sur téléphone. */
+:root {
+  --bg: #edf0f4; --surface: #ffffff; --paper: #fbfcfe; --ink: #172031; --muted: #5a6577; --line: #d4dae3;
+  --rsl: #1f4fa3; --rsl-soft: #e3ebf8;
+  --steel: #dde3ea; --steel-ink: #3a4553; --solive: #4c8b5b; --gc: #e06c17; --stair: #8a5728; --cote: #1f4fa3; --croix: #2445c4; --dxf: #d3336c;
+  --ok: #2c7a51; --ok-soft: #e2f3ea; --warn: #9a6512; --warn-soft: #fbf0d9; --ground: #e2e7ee; --cote3d: #d42a2a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141b; --surface: #171f29; --paper: #131a23; --ink: #e6ebf2; --muted: #98a4b5; --line: #2a3543;
+  --rsl: #84a7ff; --rsl-soft: #1c2a45;
+  --steel: #2a3441; --steel-ink: #c0cad7; --solive: #78c08b; --gc: #ff8f3f; --stair: #dd9d5e; --cote: #8fb0ff; --croix: #8da4ff; --dxf: #ff6d9c;
+  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0f141b; --surface: #171f29; --paper: #131a23; --ink: #e6ebf2; --muted: #98a4b5; --line: #2a3543;
+  --rsl: #84a7ff; --rsl-soft: #1c2a45;
+  --steel: #2a3441; --steel-ink: #c0cad7; --solive: #78c08b; --gc: #ff8f3f; --stair: #dd9d5e; --cote: #8fb0ff; --croix: #8da4ff; --dxf: #ff6d9c;
+  --ok: #63d39d; --ok-soft: #173426; --warn: #f0c35a; --warn-soft: #3a2f14; --ground: #1c242f; --cote3d: #ff6b6b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+#cot3d { accent-color: var(--cote3d); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 600 15px var(--f-display); letter-spacing: .03em; padding: 7px 16px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--rsl); color: var(--surface); }
+.seg button:focus-visible, .ghost:focus-visible { outline: 2px solid var(--rsl); outline-offset: 2px; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ghost { display: inline-flex; align-items: center; gap: 6px; font: 500 14px var(--f-body); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+#pl3d { accent-color: var(--rsl); }
+.v3d { position: relative; height: min(72vh, 760px); min-height: 360px; touch-action: none; }
+.v3d canvas { display: block; width: 100%; height: 100%; }
+.v3d-msg { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: var(--muted); }
+[hidden] { display: none !important; }
+@media (min-width: 1081px) { .sheet { position: sticky; top: max(16px, env(safe-area-inset-top, 0px)); } }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 32px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand b { font: 700 34px/1 var(--f-display); color: var(--rsl); letter-spacing: .02em; }
+.brand h1 { margin: 0; font: 600 22px/1.1 var(--f-display); letter-spacing: .01em; text-wrap: balance; }
+.brand span { color: var(--muted); font-size: 13px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--rsl); background: var(--rsl); color: var(--surface); font: 600 14px var(--f-body); cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.share-row + .share-row { margin-top: 10px; }
+.share-row label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); flex: 1 1 200px; min-width: 0; }
+.share-row input { font: 15px var(--f-body); padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); min-width: 0; }
+#sh-url { flex: 1 1 300px; font: 13px var(--f-mono); }
+.share-row a.ghost { text-decoration: none; }
+.btn:focus-within, .btn:focus-visible, .tab:focus-visible, input:focus-visible + span { outline: 2px solid var(--rsl); outline-offset: 2px; }
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.tab { flex: none; text-align: left; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.tab b { display: block; font: 600 16px/1.2 var(--f-display); letter-spacing: .02em; }
+.tab small { color: var(--muted); font: 12px var(--f-mono); }
+.tab[aria-selected="true"] { border-color: var(--rsl); background: var(--rsl-soft); box-shadow: inset 0 -3px 0 var(--rsl); }
+.msg { padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+@media (max-width: 1080px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.sheet-head h2 { margin: 0; font: 600 18px var(--f-display); letter-spacing: .02em; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+.toggle input { accent-color: var(--dxf); width: 16px; height: 16px; }
+.planbox { padding: 12px; overflow-x: auto; }
+.plan { display: block; width: 100%; height: auto; max-height: min(76vh, 960px); min-width: 520px; font-family: var(--f-display); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 16px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+aside { display: grid; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h3 { margin: 0 0 10px; font: 600 13px var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+dt { color: var(--muted); font-size: 14px; }
+dd { margin: 0; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mono { font-family: var(--f-mono); font-size: 13px; }
+.cart-title { font: 700 26px/1.1 var(--f-display); letter-spacing: .02em; margin-bottom: 2px; }
+.cart-ref { font: 500 14px var(--f-mono); color: var(--rsl); margin-bottom: 12px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; }
+.sw { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.sw i { flex: none; width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--line); }
+.sw span { color: var(--muted); display: block; line-height: 1.2; }
+.sw b { font: 500 13px var(--f-mono); }
+.checks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.pill { flex: none; white-space: nowrap; padding: 1px 9px; border-radius: 999px; font: 500 12px var(--f-mono); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.ko { background: var(--warn-soft); color: var(--warn); }
+.nomen-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 600 12px var(--f-body); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 0 6px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.q { text-align: right; font: 600 15px var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .det { display: block; color: var(--muted); font-size: 13px; }
+tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: .03em; color: var(--rsl); border-bottom: 1px solid var(--line); }
+.src { font: 500 10px var(--f-mono); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+.src.dxf { border-color: var(--solive); color: var(--solive); }
+.note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+/* Plan SVG (unités = mm) */
+.plan path, .plan rect, .plan circle { vector-effect: non-scaling-stroke; }
+.g-solive rect { fill: color-mix(in srgb, var(--solive) 12%, transparent); stroke: var(--solive); stroke-width: 1; }
+.g-solive path { fill: none; stroke: var(--solive); stroke-width: 1; }
+.g-lisse rect { fill: var(--steel); stroke: var(--steel-ink); stroke-width: 1.2; }
+.g-semi rect { fill: var(--paper); stroke: var(--steel-ink); stroke-width: 1; }
+.g-croix path, .g-jdf path, .g-jdf circle { fill: none; stroke: var(--croix); stroke-width: 1.4; }
+.g-gc path { fill: none; stroke: var(--gc); stroke-width: 6; stroke-linecap: round; }
+.g-pole .platine { fill: none; stroke: var(--steel-ink); stroke-width: 1; stroke-dasharray: 3 2; }
+.g-pole .tube { fill: var(--ral, var(--steel-ink)); stroke: var(--ink); stroke-width: 1.2; }
+.g-pole .x { fill: none; stroke: var(--paper); stroke-width: 1; }
+.g-stair path, .g-stair circle, .g-stair-dim path { fill: none; stroke: var(--stair); stroke-width: 1.1; }
+.g-stair .pl, .g-stair-dim .pl { fill: var(--stair); stroke: none; }
+.g-stair text, .g-stair-dim text { fill: var(--stair); }
+.g-cote path { fill: none; stroke: var(--cote); stroke-width: 1; }
+.g-cote text { fill: var(--cote); font-weight: 600; }
+.g-dxf path, .g-dxf circle { fill: none; stroke: var(--dxf); stroke-width: 1; }
+.g-dxf .pl { fill: var(--dxf); stroke: none; }
+.g-dxf text { fill: var(--dxf); }
+@media (prefers-reduced-motion: no-preference) { .tab, .btn { transition: background-color .15s, border-color .15s; } }
+.client .internal { display: none !important; }
+.logo { height: 46px; width: auto; display: block; background: #fff; border-radius: 6px; padding: 3px 6px; } /* le logo a un fond blanc : on l'assume en pastille */
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><b id="brand-rsl">RSL</b><div><h1 id="h1">Plans mezzanine</h1><span id="sub">Plan coté et nomenclature à partir du JSON et du DXF</span></div></div>
+    <div class="actions internal">
+      <button class="ghost" id="share" type="button">🔗 Lien 3D</button>
+      <label class="btn" for="imp">Importer un projet (JSON + DXF)<input id="imp" type="file" multiple accept=".json,.dxf" hidden></label>
+    </div>
+  </header>
+  <div class="card internal" id="share-box" hidden>
+    <h3>Lien 3D pour le client</h3>
+    <div class="share-row">
+      <label>Nom du client<input id="sh-nom" type="text" autocomplete="off"></label>
+      <label>Projet (facultatif)<input id="sh-projet" type="text" autocomplete="off"></label>
+      <button class="btn" id="sh-go" type="button">Créer le lien</button>
+    </div>
+    <div class="share-row" id="sh-out" hidden>
+      <input id="sh-url" type="text" readonly aria-label="Lien 3D à envoyer au client">
+      <button class="ghost" id="sh-copy" type="button">Copier</button>
+      <a class="ghost" id="sh-open" target="_blank" rel="noopener">Ouvrir</a>
+    </div>
+    <p class="note">Le projet est contenu dans le lien : plateforme, cotes et couleurs, sans vos codes fournisseur ni votre compte. Il ouvre la page publiée sur GitHub, en mode client.</p>
+  </div>
+  <nav class="tabs internal" id="tabs" role="tablist" aria-label="Projets"></nav>
+  <div class="msg" id="msg" role="status" hidden></div>
+  <div class="main" id="main">
+    <section class="sheet" aria-labelledby="plan-h">
+      <div class="sheet-head">
+        <h2 id="plan-h" class="sr">Vue de la plateforme</h2>
+        <div class="seg" role="group" aria-label="Type de vue"><button id="vw-3d" type="button" aria-pressed="true">Vue 3D</button><button id="vw-plan" type="button" aria-pressed="false">Vue 2D</button></div>
+        <div class="tools">
+          <label class="toggle internal" id="ov-wrap"><input id="ov" type="checkbox"><span>Superposer le plan fournisseur (DXF)</span></label>
+          <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
+          <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
+          <button class="ghost" id="re3d" type="button">Recentrer</button>
+          <button class="ghost" id="rot2d" type="button" aria-label="Tourner le plan de 90°"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tourner 90°</button>
+        </div>
+      </div>
+      <div class="planbox" id="planbox"></div>
+      <div class="v3d" id="v3d"><p class="v3d-msg" id="v3d-msg" hidden></p></div>
+      <div class="legend" id="hint3d">Glisser pour tourner · molette ou pincement pour zoomer · clic droit ou deux doigts pour déplacer.<span class="internal"> Solives : hauteur estimée d'après leur largeur.</span></div>
+      <div class="legend" id="legend">
+        <span><i id="lg-pole"></i>Poteau et platine</span>
+        <span><i style="background:var(--steel);border:1px solid var(--steel-ink)"></i>Lisse</span>
+        <span><i style="background:var(--paper);border:1px solid var(--steel-ink)"></i>Semi-lisse</span>
+        <span><i style="border:1px solid var(--solive)"></i>Solive, entretoise</span>
+        <span><i style="background:var(--gc);height:5px;vertical-align:2px"></i>Garde-corps</span>
+        <span><i style="border:1px solid var(--stair)"></i>Escalier</span>
+        <span><i style="border:1px solid var(--croix)"></i>Croisillon, jambe de force</span>
+        <span id="lg-dxf" hidden><i style="border:1px solid var(--dxf)"></i>Plan fournisseur</span>
+      </div>
+    </section>
+    <aside>
+      <div class="card" id="cartouche"></div>
+      <div class="card"><h3>Caractéristiques</h3><dl id="carac"></dl></div>
+      <div class="card"><h3>Couleurs</h3><div class="swatches" id="couleurs"></div></div>
+      <div class="card internal" id="checks-card"><h3>Contrôles JSON / DXF</h3><ul class="checks" id="checks"></ul></div>
+      <div class="card internal"><h3>Nomenclature</h3><div class="nomen-wrap"><table><thead><tr><th>Élément</th><th style="text-align:right">Qté</th><th>Source</th></tr></thead><tbody id="nomen"></tbody></table></div>
+        <p class="note">Longueurs de lisses recalculées depuis le JSON. Solives et entretoises telles que dessinées dans le DXF du fournisseur : leur section exacte n'est pas dans les fichiers.</p></div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>// Moteur plan mezzanine : structure depuis le JSON, solives / entretoises / garde-corps / escalier depuis le DXF fournisseur.
+(function (root) {
+  'use strict';
+
+  // ---------- Lecture DXF (sections BLOCKS et ENTITIES uniquement) ----------
+  function decode(e) {
+    const o = { type: e.type, color: 256, p: [], flags: 0 };
+    let last = null;
+    for (const [c, v] of e.c) {
+      const n = parseFloat(v);
+      if (c >= 10 && c <= 13) { last = [n, 0]; o.p.push(last); o['k' + c] = last; }
+      else if (c >= 20 && c <= 23) { if (last) last[1] = n; }
+      else if (c === 40) o.h = n; else if (c === 41) o.sx = n; else if (c === 42) o.sy = n;
+      else if (c === 43) o.width = n; else if (c === 50) o.rot = n;
+      else if (c === 62) o.color = n; else if (c === 70) o.flags = n;
+      else if (c === 71) o.attach = n; else if (c === 72) o.ha = n; else if (c === 73) o.va = n;
+      else if (c === 1) o.text = v; else if (c === 2) o.name = v;
+    }
+    return o;
+  }
+
+  function parseDXF(text) {
+    const L = text.split(/\r?\n/), raw = {}, top = [];
+    let section = '', block = null, ent = null;
+    for (let i = 0; i + 1 < L.length; i += 2) {
+      const c = parseInt(L[i], 10), v = L[i + 1].trim();
+      if (c === 0) {
+        ent = null;
+        if (v === 'SECTION') { section = (L[i + 3] || '').trim(); continue; }
+        if (v === 'ENDSEC') { section = ''; continue; }
+        if (section === 'BLOCKS') {
+          if (v === 'BLOCK') { block = { name: '', ents: [] }; ent = { type: 'BLOCK', c: [] }; }
+          else if (v === 'ENDBLK') { if (block) raw[block.name] = block.ents; block = null; }
+          else if (block) { ent = { type: v, c: [] }; block.ents.push(ent); }
+        } else if (section === 'ENTITIES') { ent = { type: v, c: [] }; top.push(ent); }
+        continue;
+      }
+      if (!ent) continue;
+      if (ent.type === 'BLOCK') { if (c === 2) block.name = v; continue; }
+      ent.c.push([c, v]);
+    }
+    const blocks = {};
+    for (const k in raw) blocks[k] = raw[k].map(decode);
+    return { blocks, entities: top.map(decode) };
+  }
+
+  // ---------- Dessin générique d'entités DXF (blocs imbriqués, cotes) en coordonnées plan (Y vers le bas) ----------
+  const fx = v => (Math.round(v * 10) / 10).toString();
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const pathD = (pts, close) => 'M' + pts.map(p => fx(p[0]) + ' ' + fx(p[1])).join('L') + (close ? 'Z' : '');
+  const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+  const ID = [1, 0, 0, 1, 0, 0];
+
+  function insertM(o) {
+    const r = (o.rot || 0) * Math.PI / 180, sx = o.sx || 1, sy = o.sy || 1, c = Math.cos(r), s = Math.sin(r);
+    return [c * sx, s * sx, -s * sy, c * sy, o.k10[0], o.k10[1]];
+  }
+
+  function drawDXF(ents, blocks, m, out, bb, depth) {
+    if ((depth || 0) > 8) return;
+    const P = q => { const x = m[0] * q[0] + m[2] * q[1] + m[4], y = -(m[1] * q[0] + m[3] * q[1] + m[5]); if (bb) grow(bb, x, y); return [x, y]; };
+    const sc = Math.hypot(m[0], m[1]), ang = Math.atan2(m[1], m[0]) * 180 / Math.PI;
+    for (const o of ents) {
+      if (o.type === 'LWPOLYLINE' && o.p.length > 1) out.push(`<path d="${pathD(o.p.map(P), o.flags & 1)}"/>`);
+      else if (o.type === 'LINE') out.push(`<path d="${pathD([P(o.k10), P(o.k11)])}"/>`);
+      else if (o.type === 'SOLID') { const q = o.p.map(P); out.push(`<path class="pl" d="${pathD([q[0], q[1], q[3] || q[2], q[2]], true)}"/>`); }
+      else if (o.type === 'CIRCLE') { const c = P(o.k10); out.push(`<circle cx="${fx(c[0])}" cy="${fx(c[1])}" r="${fx(o.h * sc)}"/>`); }
+      else if ((o.type === 'TEXT' || o.type === 'MTEXT') && o.text) {
+        const tp = o.type === 'TEXT' && (o.ha || o.va) && o.k11 ? o.k11 : o.k10, [x, y] = P(tp);
+        let anchor = 'start', base = 'auto';
+        if (o.type === 'MTEXT') {
+          const a = (o.attach || 1) - 1;
+          anchor = ['start', 'middle', 'end'][a % 3]; base = ['hanging', 'central', 'auto'][Math.floor(a / 3)];
+        } else {
+          anchor = o.ha === 1 || o.ha === 4 ? 'middle' : o.ha === 2 ? 'end' : 'start';
+          base = o.va === 2 ? 'central' : o.va === 3 ? 'hanging' : 'auto';
+        }
+        const rot = -(ang + (o.rot || 0));
+        out.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${fx((o.h || 100) * sc)}" text-anchor="${anchor}" dominant-baseline="${base}"${Math.abs(rot) > 0.01 ? ` transform="rotate(${fx(rot)} ${fx(x)} ${fx(y)})"` : ''}>${esc(o.text.replace(/\\P/g, ' '))}<\/text>`);
+      }
+      else if (o.type === 'INSERT' && blocks[o.name]) drawDXF(blocks[o.name], blocks, mul(m, insertM(o)), out, bb, (depth || 0) + 1);
+      else if (o.type === 'DIMENSION' && blocks[o.name]) drawDXF(blocks[o.name], blocks, m, out, bb, (depth || 0) + 1);
+    }
+  }
+
+  function grow(bb, x, y) { bb.x0 = Math.min(bb.x0, x); bb.y0 = Math.min(bb.y0, y); bb.x1 = Math.max(bb.x1, x); bb.y1 = Math.max(bb.y1, y); }
+  const growRect = (bb, r) => { grow(bb, r[0], r[1]); grow(bb, r[2], r[3]); };
+
+  // ---------- Règles de géométrie tirées des 3 projets (PEP2610-1250-A, PEP2610-846-A, PEP2609-510-F) ----------
+  const DIR = { nord: [0, -1], sud: [0, 1], est: [1, 0], ouest: [-1, 0] };
+  const nums = s => String(s).split('x').map(Number);
+  const code5 = s => { const m = /T(\d{5})/.exec(s || ''); return m ? +m[1] : null; };
+
+  function buildPlan(J, D) {
+    const env = J.environement || {}, S = J.structure || {}, warn = [];
+
+    const poles = {};
+    for (const p of S.poteaux || []) {
+      const [w, h] = nums(p.section);
+      poles[p.id] = Object.assign({}, p, { w, h: h || w, cx: p.x + w / 2, cy: p.y + (h || w) / 2, pl: nums(p.platine && p.platine.taille || '0')[0] || 0 });
+    }
+
+    // Lisse : le dos (âme) est au ras de la face extérieure du poteau si « intérieur », sinon à 15 mm de son axe ;
+    // la semelle part vers « direction ». Arrêt à 27,5 mm du poteau si « intérieur » (27 ou 28 dans le DXF selon le sens), 5 mm sinon,
+    // et contre le dos de la lisse d'appui quand l'extrémité est une lisse.
+    const defs = {}; for (const l of S.lisses || []) defs[l.id] = l;
+    const lisses = {};
+    function lisse(id, seen) {
+      if (lisses[id]) return lisses[id];
+      const l = defs[id];
+      seen = seen || new Set();
+      if (!l || seen.has(id)) throw new Error(`lisse ${id} introuvable ou référencée en boucle`);
+      seen.add(id);
+      const [ht, fl] = nums(l.section), d = l.orientation && l.orientation.direction;
+      const int = l.orientation && l.orientation.position === 'interieur';
+      if (!DIR[d]) throw new Error(`lisse ${id} : direction « ${d} » inconnue`);
+      const H = d === 'nord' || d === 'sud', sg = d === 'sud' || d === 'est' ? 1 : -1;
+      const ends = [l.origine, l.fin].map(e => e.objet === 'poteau' ? { pole: poles[e.id] } : { web: lisse(e.id, seen).web });
+      if (ends.some(e => 'pole' in e && !e.pole)) throw new Error(`lisse ${id} : poteau d'extrémité introuvable`);
+      const ref = (ends.find(e => e.pole) || {}).pole;
+      // shortcut: une lisse posée entre deux lisses n'a pas de poteau pour fixer son axe ; à traiter si un projet en contient.
+      if (!ref) throw new Error(`lisse ${id} : aucune extrémité sur un poteau`);
+      const web = (H ? ref.cy : ref.cx) - sg * (int ? (H ? ref.h : ref.w) / 2 : 15), gap = int ? 27.5 : 5;
+      const pos = ends.map(e => e.pole ? (H ? e.pole.cx : e.pole.cy) : e.web);
+      const lo = pos[0] <= pos[1] ? 0 : 1, hi = 1 - lo, half = e => (H ? e.pole.w : e.pole.h) / 2;
+      const a0 = ends[lo].pole ? pos[lo] + half(ends[lo]) + gap : pos[lo];
+      const a1 = ends[hi].pole ? pos[hi] - half(ends[hi]) - gap : pos[hi];
+      const b0 = Math.min(web, web + sg * fl), b1 = Math.max(web, web + sg * fl);
+      // Pour le plancher et la 3D : lisse prolongée jusqu'à la face extérieure des poteaux, et son axe entre centres d'appui.
+      const e0 = ends[lo].pole ? pos[lo] - half(ends[lo]) : a0, e1 = ends[hi].pole ? pos[hi] + half(ends[hi]) : a1, cr = H ? ref.cy : ref.cx;
+      return (lisses[id] = {
+        id, def: l, section: l.section, ht, fl, H, sg, web, a0, a1, len: a1 - a0, rect: H ? [a0, b0, a1, b1] : [b0, a0, b1, a1],
+        ext: H ? [e0, b0, e1, b1] : [b0, e0, b1, e1], axis: H ? [[pos[lo], cr], [pos[hi], cr]] : [[cr, pos[lo]], [cr, pos[hi]]],
+      });
+    }
+    for (const id in defs) { try { lisse(+id); } catch (e) { warn.push(e.message); } }
+    const L = Object.values(lisses);
+
+    // Semi-lisses : 250 mm vers l'extérieur depuis le dos, « position » comptée depuis le début de la lisse.
+    const semi = [];
+    for (const s of S['semi-lisses'] || []) {
+      const l = lisses[s.lisse]; if (!l) { warn.push(`semi-lisse sur lisse ${s.lisse} inconnue`); continue; }
+      const u = l.a0 + s.position, w = 80; // shortcut: largeur du symbole fixée à 80 mm (le DXF dessine 80 ou 95 selon le côté)
+      const o0 = l.web, o1 = l.web - l.sg * s.section, b0 = Math.min(o0, o1), b1 = Math.max(o0, o1);
+      semi.push({ s, rect: l.H ? [u, b0, u + w, b1] : [b0, u, b1, u + w] });
+    }
+
+    // Plancher : cellules de la grille des lisses entourées de lisses dans les 4 directions, plus le débord des semi-lisses.
+    const floor = floorRects(L.map(l => l.ext));
+    for (const id of new Set(semi.map(x => x.s.lisse))) {
+      const rs = semi.filter(x => x.s.lisse === id).map(x => x.rect);
+      floor.push([Math.min(...rs.map(r => r[0])), Math.min(...rs.map(r => r[1])), Math.max(...rs.map(r => r[2])), Math.max(...rs.map(r => r[3]))]);
+    }
+
+    const croix = L.filter(l => l.def.croisillon).map(l => ({ l, mid: (l.a0 + l.a1) / 2, cross: l.web + l.sg * l.fl / 2 }));
+    const jdf = Object.values(poles).filter(p => DIR[p.jdf]).map(p => ({ p, u: DIR[p.jdf] }));
+
+    // ---------- Ce que seul le DXF contient ----------
+    const ents = D ? D.entities : [];
+    const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
+    const solives = [], entretoises = [], gc = [], stair = [], stairDims = [], foundLisses = new Set();
+    let dxfSousLisse = null;
+    for (const o of ents) {
+      if (o.type === 'LWPOLYLINE' && o.color === 30) {
+        const pts = o.p.map(q => [q[0], -q[1]]);
+        let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        gc.push({ pts, len, modules: Math.ceil(len / 1000 - 1e-6) });
+      } else if (o.type === 'LWPOLYLINE' && (o.flags & 1) && o.p.length === 4 && new Set(o.p.map(q => q[0])).size === 2 && new Set(o.p.map(q => q[1])).size === 2) {
+        const xs = o.p.map(q => q[0]), ys = o.p.map(q => -q[1]);
+        const r = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+        const hit = L.find(l => near(l.rect, r));
+        // shortcut: tout rectangle fermé qui n'est pas une lisse est pris pour une solive (vrai sur les 3 projets).
+        if (hit) foundLisses.add(hit.id);
+        else solives.push({ rect: r, w: Math.min(r[2] - r[0], r[3] - r[1]), len: Math.max(r[2] - r[0], r[3] - r[1]) });
+      } else if (o.type === 'LWPOLYLINE' && o.p.length === 2 && o.color === 0 && !o.width) {
+        const a = [o.p[0][0], -o.p[0][1]], b = [o.p[1][0], -o.p[1][1]], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        // shortcut: les traits d'axe des semi-lisses font 75 mm ; au-delà de 150 mm c'est une entretoise.
+        if (len > 150) entretoises.push({ a, b, len });
+      } else if (o.type === 'INSERT' && /^(STAIR|RECEPTION)_/.test(o.name || '')) stair.push(o);
+      else if (o.type === 'INSERT' && /^MEASURE_/.test(o.name || '')) stairDims.push(o);
+      else if (o.type === 'TEXT' && /sous lisse/i.test(o.text || '')) dxfSousLisse = +((/(\d+)\s*mm/.exec(o.text) || [])[1]);
+    }
+
+    // Escalier et palier pour la 3D, lus dans les blocs du DXF (repère du bloc : arrivée en (0,0), descente vers -Y).
+    const stairs3d = [], landing = { poles: [], beams: [], gc: [], rect: null };
+    for (const o of stair) {
+      const m = insertM(o), pls = (D.blocks[o.name] || []).filter(e => e.type === 'LWPOLYLINE');
+      const T = q => [m[0] * q[0] + m[2] * q[1] + m[4], -(m[1] * q[0] + m[3] * q[1] + m[5])];
+      const Vd = q => { const x = m[0] * q[0] + m[2] * q[1], y = -(m[1] * q[0] + m[3] * q[1]), n = Math.hypot(x, y); return [x / n, y / n]; };
+      if (/^STAIR_/.test(o.name)) {
+        const len = Math.max(...pls.flatMap(e => e.p.map(q => -q[1])));
+        const spans0 = pls.filter(e => (e.flags & 1) && Math.min(...e.p.map(q => q[0])) < 0 && Math.max(...e.p.map(q => q[0])) > 0);
+        const steps = pls.filter(e => !(e.flags & 1) && e.p.length === 2 && Math.abs(e.p[0][1] - e.p[1][1]) < 1 && -e.p[0][1] > 1 && -e.p[0][1] < len - 1).map(e => -e.p[0][1]).sort((a, b) => a - b);
+        stairs3d.push({
+          top: T([0, 0]), dir: Vd([0, -1]), lat: Vd([1, 0]), L: len, steps,
+          halfOut: Math.max(...pls.flatMap(e => e.p.map(q => Math.abs(q[0])))),
+          halfIn: spans0.length ? Math.max(...spans0.flatMap(e => e.p.map(q => Math.abs(q[0])))) : 400,
+        });
+      } else {
+        const r = (pls.find(e => e.flags & 1) || pls[0]).p.map(T), xs = r.map(q => q[0]), ys = r.map(q => q[1]);
+        const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+        if (/^RECEPTION_LEVEL_POLE/.test(o.name)) landing.poles.push([(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]);
+        else if (/^RECEPTION_LEVEL_BEAM/.test(o.name)) landing.beams.push(box);
+      }
+    }
+    if (landing.poles.length) {
+      const rs = landing.beams.concat(landing.poles.map(([x, y]) => [x - 50, y - 50, x + 50, y + 50]));
+      const b = landing.rect = [Math.min(...rs.map(r => r[0])), Math.min(...rs.map(r => r[1])), Math.max(...rs.map(r => r[2])), Math.max(...rs.map(r => r[3]))];
+      const inFloor = (x, y) => floor.some(r => x > r[0] && x < r[2] && y > r[1] && y < r[3]);
+      // Garde-corps du palier : tous les côtés sauf celui contre la plateforme, moins le passage de l'escalier.
+      for (const [p, q, n] of [[[b[0], b[1]], [b[2], b[1]], [0, -1]], [[b[2], b[1]], [b[2], b[3]], [1, 0]], [[b[2], b[3]], [b[0], b[3]], [0, 1]], [[b[0], b[3]], [b[0], b[1]], [-1, 0]]]) {
+        if (inFloor((p[0] + q[0]) / 2 + n[0] * 60, (p[1] + q[1]) / 2 + n[1] * 60)) continue;
+        const len = Math.hypot(q[0] - p[0], q[1] - p[1]), t = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+        let segs = [[0, len]];
+        for (const s of stairs3d) {
+          if (Math.abs((s.top[0] - p[0]) * n[0] + (s.top[1] - p[1]) * n[1]) > 120) continue;
+          const c = (s.top[0] - p[0]) * t[0] + (s.top[1] - p[1]) * t[1], c0 = c - s.halfOut, c1 = c + s.halfOut;
+          segs = segs.flatMap(([u, v]) => [[u, Math.min(v, c0)], [Math.max(u, c1), v]]).filter(([u, v]) => v - u > 100);
+        }
+        for (const [u, v] of segs) landing.gc.push([[p[0] + t[0] * u, p[1] + t[1] * u], [p[0] + t[0] * v, p[1] + t[1] * v]]);
+      }
+    }
+
+    const ep = code5(env.plancher), maxHt = Math.max(0, ...L.map(l => l.ht));
+    const sousLisse = env.hauteur && ep != null && L.length ? env.hauteur - maxHt - ep : null;
+    const gcAcc = (J.accessoires || []).find(a => /^P.29T/.test(a.codearticle || '')); // shortcut: garde-corps = article P?29T…, constaté sur 3 projets
+    const gcModules = gc.reduce((s, g) => s + g.modules, 0);
+
+    const checks = D ? [
+      { ok: foundLisses.size === L.length, label: 'Lisses recalculées et retrouvées dans le DXF', val: `${foundLisses.size} / ${L.length}` },
+      gcAcc ? { ok: gcModules === gcAcc.count, label: 'Modules de garde-corps = quantité du JSON', val: `${gcModules} / ${gcAcc.count}` } : null,
+      dxfSousLisse ? { ok: dxfSousLisse === sousLisse, label: 'Hauteur sous lisse = cartouche fournisseur', val: `${sousLisse} / ${dxfSousLisse} mm` } : null,
+    ].filter(Boolean) : [];
+
+    // ---------- Nomenclature ----------
+    const rows = [], groupBy = (arr, key) => arr.reduce((m, x) => { const k = key(x); (m[k] = m[k] || []).push(x); return m; }, {});
+    const byKey = (arr, key, fn) => Object.entries(groupBy(arr, key)).sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true })).forEach(([k, xs]) => fn(k, xs));
+    const P = Object.values(poles);
+    byKey(P, p => p.section, (k, xs) => rows.push({ g: 'Structure', el: `Poteau ${k}`, det: `hauteur plancher ${env.hauteur} mm`, q: xs.length, src: 'JSON' }));
+    byKey(P, p => `${p.platine && p.platine.taille}|${p.platine && p.platine.position}`, (k, xs) => { const [t, pos] = k.split('|'); rows.push({ g: 'Structure', el: `Platine ${t}`, det: `position ${pos}`, q: xs.length, src: 'JSON' }); });
+    byKey(L, l => `${l.section}|${String(Math.round(l.len)).padStart(6, '0')}`, (k, xs) => rows.push({ g: 'Structure', el: `Lisse ${xs[0].section}`, det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'JSON' }));
+    if (semi.length) byKey(semi, x => String(x.s.section), (k, xs) => rows.push({ g: 'Structure', el: 'Semi-lisse', det: `${k} mm en débord`, q: xs.length, src: 'JSON' }));
+    if (jdf.length) rows.push({ g: 'Structure', el: 'Jambe de force', det: jdf.map(j => `poteau ${j.p.id} → ${j.p.jdf}`).join(' · '), q: jdf.length, src: 'JSON' });
+    if (croix.length) rows.push({ g: 'Structure', el: `Croisillon ${env.croisillon || ''}`.trim(), det: croix.map(c => `lisse ${c.l.id}`).join(' · '), q: croix.length, src: 'JSON' });
+    rows.push({ g: 'Plancher', el: `Plancher ${env.plancher || '?'}`, det: `ép. ${ep} mm · solivage ${String(env.solivage || '').toLowerCase()}`, q: null, src: 'JSON' });
+    byKey(solives, s => `${String(Math.round(s.w)).padStart(4, '0')}|${String(Math.round(s.len)).padStart(6, '0')}`, (k, xs) => rows.push({ g: 'Plancher', el: `Solive, ${Math.round(xs[0].w)} mm de large`, det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
+    if (entretoises.length) byKey(entretoises, e => String(Math.round(e.len)).padStart(6, '0'), (k, xs) => rows.push({ g: 'Plancher', el: 'Entretoise', det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
+    if (gc.length) rows.push({ g: 'Sécurité et accès', el: 'Garde-corps', det: `${(gc.reduce((s, g) => s + g.len, 0) / 1000).toFixed(2).replace('.', ',')} ml en ${gc.length} tronçon${gc.length > 1 ? 's' : ''}`, q: gcModules, src: 'DXF' });
+    for (const e of S.escalier || []) rows.push({ g: 'Sécurité et accès', el: `Escalier ${e.modele}`, det: [`emmarchement ${code5(e.modele)} mm`, `sur lisse ${e.lisse}, vers ${/^[eo]/.test(e.orientation) ? "l'" : 'le '}${e.orientation}`].concat(e.options || []).join(' · '), q: 1, src: 'JSON' });
+    for (const a of J.accessoires || []) rows.push({ g: 'Accessoires', el: a.codearticle, det: a === gcAcc ? 'modules de garde-corps' : '', q: a.count, src: 'JSON', mono: true });
+
+    // ---------- Encombrement ----------
+    const bb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    for (const p of P) { const h = Math.max(p.pl, p.w) / 2; growRect(bb, [p.cx - h, p.cy - h, p.cx + h, p.cy + h]); }
+    L.forEach(l => growRect(bb, l.rect)); semi.forEach(s => growRect(bb, s.rect));
+    jdf.forEach(j => grow(bb, j.p.cx + j.u[0] * 1025, j.p.cy + j.u[1] * 1025));
+    const stairSVG = [], stairDimSVG = [];
+    if (D) { drawDXF(stair, D.blocks, ID, stairSVG, bb); drawDXF(stairDims, D.blocks, ID, stairDimSVG, bb); }
+
+    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, landing: landing.poles.length ? landing : null };
+  }
+
+  // shortcut: une plateforme en U pourrait voir son échancrure remplie (test « entouré dans les 4 directions ») ; passer à un vrai contour si un projet le montre.
+  function floorRects(els) {
+    const uq = vs => vs.sort((a, b) => a - b).filter((v, i, a) => !i || v - a[i - 1] > 0.5);
+    const xs = uq(els.flatMap(r => [r[0], r[2]])), ys = uq(els.flatMap(r => [r[1], r[3]]));
+    const inside = (cx, cy) => els.some(r => cx > r[0] && cx < r[2] && cy > r[1] && cy < r[3]) || (
+      els.some(r => r[2] <= cx && cy > r[1] && cy < r[3]) && els.some(r => r[0] >= cx && cy > r[1] && cy < r[3]) &&
+      els.some(r => r[3] <= cy && cx > r[0] && cx < r[2]) && els.some(r => r[1] >= cy && cx > r[0] && cx < r[2]));
+    const out = [];
+    for (let j = 0; j + 1 < ys.length; j++) {
+      let run = null;
+      for (let i = 0; i + 1 < xs.length; i++) {
+        if (inside((xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2)) { if (run) run[2] = xs[i + 1]; else run = [xs[i], ys[j], xs[i + 1], ys[j + 1]]; }
+        else if (run) { out.push(run); run = null; }
+      }
+      if (run) out.push(run);
+    }
+    return out;
+  }
+
+  // ---------- Rendu SVG ----------
+  function renderSVG(M, opt) {
+    opt = opt || {};
+    const bb = M.bb, span = Math.max(bb.x1 - bb.x0, bb.y1 - bb.y0, 3000), fs = Math.round(span / 75);
+    const rect = (r, cls) => `<rect${cls ? ` class="${cls}"` : ''} x="${fx(r[0])}" y="${fx(r[1])}" width="${fx(r[2] - r[0])}" height="${fx(r[3] - r[1])}"/>`;
+    const out = [];
+
+    out.push(`<g class="g-solive">${M.solives.map(s => rect(s.rect)).join('')}${M.entretoises.map(e => `<path d="${pathD([e.a, e.b])}"/>`).join('')}<\/g>`);
+    out.push(`<g class="g-lisse">${M.lisses.map(l => rect(l.rect)).join('')}<\/g>`);
+    out.push(`<g class="g-semi">${M.semi.map(s => rect(s.rect)).join('')}<\/g>`);
+    out.push(`<g class="g-croix">${M.croix.map(c => {
+      const pt = (u, v) => c.l.H ? [c.mid + u, c.cross + v] : [c.cross + v, c.mid + u];
+      return `<path d="${pathD([pt(-457.5, 100), pt(-229.5, 100), pt(229.5, -100), pt(457.5, -100)])}"/><path d="${pathD([pt(-457.5, -100), pt(-229.5, -100), pt(229.5, 100), pt(457.5, 100)])}"/>`;
+    }).join('')}<\/g>`);
+    out.push(`<g class="g-gc">${M.gc.map(g => `<path d="${pathD(g.pts)}"/>`).join('')}<\/g>`);
+    out.push(`<g class="g-jdf">${M.jdf.map(({ p, u }) => {
+      const v = [-u[1], u[0]], pt = (a, b) => [p.cx + u[0] * a + v[0] * b, p.cy + u[1] * a + v[1] * b];
+      const holes = [[850, 75], [1000, 75], [850, -75], [1000, -75]].map(([a, b]) => { const q = pt(a, b); return `<circle cx="${fx(q[0])}" cy="${fx(q[1])}" r="10"/>`; }).join('');
+      return `<path d="${pathD([pt(50, 25), pt(965, 25), pt(965, -25), pt(50, -25)], true)}"/><path d="${pathD([pt(825, -100), pt(1025, -100), pt(1025, 100), pt(825, 100)], true)}"/>${holes}`;
+    }).join('')}<\/g>`);
+    const ral = (M.env.couleurs || {}).poteaux || '';
+    out.push(`<g class="g-pole" data-ral="${esc(ral)}">${M.poles.map(p => {
+      const h = p.pl / 2, a = [p.x, p.y], b = [p.x + p.w, p.y + p.h];
+      return (p.pl ? rect([p.cx - h, p.cy - h, p.cx + h, p.cy + h], 'platine') : '') + rect([a[0], a[1], b[0], b[1]], 'tube') + `<path class="x" d="${pathD([a, b])}M${fx(a[0])} ${fx(b[1])}L${fx(b[0])} ${fx(a[1])}"/>`;
+    }).join('')}<\/g>`);
+    out.push(`<g class="g-stair">${M.stairSVG.join('')}<\/g><g class="g-stair-dim">${M.stairDimSVG.join('')}<\/g>`);
+
+    // Cotes : entraxes des poteaux en haut et à gauche, puis hors tout platine.
+    const uniq = vs => vs.sort((a, b) => a - b).filter((v, i, a) => !i || v - a[i - 1] > 1);
+    const xs = uniq(M.poles.map(p => p.cx)), ys = uniq(M.poles.map(p => p.cy));
+    const pl = Math.max(0, ...M.poles.map(p => p.pl)) / 2, t = fs * 0.45, cot = [];
+    const tick = (x, y) => `M${fx(x - t)} ${fx(y + t)}L${fx(x + t)} ${fx(y - t)}`;
+    const dimH = (x0, x1, y, txt) => {
+      cot.push(`<path d="M${fx(x0)} ${fx(bb.y0 - fs * 0.6)}L${fx(x0)} ${fx(y - t)}M${fx(x1)} ${fx(bb.y0 - fs * 0.6)}L${fx(x1)} ${fx(y - t)}M${fx(x0 - t)} ${fx(y)}L${fx(x1 + t)} ${fx(y)}${tick(x0, y)}${tick(x1, y)}"/>`);
+      cot.push(`<text x="${fx((x0 + x1) / 2)}" y="${fx(y - fs * 0.35)}" font-size="${fs}" text-anchor="middle">${esc(txt)}<\/text>`);
+    };
+    const dimV = (y0, y1, x, txt) => {
+      cot.push(`<path d="M${fx(bb.x0 - fs * 0.6)} ${fx(y0)}L${fx(x - t)} ${fx(y0)}M${fx(bb.x0 - fs * 0.6)} ${fx(y1)}L${fx(x - t)} ${fx(y1)}M${fx(x)} ${fx(y0 - t)}L${fx(x)} ${fx(y1 + t)}${tick(x, y0)}${tick(x, y1)}"/>`);
+      const tx = x - fs * 0.35, ty = (y0 + y1) / 2;
+      cot.push(`<text x="${fx(tx)}" y="${fx(ty)}" font-size="${fs}" text-anchor="middle" transform="rotate(-90 ${fx(tx)} ${fx(ty)})">${esc(txt)}<\/text>`);
+    };
+    if (xs.length > 1) for (let i = 1; i < xs.length; i++) dimH(xs[i - 1], xs[i], bb.y0 - fs * 2, Math.round(xs[i] - xs[i - 1]));
+    if (ys.length > 1) for (let i = 1; i < ys.length; i++) dimV(ys[i - 1], ys[i], bb.x0 - fs * 2, Math.round(ys[i] - ys[i - 1]));
+    if (xs.length) dimH(xs[0] - pl, xs[xs.length - 1] + pl, bb.y0 - fs * 4, `${Math.round(xs[xs.length - 1] - xs[0] + 2 * pl)} hors tout platine`);
+    if (ys.length) dimV(ys[0] - pl, ys[ys.length - 1] + pl, bb.x0 - fs * 4, `${Math.round(ys[ys.length - 1] - ys[0] + 2 * pl)} hors tout platine`);
+    out.unshift(`<g class="g-cote">${cot.join('')}<\/g>`);
+
+    const vx = bb.x0 - fs * 5.2, vy = bb.y0 - fs * 5.2, vw = bb.x1 - vx + fs * 1.5, vh = bb.y1 - vy + fs * 1.5;
+
+    if (M.D) {
+      const ov = [], keep = M.D.entities.filter(o => !(o.type === 'INSERT' && /_BOX$/.test(o.name || '')) && o.type !== 'TEXT' && o.type !== 'DIMENSION');
+      drawDXF(keep, M.D.blocks, ID, ov, null);
+      out.push(`<g class="g-dxf"${opt.overlay ? '' : ' hidden'}>${ov.join('')}<\/g>`);
+    }
+    const ref = M.J.client && M.J.client.reference_interne || '';
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="plan" viewBox="${fx(vx)} ${fx(vy)} ${fx(vw)} ${fx(vh)}" role="img" aria-label="Plan de la mezzanine ${esc(ref)}">${out.join('')}<\/svg>`;
+  }
+
+  const api = { parseDXF, buildPlan, renderSVG };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.MEZZ = api;
+})(this);
+</script>
+<script>// Scène 3D d'une mezzanine à partir du modèle MEZZ.buildPlan (plan en mm, Y vers le sud ; Three.js en m, Y vers le haut).
+(function (root) {
+  'use strict';
+  const K = 0.001;
+
+  // shortcut: hauteur des solives déduite de leur largeur (50 → 150, 80 → 250, relevé sur PEP2610-1250 et PEP2610-846) ; la lire si un export la donne un jour.
+  const soliveHt = w => (w <= 60 ? 150 : 250);
+
+  function build(T, M, opt) {
+    opt = opt || {};
+    const col = opt.colors || {}, H = M.env.hauteur || 3000, ep = M.ep || 30, top = H - ep;
+    const g = new T.Group(), UP = new T.Vector3(0, 1, 0), mats = {};
+
+    const mat = key => {
+      const c = col[key] && col[key] !== 'GALVA' ? col[key] : 'GALVA';
+      return mats[c] || (mats[c] = c === 'GALVA'
+        ? new T.MeshStandardMaterial({ color: '#c5ccd3', metalness: 0.25, roughness: 0.5 }) // sans carte d'environnement, un métal plus réfléchissant sort noir
+        : new T.MeshStandardMaterial({ color: c, metalness: 0.1, roughness: 0.55 }));
+    };
+    const V = (x, y, h) => new T.Vector3(x * K, h * K, y * K);
+    const add = (geo, m, mtx) => {
+      const o = new T.Mesh(geo, m);
+      if (mtx) { o.matrixAutoUpdate = false; o.matrix.copy(mtx); }
+      o.castShadow = o.receiveShadow = true; g.add(o); return o;
+    };
+    const box = (w, h, d, m, x, y, z) => { const o = add(new T.BoxGeometry(w * K, h * K, d * K), m); o.position.set(x * K, y * K, z * K); return o; };
+    // Pavé de section w × h (mm) entre deux points 3D ; h reste dans le plan vertical.
+    const obox = (a, b, w, h, m) => {
+      const z = new T.Vector3().subVectors(b, a), len = z.length(); z.normalize();
+      const x = new T.Vector3().crossVectors(UP, z); if (x.lengthSq() < 1e-8) x.set(1, 0, 0); x.normalize();
+      const y = new T.Vector3().crossVectors(z, x);
+      return add(new T.BoxGeometry(w * K, h * K, len), m, new T.Matrix4().makeBasis(x, y, z).setPosition(a.clone().add(b).multiplyScalar(0.5)));
+    };
+    const rod = (a, b, d, m) => {
+      const v = new T.Vector3().subVectors(b, a), o = add(new T.CylinderGeometry(d * K / 2, d * K / 2, v.length(), 8), m);
+      o.position.copy(a).addScaledVector(v, 0.5); o.quaternion.setFromUnitVectors(UP, v.normalize()); return o;
+    };
+    // Profil C (âme + ailes + retours) : âme à la cote `web`, ailes vers sg, dessus à `top`.
+    const cProfile = (o, m) => {
+      const { ht: h, fl: f, lip, t } = o, s = new T.Shape();
+      [[0, 0], [f, 0], [f, lip], [f - t, lip], [f - t, t], [t, t], [t, h - t], [f - t, h - t], [f - t, h - lip], [f, h - lip], [f, h], [0, h]]
+        .forEach(([u, v], i) => (i ? s.lineTo(u * K, v * K) : s.moveTo(u * K, v * K)));
+      const along = o.H ? new T.Vector3(1, 0, 0) : new T.Vector3(0, 0, 1);
+      const across = (o.H ? new T.Vector3(0, 0, 1) : new T.Vector3(1, 0, 0)).multiplyScalar(o.sg);
+      const origin = o.H ? V(o.a0, o.web, o.top - h) : V(o.web, o.a0, o.top - h);
+      return add(new T.ExtrudeGeometry(s, { depth: o.len * K, bevelEnabled: false }), m, new T.Matrix4().makeBasis(across, UP, along).setPosition(origin));
+    };
+    const rail = (a, b, base, m) => {
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 50) return;
+      const n = Math.max(1, Math.ceil(len / 1500));
+      for (let i = 0; i <= n; i++) { const x = a[0] + (b[0] - a[0]) * i / n, y = a[1] + (b[1] - a[1]) * i / n; obox(V(x, y, base), V(x, y, base + 1100), 40, 40, m); }
+      rod(V(a[0], a[1], base + 1100), V(b[0], b[1], base + 1100), 42, m);
+      rod(V(a[0], a[1], base + 550), V(b[0], b[1], base + 550), 30, m);
+      obox(V(a[0], a[1], base + 75), V(b[0], b[1], base + 75), 8, 150, m);
+    };
+
+    // Poteaux et platines
+    for (const p of M.poles) {
+      box(p.pl || 200, 10, p.pl || 200, mat('poteaux'), p.cx, 5, p.cy);
+      box(p.w, top - 10, p.h, mat('poteaux'), p.cx, 10 + (top - 10) / 2, p.cy);
+    }
+    // Lisses à leur vraie section
+    for (const l of M.lisses) {
+      const sec = l.section.split('x').map(Number);
+      cProfile({ H: l.H, a0: l.a0, len: l.len, web: l.web, sg: l.sg, ht: l.ht, fl: l.fl, lip: sec[2] || 30, t: sec[3] || 3, top }, mat('lisses'));
+    }
+    // Solives (emprise du DXF), affleurant le dessus des lisses
+    for (const s of M.solives) {
+      const r = s.rect, h = r[2] - r[0] > r[3] - r[1];
+      cProfile({ H: h, a0: h ? r[0] : r[1], len: s.len, web: h ? r[1] : r[0], sg: 1, ht: soliveHt(s.w), fl: s.w, lip: 20, t: 2, top }, mat('solives'));
+    }
+    for (const e of M.entretoises) obox(V(e.a[0], e.a[1], top - 90), V(e.b[0], e.b[1], top - 90), 30, 100, mat('solives'));
+    for (const s of M.semi) { const r = s.rect; box(r[2] - r[0], 150, r[3] - r[1], mat('lisses'), (r[0] + r[2]) / 2, top - 75, (r[1] + r[3]) / 2); }
+
+    // Croisillons câble en X entre les appuis de la lisse
+    for (const c of M.croix) {
+      const [A, B] = c.l.axis, lo = 150, hi = top - c.l.ht - 60;
+      rod(V(A[0], A[1], lo), V(B[0], B[1], hi), 10, mat('croisillons'));
+      rod(V(B[0], B[1], lo), V(A[0], A[1], hi), 10, mat('croisillons'));
+    }
+    // Jambes de force : du poteau sous la lisse jusqu'à la platine au sol (925 mm du poteau, comme sur le plan)
+    const hmax = Math.max(250, ...M.lisses.map(l => l.ht));
+    for (const { p, u } of M.jdf) {
+      const fx = p.cx + u[0] * 925, fy = p.cy + u[1] * 925;
+      obox(V(p.cx + u[0] * 50, p.cy + u[1] * 50, top - hmax - 150), V(fx, fy, 40), 60, 60, mat('poteaux'));
+      box(200, 10, 200, mat('poteaux'), fx, 5, fy);
+    }
+
+    // Garde-corps relevés dans le DXF, posés sur le plancher
+    for (const r of M.gc) for (let i = 1; i < r.pts.length; i++) rail(r.pts[i - 1], r.pts[i], H, mat('rambardes'));
+
+    // Escalier : limons, marches à hauteurs égales, rambardes des deux côtés
+    for (const s of M.stairs3d) {
+      const P = (r, q, h) => V(s.top[0] + s.dir[0] * r + s.lat[0] * q, s.top[1] + s.dir[1] * r + s.lat[1] * q, h);
+      const st = s.steps.length ? s.steps : Array.from({ length: Math.max(1, Math.round(H / 230) - 1) }, (_, i) => (i + 1) * s.L / Math.round(H / 230));
+      const k = st.length, riser = H / (k + 1), m = mat('escaliers'), hAt = r => H * (1 - r / s.L);
+      for (let i = 0; i < k; i++) {
+        const r0 = i ? st[i - 1] : 0, h = H - (i + 1) * riser;
+        obox(P(r0 + 10, 0, h - 15), P(st[i], 0, h - 15), 2 * s.halfIn, 30, mat('galva'));
+      }
+      for (const sg of [-1, 1]) {
+        const q = sg * (s.halfIn + 25), qr = sg * (s.halfIn + 70);
+        obox(P(0, q, H - 140), P(s.L - 60, q, 170), 10, 260, m); // pied du limon arrêté au sol
+        const n = Math.max(2, Math.ceil((s.L - 300) / 1200) + 1), rs = Array.from({ length: n }, (_, i) => 150 + i * (s.L - 300) / (n - 1));
+        for (const r of rs) obox(P(r, qr, Math.max(0, hAt(r) - 100)), P(r, qr, hAt(r) + 1000), 40, 40, m);
+        rod(P(rs[0], qr, hAt(rs[0]) + 1000), P(rs[n - 1], qr, hAt(rs[n - 1]) + 1000), 42, m);
+        rod(P(rs[0], qr, hAt(rs[0]) + 500), P(rs[n - 1], qr, hAt(rs[n - 1]) + 500), 30, m);
+      }
+    }
+
+    // Palier d'arrivée
+    if (M.landing) {
+      for (const [x, y] of M.landing.poles) { box(200, 10, 200, mat('escaliers'), x, 5, y); box(100, top - 10, 100, mat('escaliers'), x, 10 + (top - 10) / 2, y); }
+      for (const r of M.landing.beams) box(r[2] - r[0], 200, r[3] - r[1], mat('lisses'), (r[0] + r[2]) / 2, top - 100, (r[1] + r[3]) / 2);
+      for (const [a, b] of M.landing.gc) rail(a, b, H, mat('rambardes'));
+    }
+
+    // Plancher : caillebotis (code …CB…) ajouré, sinon panneau aggloméré
+    const cb = /CB/.test(M.env.plancher || ''), floor = new T.Group();
+    const fm = cb ? grating(T) : chipboard(T);
+    // Calepinage depuis l'angle de la plateforme ; côté 1000 des panneaux dans le sens des solives.
+    const alongX = String(M.env.solivage).toUpperCase() === 'HORIZONTAL';
+    const fr = M.floor.concat(M.landing ? [M.landing.rect] : []), ox = Math.min(...fr.map(r => r[0])) * K, oz = Math.min(...fr.map(r => r[1])) * K;
+    const slab = r => {
+      const geo = new T.BoxGeometry((r[2] - r[0]) * K, ep * K, (r[3] - r[1]) * K);
+      geo.translate((r[0] + r[2]) / 2 * K, (top + ep / 2) * K, (r[1] + r[3]) / 2 * K);
+      const p = geo.attributes.position, uv = geo.attributes.uv;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i) - ox, z = p.getZ(i) - oz;
+        if (cb) uv.setXY(i, x / 0.06, z / 0.038); // maille 30×19 dessinée au double
+        else uv.setXY(i, (alongX ? z : x) / 2, (alongX ? x : z) / 2); // tuile de 2 m × 2 m = deux rangées de panneaux
+      }
+      const o = new T.Mesh(geo, fm); o.receiveShadow = true; o.castShadow = !cb; floor.add(o);
+    };
+    M.floor.forEach(slab);
+    if (M.landing) slab(M.landing.rect);
+    g.add(floor);
+    return { group: g, floor };
+  }
+
+  // Panneaux d'aggloméré 2000 × 1000 à joints décalés : u = 2000 en travers des solives, v = 2 rangées de 1000 dans leur sens.
+  function chipboard(T) {
+    const m = new T.MeshStandardMaterial({ color: '#b98f5e', roughness: 0.85 });
+    if (typeof document === 'undefined') return m;
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const x = c.getContext('2d');
+    x.fillStyle = '#a97f52'; x.fillRect(0, 0, 512, 512); // plus foncé que l'aggloméré réel : l'éclairage le pâlit
+    for (let i = 0; i < 2500; i++) {
+      x.fillStyle = i % 2 ? 'rgba(120,85,45,.25)' : 'rgba(235,205,160,.3)';
+      x.fillRect(Math.random() * 512, Math.random() * 512, 2 + Math.random() * 3, 1 + Math.random() * 2);
+    }
+    x.fillStyle = '#4a3420';
+    x.fillRect(0, 0, 512, 4); x.fillRect(0, 254, 512, 4); // joints entre rangées
+    x.fillRect(0, 0, 4, 256); x.fillRect(254, 256, 4, 256); // joints de bout, décalés d'un demi-panneau
+    const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8;
+    m.color.set('#ffffff'); m.map = t; return m;
+  }
+
+  function grating(T) {
+    const m = new T.MeshStandardMaterial({ color: '#b4bcc4', metalness: 0.3, roughness: 0.5, transparent: true, side: T.DoubleSide });
+    if (typeof document === 'undefined') { m.opacity = 0.45; return m; }
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 64, 14); x.fillRect(0, 0, 10, 64);
+    const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8;
+    m.alphaMap = t; return m;
+  }
+
+  // Cotes en rouge : entraxes et hors tout platine au sol sur deux côtés dégagés de l'escalier, hauteurs à un poteau d'angle.
+  function dims(T, M, opt) {
+    opt = opt || {};
+    const g = new T.Group(), red = opt.color || '#d42a2a', P = M.poles, pts = [];
+    if (!P.length) return g;
+    const V = (x, y, h) => new T.Vector3(x * K, h * K, y * K), seg = (a, b) => pts.push(a, b);
+    const uq = vs => vs.sort((a, b) => a - b).filter((v, i, a) => !i || v - a[i - 1] > 1);
+    const pl = Math.max(50, ...P.map(p => (p.pl || p.w) / 2)), xs = uq(P.map(p => p.cx)), ys = uq(P.map(p => p.cy));
+    const rs = M.floor.concat(P.map(p => [p.cx - pl, p.cy - pl, p.cx + pl, p.cy + pl]));
+    const B = [Math.min(...rs.map(r => r[0])), Math.min(...rs.map(r => r[1])), Math.max(...rs.map(r => r[2])), Math.max(...rs.map(r => r[3]))];
+    const busy = M.stairs3d.map(s => {
+      const c = [-1, 1].flatMap(k => [0, s.L].map(r => [s.top[0] + s.dir[0] * r + s.lat[0] * k * s.halfOut, s.top[1] + s.dir[1] * r + s.lat[1] * k * s.halfOut]));
+      return [Math.min(...c.map(q => q[0])), Math.min(...c.map(q => q[1])), Math.max(...c.map(q => q[0])), Math.max(...c.map(q => q[1]))];
+    }).concat(M.landing ? [M.landing.rect] : []);
+    const span = Math.max(B[2] - B[0], B[3] - B[1]), th = Math.min(0.45, Math.max(0.2, span * K * 0.045)), tm = th / K; // th : hauteur du texte (m)
+    const r1 = 1.2 * tm + 250, r2 = r1 + 1.2 * tm + 250, S = r2 + 600; // rangées de cotes espacées pour que chaque texte tienne entre deux lignes
+    const free = (r, mg = 0) => !busy.some(b => b[0] - mg < r[2] && b[2] + mg > r[0] && b[1] - mg < r[3] && b[3] + mg > r[1]);
+    const sy = free([B[0], B[3], B[2], B[3] + S]) || !free([B[0], B[1] - S, B[2], B[1]]) ? 1 : -1, yE = sy > 0 ? B[3] : B[1];
+    const sx = free([B[0] - S, B[1], B[0], B[3]]) || !free([B[2], B[1], B[2] + S, B[3]]) ? -1 : 1, xE = sx < 0 ? B[0] : B[2];
+    const t = 70, h0 = 8;
+
+    // Texte posé dans le plan de la cote (sens de lecture r, normale n), juste au-dessus de la ligne, comme sur un plan.
+    const X = new T.Vector3(1, 0, 0), Y = new T.Vector3(0, 1, 0), NZ = new T.Vector3(0, 0, -1);
+    const label = (txt, p, r, n) => {
+      if (typeof document === 'undefined') return;
+      const f = '600 96px "Barlow Condensed", "Arial Narrow", sans-serif', c = document.createElement('canvas'), x = c.getContext('2d');
+      x.font = f; const tw = Math.ceil(x.measureText(txt).width) + 36;
+      let cw = 128; while (cw < tw) cw *= 2; // largeur en puissance de 2 pour les mipmaps
+      c.width = cw; c.height = 128; x.font = f; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.globalAlpha = 0.85; x.fillStyle = opt.halo || '#ffffff'; x.fillRect((cw - tw) / 2, 8, tw, 112);
+      x.globalAlpha = 1; x.fillStyle = red; x.fillText(txt, cw / 2, 68);
+      const tx = new T.CanvasTexture(c); tx.anisotropy = 8;
+      const u = new T.Vector3().crossVectors(n, r);
+      const o = new T.Mesh(new T.PlaneGeometry(th * cw / 128, th), new T.MeshBasicMaterial({ map: tx, transparent: true, depthWrite: false, side: T.DoubleSide }));
+      o.matrixAutoUpdate = false; o.matrix.makeBasis(r, u, n).setPosition(p.clone().addScaledVector(u, th * 0.7));
+      o.renderOrder = 2; g.add(o);
+    };
+    // Cote au sol parallèle à x (le long du bord yE) ou à y (le long du bord xE), avec traits de rappel depuis le bord.
+    const dimX = (x0, x1, off, txt) => {
+      const y = yE + sy * off;
+      seg(V(x0, y, h0), V(x1, y, h0));
+      for (const x of [x0, x1]) { seg(V(x - t, y + t, h0), V(x + t, y - t, h0)); seg(V(x, yE + sy * 60, h0), V(x, y + sy * 100, h0)); }
+      label(txt, V((x0 + x1) / 2, y, h0 + 1), X, Y);
+    };
+    const dimY = (y0, y1, off, txt) => {
+      const x = xE + sx * off;
+      seg(V(x, y0, h0), V(x, y1, h0));
+      for (const y of [y0, y1]) { seg(V(x - t, y + t, h0), V(x + t, y - t, h0)); seg(V(xE + sx * 60, y, h0), V(x + sx * 100, y, h0)); }
+      label(txt, V(x, (y0 + y1) / 2, h0 + 1), NZ, Y);
+    };
+    if (xs.length > 1) for (let i = 1; i < xs.length; i++) dimX(xs[i - 1], xs[i], r1, String(Math.round(xs[i] - xs[i - 1])));
+    if (ys.length > 1) for (let i = 1; i < ys.length; i++) dimY(ys[i - 1], ys[i], r1, String(Math.round(ys[i] - ys[i - 1])));
+    dimX(xs[0] - pl, xs[xs.length - 1] + pl, r2, `${Math.round(xs[xs.length - 1] - xs[0] + 2 * pl)} hors tout platine`);
+    dimY(ys[0] - pl, ys[ys.length - 1] + pl, r2, `${Math.round(ys[ys.length - 1] - ys[0] + 2 * pl)} hors tout platine`);
+
+    // Hauteurs au premier angle dégagé de l'escalier : bout opposé de la rangée en x, puis de celle en y, puis leur angle commun.
+    const xF = sx < 0 ? B[2] : B[0], yF = sy > 0 ? B[1] : B[3];
+    const cand = [[xF, yE, -sx, sy], [xE, yF, sx, -sy], [xE, yE, sx, sy]];
+    // marge de 600 mm : une cote de hauteur collée au pied de l'escalier se lit mal en vue 3D
+    const [kx, ky, ox, oy] = cand.find(([x, y, a, b]) => free([Math.min(x, x + a * 2000), Math.min(y, y + b * 2000), Math.max(x, x + a * 2000), Math.max(y, y + b * 2000)], 600)) || cand[2];
+    const c = P.reduce((a, p) => (Math.hypot(p.cx - kx, p.cy - ky) < Math.hypot(a.cx - kx, a.cy - ky) ? p : a));
+    const H = M.env.hauteur, vert = (off, h, txt) => {
+      const x = c.cx + ox * (pl + off), y = c.cy + oy * (pl + off);
+      seg(V(x, y, 0), V(x, y, h));
+      for (const z of [0, h]) seg(V(x - ox * t, y - oy * t, z - t), V(x + ox * t, y + oy * t, z + t));
+      seg(V(c.cx + ox * 60, c.cy + oy * 60, h), V(x + ox * 100, y + oy * 100, h));
+      label(txt, V(x, y, h / 2), Y, new T.Vector3(ox, 0, oy).normalize());
+    };
+    if (H) vert(350, H, `${H} sur plancher`);
+    if (M.sousLisse) vert(350 + 1.5 * tm, M.sousLisse, `${M.sousLisse} sous lisse`);
+
+    g.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: red })));
+    return g;
+  }
+
+  const api = { build, dims };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.MEZZ3D = api;
+})(this);
+</script>
+<script>
+const PRESETS = [];
+let CLIENT = null; // mode client (page client ou lien 3D) : un seul projet, sans données fournisseur
+const LOGO = 'data:image/jpeg;base64,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';
+const URL_PUBLIQUE = 'https://rsl-degardin.github.io/Devis_Gondoles/plans-mezzanine.html'; // page publiée qu'ouvrent les liens 3D
+function applyClient() {
+  if (!CLIENT) return;
+  document.body.classList.add('client');
+  $('h1').textContent = 'Votre plateforme de stockage';
+  $('sub').textContent = `Proposition RSL pour ${CLIENT.nom}${CLIENT.projet ? ' · projet ' + CLIENT.projet : ''}`;
+  $('brand-rsl').outerHTML = `<img class="logo" src="${LOGO}" alt="RSL">`;
+}
+const RAL = { RAL7024: '#474b4e', RAL5015: '#2271b3', RAL1028: '#f4a900', RAL7035: '#d7d7d7', RAL7016: '#383e42', RAL9005: '#0a0a0a', RAL9010: '#f1ece1', RAL9016: '#f6f6f6', RAL5010: '#0e294b', RAL3020: '#cc0605', RAL6011: '#587246', RAL2004: '#f44611', RAL1013: '#e3d9c6', RAL3000: '#a72920', RAL5018: '#058b8c', RAL9006: '#a5a8a6', GALVA: 'linear-gradient(135deg,#c9ced3,#9aa1a8 55%,#d6dadd)' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const projects = PRESETS.slice();
+let cur = 0;
+
+function model(p) {
+  if (!p.m) p.m = MEZZ.buildPlan(p.json, p.D || (p.dxf ? MEZZ.parseDXF(p.dxf) : null));
+  return p.m;
+}
+
+function renderTabs() {
+  $('tabs').innerHTML = projects.map((p, i) => `<button class="tab" role="tab" id="tab-${i}" aria-selected="${i === cur}"><b>${esc(p.json.client?.reference_client || 'Projet')}</b><small>${esc(p.json.client?.reference_interne || p.name)}</small></button>`).join('');
+  projects.forEach((p, i) => $('tab-' + i).onclick = () => {
+    cur = i; $('sh-out').hidden = true; $('sh-nom').value = p.json.client?.reference_client || ''; $('sh-projet').value = '';
+    render();
+  });
+}
+
+function render() {
+  renderTabs();
+  $('main').hidden = !projects.length;
+  if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON et le DXF d'un projet (bouton en haut à droite) pour afficher sa vue 3D, son plan et sa nomenclature."; $('msg').hidden = false; } return; }
+  const p = projects[cur], J = p.json, c = J.client || {}, e = J.environement || {};
+  let M;
+  try { M = model(p); } catch (err) { $('msg').textContent = 'Lecture impossible : ' + err.message; $('msg').hidden = false; return; }
+  const notes = [];
+  if (!p.dxf && !p.D) notes.push('Pas de DXF pour ce projet : solives, entretoises, garde-corps et escalier ne sont pas dessinés.');
+  notes.push(...M.warn.map(w => 'Non dessiné : ' + w + '.'));
+  $('msg').textContent = notes.join(' '); $('msg').hidden = !notes.length;
+
+  const svg = drawPlan(M);
+  const fill = RAL[e.couleurs?.poteaux] || '';
+  if (fill && !fill.startsWith('linear')) svg.style.setProperty('--ral', fill);
+  $('lg-pole').style.cssText = `background:${fill && !fill.startsWith('linear') ? fill : 'var(--steel-ink)'};border:1px solid var(--ink)`;
+  $('lg-dxf').hidden = !$('ov').checked || !p.dxf;
+
+  $('cartouche').innerHTML = CLIENT
+    ? `<h3>Votre projet</h3><div class="cart-title">${esc(CLIENT.nom)}</div><div class="cart-ref">${esc(c.reference_interne)}</div>
+      <dl>${CLIENT.projet ? `<dt>Projet</dt><dd>${esc(CLIENT.projet)}</dd>` : ''}<dt>Date</dt><dd>${esc(c.date)}</dd><dt>Code postal</dt><dd>${esc(c.code_region)}</dd><dt>Votre contact</dt><dd>${esc([c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' '))}, RSL</dd></dl>`
+    : `<h3>Cartouche</h3><div class="cart-title">${esc(c.reference_client)}</div><div class="cart-ref">${esc(c.reference_interne)}</div>
+      <dl><dt>Date</dt><dd>${esc(c.date)}</dd><dt>Code postal</dt><dd>${esc(c.code_region)} ${esc(c.pays)}</dd>
+      <dt>Société</dt><dd>${esc(c.societe)}</dd><dt>Dessiné par</dt><dd>${esc([c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' '))}</dd><dt>N° client</dt><dd class="mono">${esc(c.num)}</dd></dl>`;
+
+  $('carac').innerHTML = caracRows(M).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+  $('couleurs').innerHTML = colorRows(e).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('');
+
+  $('checks-card').hidden = !M.checks.length;
+  $('checks').innerHTML = M.checks.map(k => `<li><span>${esc(k.label)}</span><span class="pill ${k.ok ? 'ok' : 'ko'}">${esc(k.val)}</span></li>`).join('');
+
+  if (mode === '3d') draw3D();
+
+  let g = '';
+  $('nomen').innerHTML = M.rows.map(r => {
+    const head = r.g !== g ? `<tr class="grp"><td colspan="3">${esc(g = r.g)}</td></tr>` : '';
+    return head + `<tr><td><span class="${r.mono ? 'mono' : ''}">${esc(r.el)}</span>${r.det ? `<span class="det">${esc(r.det)}</span>` : ''}</td><td class="q">${r.q ?? '—'}</td><td><span class="src ${r.src === 'DXF' ? 'dxf' : ''}">${r.src}</span></td></tr>`;
+  }).join('');
+}
+
+// Vue 2D, tournée par quarts de tour (sens horaire) autour du centre du plan.
+let rot2d = 0;
+function drawPlan(M) {
+  $('planbox').innerHTML = MEZZ.renderSVG(M, { overlay: $('ov').checked });
+  const svg = $('planbox').querySelector('svg');
+  if (rot2d) {
+    const [x, y, w, h] = svg.getAttribute('viewBox').split(' ').map(Number), cx = x + w / 2, cy = y + h / 2;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `rotate(${rot2d} ${cx} ${cy})`);
+    g.append(...svg.childNodes); svg.append(g);
+    if (rot2d % 180) svg.setAttribute('viewBox', `${cx - h / 2} ${cy - w / 2} ${h} ${w}`);
+  }
+  // Textes lisibles du bas ou de la droite, comme sur un plan : retournés sur place sinon.
+  for (const t of svg.querySelectorAll('text')) {
+    const own = t.getAttribute('transform') || '', deg = +((/rotate\(\s*(-?[\d.]+)/.exec(own) || [])[1] || 0);
+    const a = ((Math.round(deg + rot2d) % 360) + 360) % 360;
+    // centre approximatif du texte (le plan est caché en vue 3D, getBBox y renverrait 0)
+    const fs = +t.getAttribute('font-size') || 0, half = t.textContent.length * fs * 0.28, anc = t.getAttribute('text-anchor'), base = t.getAttribute('dominant-baseline');
+    const cx = +t.getAttribute('x') + (anc === 'start' ? half : anc === 'end' ? -half : 0);
+    const cy = +t.getAttribute('y') + (base === 'hanging' ? 0.35 : base === 'central' ? 0 : -0.35) * fs;
+    if (a >= 90 && a < 270) t.setAttribute('transform', `${own} rotate(180 ${cx} ${cy})`.trim());
+  }
+  return svg;
+}
+
+// Caractéristiques en clair (page, page client et PDF client lisent la même liste).
+function caracRows(M) {
+  const e = M.env, P = M.poles, pl = Math.max(...P.map(q => q.pl || q.w)) / 2, n = (v, d) => v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const ext = k => Math.max(...P.map(q => q[k])) - Math.min(...P.map(q => q[k])) + 2 * pl;
+  const surf = M.floor.reduce((s, r) => s + (r[2] - r[0]) * (r[3] - r[1]), 0) / 1e6;
+  const stab = [M.croix.length && `${M.croix.length} croisillon${M.croix.length > 1 ? 's' : ''} ${e.croisillon === 'cable' ? 'câble' : e.croisillon || ''}`.trim(), M.jdf.length && `${M.jdf.length} jambe${M.jdf.length > 1 ? 's' : ''} de force`].filter(Boolean).join(', ') || '—';
+  const esc0 = (M.J.structure?.escalier || [])[0], s0 = M.stairs3d[0], w = esc0 && /T(\d{5})/.exec(esc0.modele || '');
+  const gcml = M.gc.reduce((s, g) => s + g.len, 0) / 1000;
+  const rows = [
+    P.length && ['Emprise au sol', `${n(ext('cx') / 1000, 2)} × ${n(ext('cy') / 1000, 2)} m hors tout platine`],
+    ['Surface de plancher', `${n(surf, 1)} m²`],
+    ['Hauteur sur plancher', `${e.hauteur} mm`],
+    ['Hauteur sous lisse', M.sousLisse != null ? `${M.sousLisse} mm` : '—'],
+    ['Charge de service', `${e.charge} kg/m²`],
+    ['Flèche maximale', `1/${e.fleche}e`],
+    ['Plancher', `${/CB/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2000 × 1000'}, ép. ${M.ep} mm`],
+    ['Stabilité', stab],
+    esc0 && ['Escalier', [s0 && `${Math.round(Math.atan2(e.hauteur, s0.L) * 180 / Math.PI)}°`, w && `passage ${+w[1]} mm`, M.landing && 'avec palier'].filter(Boolean).join(', ')],
+    gcml && ['Garde-corps', `hauteur 1100 mm, ${n(gcml, 1)} ml en bord de plateforme`],
+  ];
+  if (!CLIENT) rows.push(['Code plancher', e.plancher || '—'], ['Solivage', String(e.solivage || '').toLowerCase()]);
+  return rows.filter(Boolean);
+}
+function colorRows(e) {
+  const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
+  return Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
+    .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
+}
+
+// ---------- Vue 3D ----------
+const V3 = {};
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const msg3D = t => { $('v3d-msg').textContent = t; $('v3d-msg').hidden = false; };
+
+function init3D() {
+  if (V3.r) return true;
+  if (typeof THREE === 'undefined' || !THREE.OrbitControls) { msg3D("La vue 3D n'a pas pu se charger : la bibliothèque 3D est indisponible. Le plan coté reste utilisable."); return false; }
+  let r;
+  try { r = new THREE.WebGLRenderer({ antialias: true }); } catch (err) { msg3D("La vue 3D a besoin de WebGL, qui n'est pas disponible sur cet appareil. Le plan coté reste utilisable."); return false; }
+  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  $('v3d').prepend(r.domElement);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(38, 1, 0.05, 500), ctl = new THREE.OrbitControls(cam, r.domElement);
+  ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI / 2 - 0.02;
+  const sun = new THREE.DirectionalLight('#ffffff', 0.8);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+  scene.add(new THREE.HemisphereLight('#ffffff', '#8b9097', 0.8), sun, sun.target, ground);
+  Object.assign(V3, { r, scene, cam, ctl, sun, ground });
+  new ResizeObserver(size3D).observe($('v3d'));
+  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); r.render(scene, cam); } };
+  loop();
+  return true;
+}
+function size3D() {
+  const b = $('v3d'), w = b.clientWidth, h = b.clientHeight;
+  if (!V3.r || !w || !h) return;
+  V3.r.setSize(w, h, false); V3.cam.aspect = w / h; V3.cam.updateProjectionMatrix();
+}
+function dims3D() {
+  if (!V3.M) return;
+  if (V3.dims) { V3.scene.remove(V3.dims); V3.dims.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) o.material.map.dispose(); }); }
+  V3.dims = MEZZ3D.dims(THREE, V3.M, { color: cssVar('--cote3d') || '#d42a2a', halo: cssVar('--paper') || '#ffffff' });
+  V3.dims.visible = $('cot3d').checked; V3.scene.add(V3.dims);
+}
+function theme3D() {
+  if (!V3.r) return;
+  dims3D(); // les étiquettes portent la couleur du thème
+  V3.scene.background = new THREE.Color(cssVar('--paper') || '#fbfcfe');
+  V3.ground.material.color.set(cssVar('--ground') || '#e2e7ee');
+  if (V3.grid) V3.scene.remove(V3.grid);
+  if (!V3.span) return;
+  const n = Math.ceil(V3.span * 3), c = cssVar('--line') || '#d4dae3';
+  V3.grid = new THREE.GridHelper(n, n, c, c); // carreaux de 1 m
+  V3.grid.position.set(Math.round(V3.c.x), 0.002, Math.round(V3.c.z)); V3.scene.add(V3.grid);
+}
+function fit3D() {
+  if (!V3.model) return;
+  const b = new THREE.Box3().setFromObject(V3.model);
+  if (V3.dims) b.expandByObject(V3.dims); // cadrage identique avec ou sans cotes
+  const c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
+  const span = Math.max(s.x, s.y, s.z), d = span * 1.5;
+  Object.assign(V3, { c, span });
+  V3.ground.scale.set(span * 5, span * 5, 1); V3.ground.position.set(c.x, 0, c.z);
+  V3.cam.position.set(c.x - d * 0.6, d * 0.72, c.z + d * 0.95);
+  V3.ctl.target.set(c.x, s.y * 0.25, c.z); V3.ctl.maxDistance = span * 5; V3.ctl.minDistance = 0.5; V3.ctl.update();
+  V3.sun.position.set(c.x - span * 0.8, span * 2, c.z + span); V3.sun.target.position.copy(c);
+  const sc = V3.sun.shadow.camera; sc.left = sc.bottom = -span; sc.right = sc.top = span; sc.near = 0.1; sc.far = span * 6; sc.updateProjectionMatrix();
+  theme3D();
+}
+function draw3D() {
+  const p = projects[cur];
+  let M; try { M = model(p); } catch (err) { return; }
+  if (!init3D()) return;
+  if (V3.key === p) return; // déjà affiché
+  if (V3.model) { V3.scene.remove(V3.model); V3.model.traverse(o => o.geometry && o.geometry.dispose()); }
+  const colors = Object.fromEntries(Object.entries(p.json.environement?.couleurs || {}).map(([k, v]) => [k, RAL[v] && !RAL[v].startsWith('linear') ? RAL[v] : 'GALVA']));
+  const { group, floor } = MEZZ3D.build(THREE, M, { colors });
+  Object.assign(V3, { model: group, floor, key: p, M });
+  floor.visible = $('pl3d').checked;
+  V3.scene.add(group); dims3D(); size3D(); fit3D();
+}
+
+let mode = '3d';
+try { mode = localStorage.getItem('mezz-vue') === 'plan' ? 'plan' : '3d'; } catch (err) {}
+function setMode(m) {
+  mode = m;
+  try { localStorage.setItem('mezz-vue', m); } catch (err) {}
+  $('vw-3d').setAttribute('aria-pressed', m === '3d'); $('vw-plan').setAttribute('aria-pressed', m === 'plan');
+  $('planbox').hidden = $('legend').hidden = $('ov-wrap').hidden = $('rot2d').hidden = m === '3d';
+  $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = m !== '3d';
+  if (m === '3d') draw3D();
+}
+$('vw-3d').onclick = () => setMode('3d');
+$('vw-plan').onclick = () => setMode('plan');
+$('rot2d').onclick = () => { rot2d = (rot2d + 90) % 360; render(); };
+$('pl3d').onchange = () => { if (V3.floor) V3.floor.visible = $('pl3d').checked; };
+try { $('cot3d').checked = localStorage.getItem('mezz-cotes') === '1'; } catch (err) {}
+$('cot3d').onchange = () => {
+  if (V3.dims) V3.dims.visible = $('cot3d').checked;
+  try { localStorage.setItem('mezz-cotes', $('cot3d').checked ? '1' : '0'); } catch (err) {}
+};
+$('re3d').onclick = fit3D;
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme3D);
+new MutationObserver(theme3D).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+$('ov').onchange = () => {
+  $('planbox').querySelector('.g-dxf')?.toggleAttribute('hidden', !$('ov').checked);
+  $('lg-dxf').hidden = !$('ov').checked || !projects[cur].dxf;
+};
+
+$('imp').onchange = async ev => {
+  const files = [...ev.target.files], base = f => f.name.replace(/\.[^.]+$/, '').toLowerCase(), errs = [];
+  const byBase = {};
+  for (const f of files) (byBase[base(f)] = byBase[base(f)] || {})[f.name.split('.').pop().toLowerCase()] = f;
+  let added = -1;
+  for (const [name, set] of Object.entries(byBase)) {
+    if (!set.json) { errs.push(`${name}.dxf : il manque le fichier JSON du même nom.`); continue; }
+    try {
+      const json = JSON.parse(await set.json.text());
+      if (!json.structure) throw new Error("ce n'est pas un export (pas de « structure »)");
+      projects.push({ name, json, dxf: set.dxf ? await set.dxf.text() : null });
+      added = projects.length - 1;
+    } catch (err) { errs.push(`${name}.json : ${err.message}`); }
+  }
+  ev.target.value = '';
+  if (added >= 0) { cur = added; render(); }
+  if (errs.length) { $('msg').textContent = errs.join(' '); $('msg').hidden = false; }
+};
+
+// ---------- Lien 3D client : le projet voyage compressé dans le lien (même principe que le configurateur gondoles) ----------
+const b64u = {
+  enc: u => { let t = ''; u.forEach(b => t += String.fromCharCode(b)); return btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+  dec: t => { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return Uint8Array.from(atob(t), c => c.charCodeAt(0)); },
+};
+const pipeZ = async (u8, Ctor) => new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new Ctor('deflate-raw'))).arrayBuffer());
+
+// Le lien part chez le client : ni compte fournisseur, ni codes articles, ni cartouche du DXF ; seulement la géométrie utile à la 3D et au plan.
+function clientPayload(p, nom, projet) {
+  const J = JSON.parse(JSON.stringify(p.json)), c = J.client || {}, env = J.environement || {}, code = s => (/T(\d{5})/.exec(s || '') || [])[1];
+  J.client = { reference_interne: c.reference_interne, date: c.date, code_region: c.code_region, contact: { prenom: c.contact?.prenom, nom: c.contact?.nom } };
+  env.plancher = `T${code(env.plancher) || '00030'}${/CB/.test(env.plancher || '') ? 'CB' : ''}`;
+  (J.structure?.escalier || []).forEach(s => { s.modele = `T${code(s.modele) || '00800'}`; });
+  delete J.accessoires;
+  let dxf = null;
+  const D = p.D || (p.dxf ? MEZZ.parseDXF(p.dxf) : null);
+  if (D) {
+    const r = v => Math.round(v * 10) / 10, names = new Set();
+    const keep = o => (o.type === 'LWPOLYLINE' && (o.color === 30 || ((o.flags & 1) && o.p.length === 4) || (o.p.length === 2 && o.color === 0 && !o.width))) || (o.type === 'INSERT' && /^(STAIR|RECEPTION|MEASURE)_/.test(o.name || ''));
+    const walk = es => es.forEach(o => { if ((o.type === 'INSERT' || o.type === 'DIMENSION') && D.blocks[o.name] && !names.has(o.name)) { names.add(o.name); walk(D.blocks[o.name]); } });
+    const slim = o => {
+      const s = { type: o.type, color: o.color, flags: o.flags, p: o.p.map(q => q.map(r)) };
+      for (const k of ['name', 'text', 'rot', 'h', 'sx', 'sy', 'width', 'attach', 'ha', 'va']) if (o[k] !== undefined) s[k] = o[k];
+      if (o.type !== 'LWPOLYLINE') for (const k of ['k10', 'k11']) if (o[k]) s[k] = o[k].map(r);
+      return s;
+    };
+    const ents = D.entities.filter(keep); walk(ents);
+    dxf = { entities: ents.map(slim), blocks: Object.fromEntries([...names].map(n => [n, D.blocks[n].map(slim)])) };
+  }
+  return { v: 1, nom, projet, json: J, dxf };
+}
+async function lien3D(p, nom, projet) {
+  let u8 = new TextEncoder().encode(JSON.stringify(clientPayload(p, nom, projet))), tag = 'j';
+  if (window.CompressionStream) { u8 = await pipeZ(u8, CompressionStream); tag = 'v'; }
+  const base = /github\.io$/.test(location.hostname) ? location.href.split('#')[0] : URL_PUBLIQUE;
+  return `${base}#${tag}=${b64u.enc(u8)}`;
+}
+async function lireLien() {
+  const m = /^#([vj])=([\w-]+)$/.exec(location.hash);
+  if (!m) return null;
+  let u8 = b64u.dec(m[2]);
+  if (m[1] === 'v') u8 = await pipeZ(u8, DecompressionStream);
+  const d = JSON.parse(new TextDecoder().decode(u8));
+  if (!d.json?.structure) throw new Error('lien incomplet');
+  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf } };
+}
+
+$('share').onclick = () => {
+  $('share-box').hidden = !$('share-box').hidden;
+  if (!$('sh-nom').value) $('sh-nom').value = projects[cur]?.json.client?.reference_client || '';
+};
+$('sh-go').onclick = async () => {
+  const p = projects[cur];
+  if (!p) return;
+  try {
+    const url = await lien3D(p, $('sh-nom').value.trim() || p.json.client?.reference_client || 'Client', $('sh-projet').value.trim());
+    $('sh-url').value = url; $('sh-open').href = url; $('sh-out').hidden = false; $('sh-copy').textContent = 'Copier';
+  } catch (err) { $('msg').textContent = 'Le lien 3D n’a pas pu être créé : ' + err.message; $('msg').hidden = false; }
+};
+$('sh-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('sh-url').value); $('sh-copy').textContent = 'Lien copié'; }
+  catch (err) { $('sh-url').select(); $('sh-copy').textContent = 'Sélectionné : Ctrl+C pour copier'; }
+};
+
+(async () => {
+  try {
+    const s = await lireLien();
+    if (s) { projects.splice(0, projects.length, s.project); cur = 0; CLIENT = s.client; }
+  } catch (err) { $('msg').textContent = 'Ce lien 3D est invalide ou incomplet : demandez-en un nouveau à RSL.'; $('msg').hidden = false; }
+  applyClient();
+  setMode(CLIENT ? '3d' : mode);
+  render();
+  if (document.fonts) document.fonts.ready.then(() => { if (V3.M) dims3D(); }); // étiquettes des cotes dans la bonne police
+})();
+</script>
