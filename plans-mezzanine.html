@@ -58,7 +58,8 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 #sh-url { flex: 1 1 300px; font: 13px var(--f-mono); }
 .share-row a.ghost { text-decoration: none; }
 .btn:focus-within, .btn:focus-visible, .tab:focus-visible, input:focus-visible + span { outline: 2px solid var(--rsl); outline-offset: 2px; }
-.tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; flex: 1 1 280px; min-width: 0; } /* dans la ligne du titre */
+.sw select { font: 500 13px var(--f-body); padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .tab { flex: none; text-align: left; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
 .tab b { display: block; font: 600 16px/1.2 var(--f-display); letter-spacing: .02em; }
 .tab small { color: var(--muted); font: 12px var(--f-mono); }
@@ -132,6 +133,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 <div class="wrap">
   <header>
     <div class="brand"><b id="brand-rsl">RSL</b><div><h1 id="h1">Plans mezzanine</h1><span id="sub">Plan coté et nomenclature à partir du JSON et du DXF</span></div></div>
+    <nav class="tabs internal" id="tabs" role="tablist" aria-label="Projets"></nav>
     <div class="actions internal">
       <button class="ghost" id="share" type="button">🔗 Lien 3D</button>
       <label class="btn" for="imp">Importer un projet (JSON + DXF)<input id="imp" type="file" multiple accept=".json,.dxf" hidden></label>
@@ -151,7 +153,6 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     </div>
     <p class="note">Le projet est contenu dans le lien : plateforme, cotes et couleurs, sans vos codes fournisseur ni votre compte. Il ouvre la page publiée sur GitHub, en mode client.</p>
   </div>
-  <nav class="tabs internal" id="tabs" role="tablist" aria-label="Projets"></nav>
   <div class="msg" id="msg" role="status" hidden></div>
   <div class="main" id="main">
     <section class="sheet" aria-labelledby="plan-h">
@@ -168,7 +169,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       </div>
       <div class="planbox" id="planbox"></div>
       <div class="v3d" id="v3d"><p class="v3d-msg" id="v3d-msg" hidden></p></div>
-      <div class="legend" id="hint3d">Glisser pour tourner · molette ou pincement pour zoomer · clic droit ou deux doigts pour déplacer.<span class="internal"> Solives : hauteur estimée d'après leur largeur.</span></div>
+      <div class="legend" id="hint3d">Glisser pour tourner (on peut passer sous le sol pour voir le dessous du plancher) · molette ou pincement pour zoomer · clic droit ou deux doigts pour déplacer.<span class="internal"> Solives : hauteur estimée d'après leur largeur.</span></div>
       <div class="legend" id="legend">
         <span><i id="lg-pole"></i>Poteau et platine</span>
         <span><i style="background:var(--steel);border:1px solid var(--steel-ink)"></i>Lisse</span>
@@ -656,6 +657,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     // Plancher : caillebotis (code …CB…) ajouré, sinon panneau aggloméré
     const cb = /CB/.test(M.env.plancher || ''), floor = new T.Group();
     const fm = cb ? grating(T) : chipboard(T);
+    // sous-face peinte en blanc : matière non éclairée, sinon elle sort grise (aucune lumière ne vient d'en bas)
+    const under = !cb && opt.dessous === 'blanc' ? new T.MeshBasicMaterial({ color: '#f4f3ef' }) : fm;
     // Calepinage depuis l'angle de la plateforme ; côté 1000 des panneaux dans le sens des solives.
     const alongX = String(M.env.solivage).toUpperCase() === 'HORIZONTAL';
     const fr = M.floor.concat(M.landing ? [M.landing.rect] : []), ox = Math.min(...fr.map(r => r[0])) * K, oz = Math.min(...fr.map(r => r[1])) * K;
@@ -668,7 +671,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
         if (cb) uv.setXY(i, x / 0.06, z / 0.038); // maille 30×19 dessinée au double
         else uv.setXY(i, (alongX ? z : x) / 2, (alongX ? x : z) / 2); // tuile de 2 m × 2 m = deux rangées de panneaux
       }
-      const o = new T.Mesh(geo, fm); o.receiveShadow = true; o.castShadow = !cb; floor.add(o);
+      const o = new T.Mesh(geo, under === fm ? fm : [fm, fm, fm, under, fm, fm]); // faces du pavé : +x −x +y −y +z −z
+      o.receiveShadow = true; o.castShadow = !cb; floor.add(o);
     };
     M.floor.forEach(slab);
     if (M.landing) slab(M.landing.rect);
@@ -839,7 +843,10 @@ function render() {
       <dt>Société</dt><dd>${esc(c.societe)}</dd><dt>Dessiné par</dt><dd>${esc([c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' '))}</dd><dt>N° client</dt><dd class="mono">${esc(c.num)}</dd></dl>`;
 
   $('carac').innerHTML = caracRows(M).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
-  $('couleurs').innerHTML = colorRows(e).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('');
+  $('couleurs').innerHTML = colorRows(e, p).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span>${r.key === 'dessous' && !CLIENT
+    ? `<select id="dessous" aria-label="Couleur du dessous du plancher">${Object.entries(DESSOUS).map(([k, d]) => `<option value="${k}"${(p.dessous || 'bois') === k ? ' selected' : ''}>${d.code}</option>`).join('')}</select>`
+    : `<b>${esc(r.code)}</b>`}</div></div>`).join('');
+  if ($('dessous')) $('dessous').onchange = ev => { p.dessous = ev.target.value; V3.key = null; render(); };
 
   $('checks-card').hidden = !M.checks.length;
   $('checks').innerHTML = M.checks.map(k => `<li><span>${esc(k.label)}</span><span class="pill ${k.ok ? 'ok' : 'ko'}">${esc(k.val)}</span></li>`).join('');
@@ -901,10 +908,14 @@ function caracRows(M) {
   if (!CLIENT) rows.push(['Code plancher', e.plancher || '—'], ['Solivage', String(e.solivage || '').toLowerCase()]);
   return rows.filter(Boolean);
 }
-function colorRows(e) {
+const DESSOUS = { bois: { code: 'Bois', css: '#b98f5e' }, blanc: { code: 'Blanc', css: '#f4f3ef' } };
+function colorRows(e, p) {
   const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
-  return Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
+  const rows = Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
     .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
+  // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis)
+  if (p && !/CB/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', key: 'dessous', ...DESSOUS[p.dessous || 'bois'] });
+  return rows;
 }
 
 // ---------- Vue 3D ----------
@@ -921,15 +932,15 @@ function init3D() {
   r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
   $('v3d').prepend(r.domElement);
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(38, 1, 0.05, 500), ctl = new THREE.OrbitControls(cam, r.domElement);
-  ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI / 2 - 0.02;
+  ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI - 0.05; // on peut passer sous le sol : vu de dessous, le sol (face unique) devient transparent
   const sun = new THREE.DirectionalLight('#ffffff', 0.8);
   sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
-  scene.add(new THREE.HemisphereLight('#ffffff', '#8b9097', 0.8), sun, sun.target, ground);
+  scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground); // lumière d'en bas assez claire pour voir un dessous blanc
   Object.assign(V3, { r, scene, cam, ctl, sun, ground });
   new ResizeObserver(size3D).observe($('v3d'));
-  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); r.render(scene, cam); } };
+  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
   loop();
   return true;
 }
@@ -976,7 +987,7 @@ function draw3D() {
   if (V3.key === p) return; // déjà affiché
   if (V3.model) { V3.scene.remove(V3.model); V3.model.traverse(o => o.geometry && o.geometry.dispose()); }
   const colors = Object.fromEntries(Object.entries(p.json.environement?.couleurs || {}).map(([k, v]) => [k, RAL[v] && !RAL[v].startsWith('linear') ? RAL[v] : 'GALVA']));
-  const { group, floor } = MEZZ3D.build(THREE, M, { colors });
+  const { group, floor } = MEZZ3D.build(THREE, M, { colors, dessous: p.dessous });
   Object.assign(V3, { model: group, floor, key: p, M });
   floor.visible = $('pl3d').checked;
   V3.scene.add(group); dims3D(); size3D(); fit3D();
@@ -1058,7 +1069,7 @@ function clientPayload(p, nom, projet) {
     const ents = D.entities.filter(keep); walk(ents);
     dxf = { entities: ents.map(slim), blocks: Object.fromEntries([...names].map(n => [n, D.blocks[n].map(slim)])) };
   }
-  return { v: 1, nom, projet, json: J, dxf };
+  return { v: 1, nom, projet, json: J, dxf, dessous: p.dessous };
 }
 async function lien3D(p, nom, projet) {
   let u8 = new TextEncoder().encode(JSON.stringify(clientPayload(p, nom, projet))), tag = 'j';
@@ -1073,7 +1084,7 @@ async function lireLien() {
   if (m[1] === 'v') u8 = await pipeZ(u8, DecompressionStream);
   const d = JSON.parse(new TextDecoder().decode(u8));
   if (!d.json?.structure) throw new Error('lien incomplet');
-  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf } };
+  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, dessous: d.dessous } };
 }
 
 $('share').onclick = () => {
