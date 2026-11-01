@@ -39,6 +39,10 @@
 .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .ghost { display: inline-flex; align-items: center; gap: 6px; font: 500 14px var(--f-body); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
 #pl3d { accent-color: var(--rsl); }
+#bat-card .share-row label { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+#bat-card .share-row input { width: 92px; }
+.planbox.zoomed svg { cursor: grab; }
+#batmode { font: 500 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
 .v3d { position: relative; height: min(72vh, 760px); min-height: 360px; touch-action: none; }
 .v3d canvas { display: block; width: 100%; height: 100%; }
 .v3d-msg { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: var(--muted); }
@@ -62,7 +66,6 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .share-row a.ghost { text-decoration: none; }
 .btn:focus-within, .btn:focus-visible, .tab:focus-visible, input:focus-visible + span { outline: 2px solid var(--rsl); outline-offset: 2px; }
 .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; flex: 1 1 280px; min-width: 0; } /* dans la ligne du titre */
-.sw select { font: 500 13px var(--f-body); padding: 2px 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .tab { flex: none; text-align: left; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
 .tab b { display: block; font: 600 16px/1.2 var(--f-display); letter-spacing: .02em; }
 .tab small { color: var(--muted); font: 12px var(--f-mono); }
@@ -128,8 +131,57 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .g-dxf path, .g-dxf circle { fill: none; stroke: var(--dxf); stroke-width: 1; }
 .g-dxf .pl { fill: var(--dxf); stroke: none; }
 .g-dxf text { fill: var(--dxf); }
+.plan .g-bat path, .plan .g-bat rect, .plan .g-bat circle { vector-effect: none; } /* épaisseurs PlanCoté en mm, à l'échelle */
+.g-bat [fill="#ffffff"] { fill: var(--paper); } /* ouvertures PlanCoté : fond du plan, y compris en thème sombre */
 @media (prefers-reduced-motion: no-preference) { .tab, .btn { transition: background-color .15s, border-color .15s; } }
 .client .internal { display: none !important; }
+/* Dossier client imprimable : n'existe qu'à l'impression (A4, 2 pages) */
+#dossier { display: none; }
+@media print {
+  @page { size: A4; margin: 0; }
+  body { padding: 0 !important; background: #fff !important; }
+  body > *:not(#dossier) { display: none !important; }
+  #dossier { display: block; }
+}
+#dossier { color: #172031; font: 10pt/1.45 var(--f-body); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+#dossier .page { width: 210mm; height: 297mm; padding: 13mm 14mm 11mm; display: flex; flex-direction: column; gap: 6mm; break-after: page; background: #fff; overflow: hidden; }
+#dossier .page:last-child { break-after: auto; }
+#dossier header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.2mm solid #1f4fa3; padding-bottom: 4mm; }
+#dossier header img { height: 17mm; }
+#dossier .who { text-align: right; }
+#dossier .eyebrow { font: 600 8.5pt var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: #1f4fa3; }
+#dossier h1 { margin: 1mm 0 0; font: 700 24pt/1 var(--f-display); }
+#dossier .meta { color: #5a6577; font-size: 9.5pt; margin-top: 1.5mm; }
+#dossier h2 { margin: 0 0 2.5mm; font: 600 13pt var(--f-display); letter-spacing: .03em; color: #1f4fa3; text-transform: uppercase; }
+#dossier .hero { width: 100%; height: 128mm; object-fit: cover; border-radius: 2mm; background: #f1f4f8; }
+#dossier .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
+#dossier .tile { background: #f1f4f8; border-radius: 2mm; padding: 3mm 3.5mm; }
+#dossier .tile span { display: block; font-size: 8pt; color: #5a6577; text-transform: uppercase; letter-spacing: .06em; }
+#dossier .tile b { display: block; font: 700 17pt/1.15 var(--f-display); margin-top: 1mm; }
+#dossier .tile small { color: #5a6577; font-size: 8.5pt; }
+#dossier .row { display: grid; grid-template-columns: 1fr 72mm; gap: 6mm; align-items: start; }
+#dossier .dsw { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2.5mm 5mm; }
+#dossier .dsw div { display: flex; align-items: center; gap: 3mm; }
+#dossier .dsw i { width: 9mm; height: 9mm; border-radius: 1.5mm; border: .3mm solid #d4dae3; flex: none; }
+#dossier .dsw span { display: block; font-size: 8.5pt; color: #5a6577; line-height: 1.2; }
+#dossier .dsw b { font-weight: 600; }
+#dossier .link3d { border: .4mm solid #1f4fa3; border-radius: 2.5mm; padding: 4mm; }
+#dossier .link3d b { font: 700 13pt/1.1 var(--f-display); color: #1f4fa3; }
+#dossier .link3d p { margin: 1.5mm 0 2.5mm; font-size: 9pt; }
+#dossier .link3d a { display: inline-block; font: 600 10pt var(--f-body); color: #fff; background: #1f4fa3; border-radius: 1.5mm; padding: 1.8mm 3.5mm; text-decoration: none; }
+#dossier .planimg { flex: 0 0 98mm; display: flex; justify-content: center; }
+#dossier .planimg svg { width: 100%; height: 98mm; min-width: 0; max-height: none; }
+#dossier .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+#dossier .duo img { width: 100%; height: 48mm; object-fit: cover; border-radius: 2mm; background: #f1f4f8; display: block; }
+#dossier figure { margin: 0; }
+#dossier figcaption { font-size: 8.5pt; color: #5a6577; margin-top: 1mm; }
+#dossier table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+#dossier td { padding: 1.2mm 0; border-bottom: .25mm solid #d4dae3; vertical-align: top; }
+#dossier td:first-child { color: #5a6577; width: 45mm; }
+#dossier td:last-child { font-weight: 500; }
+#dossier footer { margin-top: auto; display: flex; justify-content: space-between; gap: 6mm; font-size: 7.5pt; color: #5a6577; border-top: .25mm solid #d4dae3; padding-top: 2.5mm; }
+#dossier footer span:last-child { white-space: nowrap; }
+
 .logo { height: 46px; width: auto; display: block; background: #fff; border-radius: 6px; padding: 3px 6px; } /* le logo a un fond blanc : on l'assume en pastille */
 </style>
 
@@ -137,9 +189,12 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
   <header>
     <div class="brand"><b id="brand-rsl">RSL</b><div><h1 id="h1">Plans mezzanine</h1><span id="sub">Plan coté et nomenclature à partir du JSON et du DXF</span></div></div>
     <nav class="tabs internal" id="tabs" role="tablist" aria-label="Projets"></nav>
+    <div class="actions"><button class="ghost" id="print" type="button">📄 Dossier PDF</button></div>
     <div class="actions internal">
       <button class="ghost" id="share" type="button">🔗 Lien 3D</button>
-      <label class="btn" for="imp">Importer un projet (JSON + DXF)<input id="imp" type="file" multiple accept=".json,.dxf" hidden></label>
+      <label class="btn" for="imp-json">Importer un JSON<input id="imp-json" type="file" accept=".json,application/json" hidden></label>
+      <label class="ghost" for="imp-dxf">Ajouter le DXF<input id="imp-dxf" type="file" accept=".dxf" hidden></label>
+      <label class="ghost" for="imp-bat">Ajouter le bâtiment<input id="imp-bat" type="file" accept=".json,application/json" hidden></label>
     </div>
   </header>
   <div class="card internal" id="share-box" hidden>
@@ -166,8 +221,11 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
           <label class="toggle internal" id="ov-wrap"><input id="ov" type="checkbox"><span>Superposer le plan fournisseur (DXF)</span></label>
           <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
           <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
+          <label class="toggle" id="bat-wrap" hidden><span>Bâtiment</span><select id="batmode"><option value="masque">masqué</option><option value="sol">au sol (2D)</option><option value="translucide" selected>3D translucide</option><option value="opaque">3D opaque</option></select></label>
           <button class="ghost" id="light3d" type="button" aria-pressed="true" aria-label="Ombres" title="Ombres affichées"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M9.5 18.5h5M10.5 21h3"/></svg></button>
           <button class="ghost" id="re3d" type="button">Recentrer</button>
+          <button class="ghost" id="zout2d" type="button" aria-label="Dézoomer le plan" title="Dézoomer"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M7.5 10.5h6"/></svg></button>
+          <button class="ghost" id="zin2d" type="button" aria-label="Zoomer dans le plan" title="Zoomer (ou molette sur le plan)"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M7.5 10.5h6M10.5 7.5v6"/></svg></button>
           <button class="ghost" id="rot2d" type="button" aria-label="Tourner le plan de 90°"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tourner 90°</button>
         </div>
       </div>
@@ -187,6 +245,13 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     </section>
     <aside>
       <div class="card" id="cartouche"></div>
+      <div class="card internal" id="bat-card" hidden>
+        <h3>Bâtiment</h3>
+        <div class="cart-ref" id="bat-name"></div>
+        <p class="note">Position de la mezzanine (angle hors tout platine) depuis l'angle haut gauche du bâtiment, en mm.</p>
+        <div class="share-row"><label>X<input id="bat-x" type="number" step="10"></label><label>Y<input id="bat-y" type="number" step="10"></label></div>
+        <div class="share-row"><button class="ghost" id="bat-rot" type="button">Tourner la mezzanine 90°</button><button class="ghost" id="bat-mid" type="button">Centrer</button><button class="ghost" id="bat-del" type="button">Retirer</button></div>
+      </div>
       <div class="card"><h3>Caractéristiques</h3><dl id="carac"></dl></div>
       <div class="card"><h3>Couleurs</h3><div class="swatches" id="couleurs"></div></div>
       <div class="card internal" id="checks-card"><h3>Contrôles JSON / DXF</h3><ul class="checks" id="checks"></ul></div>
@@ -195,6 +260,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     </aside>
   </div>
 </div>
+<section id="dossier" aria-hidden="true"></section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -633,13 +699,18 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     for (const r of M.gc) for (let i = 1; i < r.pts.length; i++) rail(r.pts[i - 1], r.pts[i], H, mat('rambardes'));
 
     // Escalier : limons, marches à hauteurs égales, rambardes des deux côtés
+    const gr = M.stairs3d.length ? grating(T) : null; // marches en caillebotis
     for (const s of M.stairs3d) {
       const P = (r, q, h) => V(s.top[0] + s.dir[0] * r + s.lat[0] * q, s.top[1] + s.dir[1] * r + s.lat[1] * q, h);
       const st = s.steps.length ? s.steps : Array.from({ length: Math.max(1, Math.round(H / 230) - 1) }, (_, i) => (i + 1) * s.L / Math.round(H / 230));
       const k = st.length, riser = H / (k + 1), m = mat('escaliers'), hAt = r => H * (1 - r / s.L);
       for (let i = 0; i < k; i++) {
         const r0 = i ? st[i - 1] : 0, h = H - (i + 1) * riser;
-        obox(P(r0 + 10, 0, h - 15), P(st[i], 0, h - 15), 2 * s.halfIn, 30, mat('galva'));
+        // marche en caillebotis (maille dans le repère de la marche), nez de marche plein à l'avant
+        const o = obox(P(r0 + 10, 0, h - 15), P(st[i] - 30, 0, h - 15), 2 * s.halfIn, 30, gr), pos = o.geometry.attributes.position, uv = o.geometry.attributes.uv;
+        for (let j = 0; j < pos.count; j++) uv.setXY(j, pos.getX(j) / 0.06, pos.getZ(j) / 0.038);
+        o.castShadow = false;
+        obox(P(st[i] - 30, 0, h - 15), P(st[i], 0, h - 15), 2 * s.halfIn, 30, mat('galva'));
       }
       for (const sg of [-1, 1]) {
         const q = sg * (s.halfIn + 25), qr = sg * (s.halfIn + 70);
@@ -786,7 +857,32 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     return g;
   }
 
-  const api = { build, dims };
+  // Bâtiment PlanCoté : chaque « solide » (mur, poteau) est un polygone en plan extrudé de z0 à z1, en mm.
+  // Murs translucides pour garder la mezzanine visible depuis l'extérieur.
+  // mode : 'sol' (emprise des murs et poteaux posée au sol, comme le plan), 'opaque', sinon translucide
+  function building(T, B, mode) {
+    const g = new T.Group(), opaque = mode === 'opaque';
+    const wall = opaque ? new T.MeshStandardMaterial({ color: '#d3d8de', roughness: 0.9 })
+      : new T.MeshStandardMaterial({ color: '#c3c9d1', roughness: 0.9, transparent: true, opacity: 0.45, depthWrite: false, side: T.DoubleSide });
+    const area = pts => Math.abs(pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+    for (const s of (B && B.solids) || []) {
+      if (!Array.isArray(s.pts) || s.pts.length < 3 || !(s.z1 > s.z0) || area(s.pts) < 1) continue;
+      const shape = new T.Shape(s.pts.map(p => new T.Vector2(p[0] * K, -p[1] * K)));
+      if (mode === 'sol') { // seules les parties qui touchent le sol : les portes restent des passages
+        if (s.z0 > 0) continue;
+        const geo = new T.ShapeGeometry(shape); geo.rotateX(-Math.PI / 2); geo.translate(0, 0.004, 0);
+        g.add(new T.Mesh(geo, new T.MeshBasicMaterial({ color: /^#[0-9a-f]{6}$/i.test(s.color || '') ? s.color : '#5b636e' })));
+        continue;
+      }
+      const geo = new T.ExtrudeGeometry(shape, { depth: (s.z1 - s.z0) * K, bevelEnabled: false });
+      geo.rotateX(-Math.PI / 2); geo.translate(0, s.z0 * K, 0); // forme (x, -y) couchée au sol, extrudée vers le haut
+      const mur = s.kind === 'mur', m = mur ? wall : new T.MeshStandardMaterial({ color: /^#[0-9a-f]{6}$/i.test(s.color || '') ? s.color : '#5b636e', roughness: 0.7 });
+      const o = new T.Mesh(geo, m); o.castShadow = !mur; o.receiveShadow = true; g.add(o);
+    }
+    return g;
+  }
+
+  const api = { build, dims, building };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.MEZZ3D = api;
 })(this);
 </script>
@@ -816,7 +912,7 @@ function model(p) {
 function renderTabs() {
   $('tabs').innerHTML = projects.map((p, i) => `<button class="tab" role="tab" id="tab-${i}" aria-selected="${i === cur}"><b>${esc(p.json.client?.reference_client || 'Projet')}</b><small>${esc(p.json.client?.reference_interne || p.name)}</small></button>`).join('');
   projects.forEach((p, i) => $('tab-' + i).onclick = () => {
-    cur = i; $('sh-out').hidden = true; $('sh-nom').value = p.json.client?.reference_client || ''; $('sh-projet').value = '';
+    cur = i; z2d = 1; c2d = null; $('sh-out').hidden = true; $('sh-nom').value = p.json.client?.reference_client || ''; $('sh-projet').value = '';
     render();
   });
 }
@@ -824,16 +920,18 @@ function renderTabs() {
 function render() {
   renderTabs();
   $('main').hidden = !projects.length;
-  if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON et le DXF d'un projet (bouton en haut à droite) pour afficher sa vue 3D, son plan et sa nomenclature."; $('msg').hidden = false; } return; }
+  if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON d'un projet, puis ajoutez son DXF (boutons en haut à droite), pour afficher sa vue 3D, son plan et sa nomenclature."; $('msg').hidden = false; } return; }
   const p = projects[cur], J = p.json, c = J.client || {}, e = J.environement || {};
   let M;
   try { M = model(p); } catch (err) { $('msg').textContent = 'Lecture impossible : ' + err.message; $('msg').hidden = false; return; }
   const notes = [];
-  if (!p.dxf && !p.D) notes.push('Pas de DXF pour ce projet : solives, entretoises, garde-corps et escalier ne sont pas dessinés.');
+  if (!p.dxf && !p.D) notes.push('Pas encore de DXF pour ce projet : ajoutez-le pour dessiner solives, entretoises, garde-corps et escalier.');
+  else if (p.dxf && M.checks[0] && !M.checks[0].ok) notes.push(`Ce DXF ne correspond pas entièrement au JSON : ${M.checks[0].val} lisses retrouvées. Vérifiez qu'il s'agit du même projet.`);
   notes.push(...M.warn.map(w => 'Non dessiné : ' + w + '.'));
   $('msg').textContent = notes.join(' '); $('msg').hidden = !notes.length;
 
   const svg = drawPlan(M);
+  renderBat(p, M);
   const fill = RAL[e.couleurs?.poteaux] || '';
   if (fill && !fill.startsWith('linear')) svg.style.setProperty('--ral', fill);
   $('lg-pole').style.cssText = `background:${fill && !fill.startsWith('linear') ? fill : 'var(--steel-ink)'};border:1px solid var(--ink)`;
@@ -847,10 +945,7 @@ function render() {
       <dt>Société</dt><dd>${esc(c.societe)}</dd><dt>Dessiné par</dt><dd>${esc([c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' '))}</dd><dt>N° client</dt><dd class="mono">${esc(c.num)}</dd></dl>`;
 
   $('carac').innerHTML = caracRows(M).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
-  $('couleurs').innerHTML = colorRows(e, p).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span>${r.key === 'dessous' && !CLIENT
-    ? `<select id="dessous" aria-label="Couleur du dessous du plancher">${Object.entries(DESSOUS).map(([k, d]) => `<option value="${k}"${(p.dessous || 'bois') === k ? ' selected' : ''}>${d.code}</option>`).join('')}</select>`
-    : `<b>${esc(r.code)}</b>`}</div></div>`).join('');
-  if ($('dessous')) $('dessous').onchange = ev => { p.dessous = ev.target.value; V3.key = null; render(); };
+  $('couleurs').innerHTML = colorRows(e).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('');
 
   $('checks-card').hidden = !M.checks.length;
   $('checks').innerHTML = M.checks.map(k => `<li><span>${esc(k.label)}</span><span class="pill ${k.ok ? 'ok' : 'ko'}">${esc(k.val)}</span></li>`).join('');
@@ -864,11 +959,120 @@ function render() {
   }).join('');
 }
 
+// ---------- Bâtiment PlanCoté : la mezzanine est placée dans le repère du bâtiment ----------
+const NS = 'http://www.w3.org/2000/svg';
+const batOk = B => !!(B && B.bounds && Array.isArray(B.solids) && typeof B.svg === 'string');
+const rotP = r => ([x, y]) => { const k = (r / 90) % 4, c = [1, 0, -1, 0][k], s = [0, 1, 0, -1][k]; return [x * c - y * s, x * s + y * c]; };
+// Emprise hors tout platine de la mezzanine (repère de la mezzanine)
+function emprise(M) {
+  const pl = Math.max(...M.poles.map(q => q.pl || q.w)) / 2;
+  return [Math.min(...M.poles.map(q => q.cx)) - pl, Math.min(...M.poles.map(q => q.cy)) - pl, Math.max(...M.poles.map(q => q.cx)) + pl, Math.max(...M.poles.map(q => q.cy)) + pl];
+}
+// Passage repère mezzanine → repère bâtiment : rotation r, puis translation (tx, ty) ; x, y = coin haut gauche de l'emprise tournée, depuis l'angle du bâtiment
+function placeOf(p, M) {
+  if (!p || !p.bat || !M.poles.length) return null;
+  const e = emprise(M), cs = [[e[0], e[1]], [e[2], e[1]], [e[0], e[3]], [e[2], e[3]]].map(rotP(p.bat.r));
+  const rx0 = Math.min(...cs.map(c => c[0])), ry0 = Math.min(...cs.map(c => c[1]));
+  const B = p.bat.data.bounds;
+  return { r: p.bat.r, tx: B.x0 + p.bat.x - rx0, ty: B.y0 + p.bat.y - ry0, w: Math.max(...cs.map(c => c[0])) - rx0, h: Math.max(...cs.map(c => c[1])) - ry0 };
+}
+function centrer(p, M, cx, cy) {
+  const B = p.bat.data.bounds, pl = placeOf(p, M);
+  p.bat.x = Math.round((cx ?? (B.x1 - B.x0) / 2) - pl.w / 2); p.bat.y = Math.round((cy ?? (B.y1 - B.y0) / 2) - pl.h / 2);
+}
+function place3D() {
+  if (!V3.place) return;
+  const pl = placeOf(projects[cur], V3.M);
+  V3.place.rotation.y = pl ? -pl.r * Math.PI / 180 : 0;
+  V3.place.position.set(pl ? pl.tx / 1000 : 0, 0, pl ? pl.ty / 1000 : 0);
+}
+// Le dessin du bâtiment vient d'un fichier ou d'un lien : on ne recopie que des formes et leurs attributs de dessin (pas de script ni de lien).
+function cleanSVG(str) {
+  const doc = new DOMParser().parseFromString(str, 'image/svg+xml'), ok = new Set(['g', 'path', 'rect', 'line', 'polyline', 'polygon', 'circle', 'ellipse']);
+  const attr = /^(d|x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height|points|fill|fill-rule|stroke|stroke-width|stroke-linecap|stroke-linejoin|stroke-dasharray|transform|opacity)$/;
+  const out = document.createElementNS(NS, 'g');
+  out.setAttribute('class', 'g-bat');
+  const copy = (src, dst) => { for (const c of src.children) {
+    if (!ok.has(c.localName)) continue;
+    const el = document.createElementNS(NS, c.localName);
+    for (const a of c.attributes) if (attr.test(a.name) && !/url\(|script:/i.test(a.value)) el.setAttribute(a.name, a.value);
+    dst.append(el); copy(c, el);
+  } };
+  if (doc.documentElement.localName === 'svg') copy(doc.documentElement, out);
+  return out;
+}
+function renderBat(p, M) {
+  $('bat-card').hidden = !p.bat;
+  if (!p.bat) return;
+  $('bat-name').textContent = p.bat.data.name || 'Bâtiment';
+  $('bat-x').value = p.bat.x; $('bat-y').value = p.bat.y;
+}
+const moveBat = f => { const p = projects[cur]; if (!p?.bat) return; f(p, model(p)); render(); place3D(); };
+$('bat-x').onchange = ev => moveBat(p => { p.bat.x = Math.round(+ev.target.value || 0); });
+$('bat-y').onchange = ev => moveBat(p => { p.bat.y = Math.round(+ev.target.value || 0); });
+$('bat-mid').onclick = () => moveBat((p, M) => centrer(p, M));
+$('bat-rot').onclick = () => moveBat((p, M) => { const pl = placeOf(p, M), cx = p.bat.x + pl.w / 2, cy = p.bat.y + pl.h / 2; p.bat.r = (p.bat.r + 90) % 360; centrer(p, M, cx, cy); });
+$('bat-del').onclick = () => { const p = projects[cur]; if (!p) return; p.bat = null; V3.key = null; render(); setMode(mode); };
+
+// Zoom de la vue 2D : z2d = 1 montre le plan entier ; c2d = centre visé, en coordonnées du plan. Gardé quand le plan est redessiné.
+let z2d = 1, c2d = null, drag2d = null;
+function zoomPlan(svg) {
+  if (!svg) return;
+  const base = svg.dataset.base || (svg.dataset.base = svg.getAttribute('viewBox')), [x, y, w, h] = base.split(' ').map(Number);
+  if (z2d <= 1) { z2d = 1; c2d = null; svg.setAttribute('viewBox', base); }
+  else {
+    const vw = w / z2d, vh = h / z2d, c = c2d || [x + w / 2, y + h / 2];
+    c2d = [Math.min(Math.max(c[0], x + vw / 2), x + w - vw / 2), Math.min(Math.max(c[1], y + vh / 2), y + h - vh / 2)]; // on reste sur le plan
+    svg.setAttribute('viewBox', `${c2d[0] - vw / 2} ${c2d[1] - vh / 2} ${vw} ${vh}`);
+  }
+  $('planbox').classList.toggle('zoomed', z2d > 1);
+  svg.style.touchAction = z2d > 1 ? 'none' : ''; // zoomé, le doigt déplace le plan au lieu de faire défiler la page
+}
+function zoom2D(k, at) { // at : point du plan qui reste sous le curseur
+  const svg = $('planbox').querySelector('svg');
+  if (!svg) return;
+  const [x, y, w, h] = svg.getAttribute('viewBox').split(' ').map(Number), c = c2d || [x + w / 2, y + h / 2], z = Math.min(20, Math.max(1, z2d * k));
+  c2d = at ? [at[0] + (c[0] - at[0]) * z2d / z, at[1] + (c[1] - at[1]) * z2d / z] : c;
+  z2d = z; zoomPlan(svg);
+}
+$('zin2d').onclick = () => zoom2D(1.5);
+$('zout2d').onclick = () => zoom2D(1 / 1.5);
+$('planbox').addEventListener('wheel', ev => {
+  const svg = $('planbox').querySelector('svg');
+  if (!svg) return;
+  ev.preventDefault();
+  const pt = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  zoom2D(ev.deltaY < 0 ? 1.25 : 0.8, [pt.x, pt.y]);
+}, { passive: false });
+$('planbox').addEventListener('pointerdown', ev => {
+  const svg = $('planbox').querySelector('svg');
+  if (!svg || z2d <= 1) return;
+  drag2d = { x: ev.clientX, y: ev.clientY, c: c2d.slice(), k: 1 / svg.getScreenCTM().a };
+  svg.setPointerCapture(ev.pointerId);
+});
+$('planbox').addEventListener('pointermove', ev => {
+  if (!drag2d) return;
+  c2d = [drag2d.c[0] - (ev.clientX - drag2d.x) * drag2d.k, drag2d.c[1] - (ev.clientY - drag2d.y) * drag2d.k];
+  zoomPlan($('planbox').querySelector('svg'));
+});
+['pointerup', 'pointercancel'].forEach(t => $('planbox').addEventListener(t, () => { drag2d = null; }));
+
 // Vue 2D, tournée par quarts de tour (sens horaire) autour du centre du plan.
 let rot2d = 0;
 function drawPlan(M) {
   $('planbox').innerHTML = MEZZ.renderSVG(M, { overlay: $('ov').checked });
-  const svg = $('planbox').querySelector('svg');
+  const svg = $('planbox').querySelector('svg'), p = projects[cur], pl = placeOf(p, M);
+  if (pl) {
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'g-mezz'); g.setAttribute('transform', `translate(${pl.tx} ${pl.ty}) rotate(${pl.r})`);
+    g.append(...svg.childNodes);
+    p.bat.g = p.bat.g || cleanSVG(p.bat.data.svg);
+    svg.append(p.bat.g.cloneNode(true), g);
+    const [x, y, w, h] = svg.getAttribute('viewBox').split(' ').map(Number), B = p.bat.data.bounds, mg = 300;
+    const cs = [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].map(rotP(pl.r)).map(([a, b]) => [a + pl.tx, b + pl.ty]);
+    const X0 = Math.min(B.x0, ...cs.map(c => c[0])) - mg, Y0 = Math.min(B.y0, ...cs.map(c => c[1])) - mg;
+    svg.setAttribute('viewBox', `${X0} ${Y0} ${Math.max(B.x1, ...cs.map(c => c[0])) + mg - X0} ${Math.max(B.y1, ...cs.map(c => c[1])) + mg - Y0}`);
+  }
   if (rot2d) {
     const [x, y, w, h] = svg.getAttribute('viewBox').split(' ').map(Number), cx = x + w / 2, cy = y + h / 2;
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -879,13 +1083,14 @@ function drawPlan(M) {
   // Textes lisibles du bas ou de la droite, comme sur un plan : retournés sur place sinon.
   for (const t of svg.querySelectorAll('text')) {
     const own = t.getAttribute('transform') || '', deg = +((/rotate\(\s*(-?[\d.]+)/.exec(own) || [])[1] || 0);
-    const a = ((Math.round(deg + rot2d) % 360) + 360) % 360;
+    const a = ((Math.round(deg + rot2d + (pl && t.closest('.g-mezz') ? pl.r : 0)) % 360) + 360) % 360;
     // centre approximatif du texte (le plan est caché en vue 3D, getBBox y renverrait 0)
     const fs = +t.getAttribute('font-size') || 0, half = t.textContent.length * fs * 0.28, anc = t.getAttribute('text-anchor'), base = t.getAttribute('dominant-baseline');
     const cx = +t.getAttribute('x') + (anc === 'start' ? half : anc === 'end' ? -half : 0);
     const cy = +t.getAttribute('y') + (base === 'hanging' ? 0.35 : base === 'central' ? 0 : -0.35) * fs;
     if (a >= 90 && a < 270) t.setAttribute('transform', `${own} rotate(180 ${cx} ${cy})`.trim());
   }
+  zoomPlan(svg);
   return svg;
 }
 
@@ -913,12 +1118,14 @@ function caracRows(M) {
   return rows.filter(Boolean);
 }
 const DESSOUS = { bois: { code: 'Bois', css: '#b98f5e' }, blanc: { code: 'Blanc', css: '#f4f3ef' } };
-function colorRows(e, p) {
+// shortcut: le champ du JSON qui portera la couleur du dessous n'est pas encore connu : on lit une couleur dont le nom contient « dessous » ou « sous-face ». À brancher sur le vrai champ dès qu'un export en contient un.
+const dessousDe = e => /BLANC|WHITE|RAL ?90(01|03|10|16)/i.test(Object.entries(e.couleurs || {}).find(([k]) => /dessous|sous.?face/i.test(k))?.[1] || '') ? 'blanc' : 'bois';
+function colorRows(e) {
   const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
   const rows = Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
     .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
   // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis)
-  if (p && !/CB/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', key: 'dessous', ...DESSOUS[p.dessous || 'bois'] });
+  if (!/CB/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
   return rows;
 }
 
@@ -941,8 +1148,9 @@ function init3D() {
   sun.castShadow = $('light3d').getAttribute('aria-pressed') === 'true'; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
-  scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground); // lumière d'en bas assez claire pour voir un dessous blanc
-  Object.assign(V3, { r, scene, cam, ctl, sun, ground });
+  const place = new THREE.Group(); // mezzanine + cotes, placées dans le repère du bâtiment
+  scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground, place); // lumière d'en bas assez claire pour voir un dessous blanc
+  Object.assign(V3, { r, scene, cam, ctl, sun, ground, place });
   new ResizeObserver(size3D).observe($('v3d'));
   const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
   loop();
@@ -955,9 +1163,9 @@ function size3D() {
 }
 function dims3D() {
   if (!V3.M) return;
-  if (V3.dims) { V3.scene.remove(V3.dims); V3.dims.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) o.material.map.dispose(); }); }
+  if (V3.dims) { V3.place.remove(V3.dims); V3.dims.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) o.material.map.dispose(); }); }
   V3.dims = MEZZ3D.dims(THREE, V3.M, { color: cssVar('--cote3d') || '#d42a2a', halo: cssVar('--paper') || '#ffffff' });
-  V3.dims.visible = $('cot3d').checked; V3.scene.add(V3.dims);
+  V3.dims.visible = $('cot3d').checked; V3.place.add(V3.dims);
 }
 function theme3D() {
   if (!V3.r) return;
@@ -972,8 +1180,10 @@ function theme3D() {
 }
 function fit3D() {
   if (!V3.model) return;
+  V3.scene.updateMatrixWorld(true);
   const b = new THREE.Box3().setFromObject(V3.model);
   if (V3.dims) b.expandByObject(V3.dims); // cadrage identique avec ou sans cotes
+  if (V3.bat && V3.bat.visible) b.expandByObject(V3.bat);
   const c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
   const span = Math.max(s.x, s.y, s.z), d = span * 1.5;
   Object.assign(V3, { c, span });
@@ -984,17 +1194,23 @@ function fit3D() {
   const sc = V3.sun.shadow.camera; sc.left = sc.bottom = -span; sc.right = sc.top = span; sc.near = 0.1; sc.far = span * 6; sc.updateProjectionMatrix();
   theme3D();
 }
+function bat3D(p) {
+  if (V3.bat) { V3.scene.remove(V3.bat); V3.bat.traverse(o => o.geometry && o.geometry.dispose()); V3.bat = null; }
+  const m = $('batmode').value;
+  if (p && p.bat && m !== 'masque') { V3.bat = MEZZ3D.building(THREE, p.bat.data, m); V3.scene.add(V3.bat); }
+}
 function draw3D() {
   const p = projects[cur];
   let M; try { M = model(p); } catch (err) { return; }
   if (!init3D()) return;
   if (V3.key === p) return; // déjà affiché
-  if (V3.model) { V3.scene.remove(V3.model); V3.model.traverse(o => o.geometry && o.geometry.dispose()); }
+  if (V3.model) { V3.place.remove(V3.model); V3.model.traverse(o => o.geometry && o.geometry.dispose()); }
+  bat3D(p);
   const colors = Object.fromEntries(Object.entries(p.json.environement?.couleurs || {}).map(([k, v]) => [k, RAL[v] && !RAL[v].startsWith('linear') ? RAL[v] : 'GALVA']));
-  const { group, floor } = MEZZ3D.build(THREE, M, { colors, dessous: p.dessous });
+  const { group, floor } = MEZZ3D.build(THREE, M, { colors, dessous: dessousDe(p.json.environement || {}) });
   Object.assign(V3, { model: group, floor, key: p, M });
   floor.visible = $('pl3d').checked;
-  V3.scene.add(group); dims3D(); size3D(); fit3D();
+  V3.place.add(group); place3D(); dims3D(); size3D(); fit3D();
 }
 
 let mode = '3d';
@@ -1003,14 +1219,20 @@ function setMode(m) {
   mode = m;
   try { localStorage.setItem('mezz-vue', m); } catch (err) {}
   $('vw-3d').setAttribute('aria-pressed', m === '3d'); $('vw-plan').setAttribute('aria-pressed', m === 'plan');
-  $('planbox').hidden = $('legend').hidden = $('ov-wrap').hidden = $('rot2d').hidden = m === '3d';
+  $('planbox').hidden = $('legend').hidden = $('ov-wrap').hidden = $('rot2d').hidden = $('zin2d').hidden = $('zout2d').hidden = m === '3d';
+  $('bat-wrap').hidden = m !== '3d' || !projects[cur]?.bat;
   $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
 $('vw-3d').onclick = () => setMode('3d');
 $('vw-plan').onclick = () => setMode('plan');
-$('rot2d').onclick = () => { rot2d = (rot2d + 90) % 360; render(); };
+$('rot2d').onclick = () => { rot2d = (rot2d + 90) % 360; c2d = null; render(); };
 $('pl3d').onchange = () => { if (V3.floor) V3.floor.visible = $('pl3d').checked; };
+try { const m = localStorage.getItem('mezz-bat'); if (m && $('batmode').querySelector(`[value="${m}"]`)) $('batmode').value = m; } catch (err) {}
+$('batmode').onchange = () => { // la caméra ne bouge pas : on compare les rendus sur place
+  if (V3.r) bat3D(projects[cur]);
+  try { localStorage.setItem('mezz-bat', $('batmode').value); } catch (err) {}
+};
 try { $('cot3d').checked = localStorage.getItem('mezz-cotes') === '1'; } catch (err) {}
 $('cot3d').onchange = () => {
   if (V3.dims) V3.dims.visible = $('cot3d').checked;
@@ -1036,23 +1258,39 @@ $('ov').onchange = () => {
   $('lg-dxf').hidden = !$('ov').checked || !projects[cur].dxf;
 };
 
-$('imp').onchange = async ev => {
-  const files = [...ev.target.files], base = f => f.name.replace(/\.[^.]+$/, '').toLowerCase(), errs = [];
-  const byBase = {};
-  for (const f of files) (byBase[base(f)] = byBase[base(f)] || {})[f.name.split('.').pop().toLowerCase()] = f;
-  let added = -1;
-  for (const [name, set] of Object.entries(byBase)) {
-    if (!set.json) { errs.push(`${name}.dxf : il manque le fichier JSON du même nom.`); continue; }
-    try {
-      const json = JSON.parse(await set.json.text());
-      if (!json.structure) throw new Error("ce n'est pas un export (pas de « structure »)");
-      projects.push({ name, json, dxf: set.dxf ? await set.dxf.text() : null });
-      added = projects.length - 1;
-    } catch (err) { errs.push(`${name}.json : ${err.message}`); }
-  }
-  ev.target.value = '';
-  if (added >= 0) { cur = added; render(); }
-  if (errs.length) { $('msg').textContent = errs.join(' '); $('msg').hidden = false; }
+// Import en deux temps, sans contrainte de nom : le JSON crée le projet, le DXF s'ajoute au projet affiché.
+const say = t => { $('msg').textContent = t; $('msg').hidden = false; };
+$('imp-json').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  try {
+    const json = JSON.parse(await f.text());
+    if (!json.structure) throw new Error("ce n'est pas un export de plateforme (pas de « structure »)");
+    projects.push({ name: f.name.replace(/\.[^.]+$/, ''), json, dxf: null });
+    cur = projects.length - 1; $('msg').hidden = true; render();
+  } catch (err) { say(`${f.name} : ${err.message}`); }
+};
+$('imp-dxf').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  const p = projects[cur];
+  if (!p) return say("Importez d'abord le JSON du projet, puis ajoutez son DXF.");
+  const txt = await f.text();
+  if (!/SECTION/.test(txt.slice(0, 2000))) return say(`${f.name} : ce fichier n'est pas un DXF lisible (format texte attendu).`);
+  Object.assign(p, { dxf: txt, D: null, m: null }); V3.key = null; $('msg').hidden = true; render();
+};
+$('imp-bat').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  const p = projects[cur];
+  if (!p) return say("Importez d'abord le JSON de la mezzanine, puis ajoutez son bâtiment.");
+  try {
+    const B = JSON.parse(await f.text());
+    if (B.kind !== 'batiment' || !batOk(B)) throw new Error("ce n'est pas un bâtiment exporté par PlanCoté");
+    if (B.unit && B.unit !== 'mm') throw new Error(`unité « ${B.unit} » non prise en charge (mm attendus)`);
+    p.bat = { data: B, x: 0, y: 0, r: 0 }; centrer(p, model(p));
+    V3.key = null; $('msg').hidden = true; render(); setMode(mode);
+  } catch (err) { say(`${f.name} : ${err.message}`); }
 };
 
 // ---------- Lien 3D client : le projet voyage compressé dans le lien (même principe que le configurateur gondoles) ----------
@@ -1084,7 +1322,8 @@ function clientPayload(p, nom, projet) {
     const ents = D.entities.filter(keep); walk(ents);
     dxf = { entities: ents.map(slim), blocks: Object.fromEntries([...names].map(n => [n, D.blocks[n].map(slim)])) };
   }
-  return { v: 1, nom, projet, json: J, dxf, dessous: p.dessous };
+  const bat = p.bat && { data: { name: p.bat.data.name, bounds: p.bat.data.bounds, svg: p.bat.data.svg, solids: p.bat.data.solids }, x: p.bat.x, y: p.bat.y, r: p.bat.r };
+  return { v: 1, nom, projet, json: J, dxf, bat };
 }
 async function lien3D(p, nom, projet) {
   let u8 = new TextEncoder().encode(JSON.stringify(clientPayload(p, nom, projet))), tag = 'j';
@@ -1099,8 +1338,73 @@ async function lireLien() {
   if (m[1] === 'v') u8 = await pipeZ(u8, DecompressionStream);
   const d = JSON.parse(new TextDecoder().decode(u8));
   if (!d.json?.structure) throw new Error('lien incomplet');
-  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, dessous: d.dessous } };
+  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, bat: batOk(d.bat?.data) ? { data: d.bat.data, x: +d.bat.x || 0, y: +d.bat.y || 0, r: [0, 90, 180, 270].includes(d.bat.r) ? d.bat.r : 0 } : null } };
 }
+
+// ---------- Dossier client imprimable (version GitHub ou fichier local : claude.ai bloque l'impression) ----------
+// Capture de la vue 3D à une taille fixe, puis retour exact à la vue de l'utilisateur.
+function shot3D(w, h, setup) {
+  const { r, cam, ctl } = V3, size = r.getSize(new THREE.Vector2()), aspect = cam.aspect, pos = cam.position.clone(), tgt = ctl.target.clone(), dv = V3.dims && V3.dims.visible;
+  r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+  setup(); ctl.update(); r.render(V3.scene, cam);
+  const url = r.domElement.toDataURL('image/jpeg', 0.9); // lu juste après le rendu, avant que le navigateur n'efface l'image
+  r.setSize(size.x, size.y, false); cam.aspect = aspect; cam.updateProjectionMatrix();
+  cam.position.copy(pos); ctl.target.copy(tgt); ctl.update(); if (V3.dims) V3.dims.visible = dv;
+  return url;
+}
+const closer = k => V3.cam.position.sub(V3.ctl.target).multiplyScalar(k).add(V3.ctl.target);
+async function printDossier() {
+  const p = projects[cur];
+  if (!p) return;
+  if (!(location.protocol === 'file:' || /github\.io$|^localhost$|^127\./.test(location.hostname)))
+    return say("Ici, le navigateur bloque l'impression : ouvrez la version publiée sur GitHub pour imprimer ou enregistrer le dossier en PDF.");
+  const M = model(p), e = p.json.environement || {}, c = p.json.client || {};
+  const nom = CLIENT ? CLIENT.nom : ($('sh-nom').value.trim() || c.reference_client || 'Client'), projet = CLIENT ? CLIENT.projet : $('sh-projet').value.trim();
+  const btn = $('print'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Préparation…';
+  try {
+    if (!init3D()) throw new Error('vue 3D indisponible');
+    draw3D();
+    const W = 1600, H = 1000;
+    const hero = shot3D(W, H, () => { fit3D(); if (V3.dims) V3.dims.visible = false; closer(0.72); });
+    const back = shot3D(W, H, () => { fit3D(); if (V3.dims) V3.dims.visible = false; const d = V3.span * 1.5; V3.cam.position.set(V3.c.x + d * 0.65, d * 0.7, V3.c.z - d * 0.9); closer(0.72); });
+    const cotes = shot3D(W, H, () => { fit3D(); if (V3.dims) V3.dims.visible = true; closer(0.85); });
+    const plan = $('planbox').querySelector('svg').cloneNode(true);
+    plan.setAttribute('viewBox', plan.dataset.base || plan.getAttribute('viewBox')); plan.removeAttribute('style');
+    const url = CLIENT ? location.href : await lien3D(p, nom, projet);
+    const carac = Object.fromEntries(caracRows(M)), fr = (k, f = v => v) => esc(f(carac[k] || ''));
+    const contact = [c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' ');
+    const foot = 'RSL · Rayonnages Services Lorraine · 13 allée des Grands Paquis, 54180 Heillecourt · 03 83 55 49 50 · info@rsl.eu · rsl.eu';
+    $('dossier').innerHTML = `
+<div class="page">
+  <header><img src="${LOGO}" alt="RSL"><div class="who"><div class="eyebrow">Plateforme de stockage</div><h1>${esc(nom)}</h1>
+    <div class="meta">${projet ? 'Projet ' + esc(projet) + ' · ' : ''}Réf. ${esc(c.reference_interne)} · ${esc(c.date)}</div></div></header>
+  <img class="hero" src="${hero}" alt="Vue 3D de la plateforme">
+  <div class="tiles">
+    <div class="tile"><span>Emprise au sol</span><b>${fr('Emprise au sol', v => v.replace(' hors tout platine', ''))}</b><small>hors tout platine</small></div>
+    <div class="tile"><span>Surface de plancher</span><b>${fr('Surface de plancher')}</b><small></small></div>
+    <div class="tile"><span>Hauteur sur plancher</span><b>${fr('Hauteur sur plancher')}</b><small>${fr('Hauteur sous lisse')} sous lisse</small></div>
+    <div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>
+  </div>
+  <div class="row">
+    <div><h2>Couleurs</h2><div class="dsw">${colorRows(e).filter(r => r.name !== 'Accessoires').map(r => `<div><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('')}</div></div>
+    <div class="link3d"><b>Votre plateforme en 3D</b><p>Faites-la tourner, zoomez, affichez les cotes : sur ordinateur, tablette ou téléphone.</p><a href="${esc(url)}">Ouvrir la vue 3D</a></div>
+  </div>
+  <footer><span>${esc(foot)}</span><span>1 / 2</span></footer>
+</div>
+<div class="page">
+  <div><h2>Plan coté${p.bat ? ' dans le bâtiment' : ''}</h2><div class="planimg" id="dossier-plan"></div></div>
+  <div class="duo"><figure><img src="${back}" alt=""><figcaption>Vue opposée</figcaption></figure><figure><img src="${cotes}" alt=""><figcaption>Principales cotes, en mm</figcaption></figure></div>
+  <div><h2>Caractéristiques</h2><table>${caracRows(M).filter(([k]) => CLIENT || !/^(Code plancher|Solivage)$/.test(k)).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>
+  <footer><span>Visuels indicatifs, non contractuels.${contact ? ' Votre contact : ' + esc(contact) + ', RSL.' : ''} ${esc(foot)}</span><span>2 / 2</span></footer>
+</div>`;
+    $('dossier-plan').append(plan);
+    await Promise.all([...$('dossier').querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+    window.print();
+  } catch (err) { say('Le dossier n’a pas pu être préparé : ' + err.message); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+$('print').onclick = printDossier;
 
 $('share').onclick = () => {
   $('share-box').hidden = !$('share-box').hidden;
