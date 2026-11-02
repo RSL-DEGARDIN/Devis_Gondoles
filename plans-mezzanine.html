@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Plans mezzanine RSL</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -204,12 +205,15 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       <label>Projet (facultatif)<input id="sh-projet" type="text" autocomplete="off"></label>
       <button class="btn" id="sh-go" type="button">Créer le lien</button>
     </div>
+    <div class="share-row">
+      <label>Jeton GitHub « gist » (saisi une fois, gardé sur ce poste)<input id="sh-tok" type="password" autocomplete="off" spellcheck="false"></label>
+    </div>
     <div class="share-row" id="sh-out" hidden>
       <input id="sh-url" type="text" readonly aria-label="Lien 3D à envoyer au client">
       <button class="ghost" id="sh-copy" type="button">Copier</button>
       <a class="ghost" id="sh-open" target="_blank" rel="noopener">Ouvrir</a>
     </div>
-    <p class="note">Le projet est contenu dans le lien : plateforme, cotes et couleurs, sans vos codes fournisseur ni votre compte. Il ouvre la page publiée sur GitHub, en mode client.</p>
+    <p class="note">Avec le jeton, le lien est court : le projet (plateforme, cotes, couleurs, sans vos codes fournisseur ni votre compte) est rangé dans un gist secret de votre compte GitHub ; supprimer le gist désactive le lien. Sans jeton, le projet est contenu dans le lien, que Outlook et certaines messageries coupent au-delà d'environ 2 000 caractères.</p>
   </div>
   <div class="msg" id="msg" role="status" hidden></div>
   <div class="main" id="main">
@@ -1330,18 +1334,33 @@ function clientPayload(p, nom, projet) {
   return { v: 1, nom, projet, json: J, dxf, bat };
 }
 async function lien3D(p, nom, projet) {
-  let u8 = new TextEncoder().encode(JSON.stringify(clientPayload(p, nom, projet))), tag = 'j';
-  if (window.CompressionStream) { u8 = await pipeZ(u8, CompressionStream); tag = 'v'; }
+  const data = JSON.stringify(clientPayload(p, nom, projet)), tok = $('sh-tok').value.trim();
   const base = /github\.io$/.test(location.hostname) ? location.href.split('#')[0] : URL_PUBLIQUE;
+  if (tok) { // lien court (~110 caractères) : le projet va dans un gist secret, le lien ne porte que son numéro
+    const r = await fetch('https://api.github.com/gists', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' },
+      body: JSON.stringify({ description: `Mezzanine ${nom} ${projet}`.trim(), public: false, files: { 'mezzanine.json': { content: data } } }) })
+      .catch(() => { throw new Error('GitHub injoignable depuis cette page : créez le lien depuis la page publiée sur GitHub'); });
+    if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'jeton GitHub refusé (il faut le droit « gist »)' : 'GitHub a répondu ' + r.status);
+    try { localStorage.setItem('mezz-gh-token', tok); } catch (err) {}
+    return `${base}#g=${(await r.json()).id}`;
+  }
+  let u8 = new TextEncoder().encode(data), tag = 'j';
+  if (window.CompressionStream) { u8 = await pipeZ(u8, CompressionStream); tag = 'v'; }
   return `${base}#${tag}=${b64u.enc(u8)}`;
 }
 async function lireLien() {
-  const m = /^#([vj])=([\w-]+)$/.exec(location.hash);
-  if (!m) return null;
-  let u8 = b64u.dec(m[2]);
-  if (m[1] === 'v') u8 = await pipeZ(u8, DecompressionStream);
-  const d = JSON.parse(new TextDecoder().decode(u8));
-  if (!d.json?.structure) throw new Error('lien incomplet');
+  const m = /^#([vj])=([\w-]+)$/.exec(location.hash), g = /^#g=([0-9a-f]{20,40})$/.exec(location.hash);
+  let d;
+  if (g) {
+    const r = await fetch('https://api.github.com/gists/' + g[1]);
+    if (!r.ok) throw new Error('gist ' + r.status);
+    d = JSON.parse((await r.json()).files?.['mezzanine.json']?.content || 'null');
+  } else if (m) {
+    let u8 = b64u.dec(m[2]);
+    if (m[1] === 'v') u8 = await pipeZ(u8, DecompressionStream);
+    d = JSON.parse(new TextDecoder().decode(u8));
+  } else return null;
+  if (!d?.json?.structure) throw new Error('lien incomplet');
   return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, bat: batOk(d.bat?.data) ? { data: d.bat.data, x: +d.bat.x || 0, y: +d.bat.y || 0, r: [0, 90, 180, 270].includes(d.bat.r) ? d.bat.r : 0 } : null } };
 }
 
@@ -1375,7 +1394,7 @@ async function printDossier() {
     const cotes = shot3D(W, H, () => { fit3D(); if (V3.dims) V3.dims.visible = true; closer(0.85); });
     const plan = $('planbox').querySelector('svg').cloneNode(true);
     plan.setAttribute('viewBox', plan.dataset.base || plan.getAttribute('viewBox')); plan.removeAttribute('style');
-    const url = CLIENT ? location.href : await lien3D(p, nom, projet);
+    const url = CLIENT ? location.href : (!$('sh-out').hidden && $('sh-url').value) || await lien3D(p, nom, projet); // réutilise le lien déjà créé (pas un gist de plus par impression)
     const carac = Object.fromEntries(caracRows(M)), fr = (k, f = v => v) => esc(f(carac[k] || ''));
     const contact = [c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' ');
     const foot = 'RSL · Rayonnages Services Lorraine · 13 allée des Grands Paquis, 54180 Heillecourt · 03 83 55 49 50 · info@rsl.eu · rsl.eu';
@@ -1420,8 +1439,10 @@ $('sh-go').onclick = async () => {
   try {
     const url = await lien3D(p, $('sh-nom').value.trim() || p.json.client?.reference_client || 'Client', $('sh-projet').value.trim());
     $('sh-url').value = url; $('sh-open').href = url; $('sh-out').hidden = false; $('sh-copy').textContent = 'Copier';
+    if (url.length > 2000) say(`Lien de ${url.length} caractères : Outlook et certaines messageries le couperont. Saisissez un jeton GitHub pour obtenir un lien court.`);
   } catch (err) { $('msg').textContent = 'Le lien 3D n’a pas pu être créé : ' + err.message; $('msg').hidden = false; }
 };
+try { $('sh-tok').value = localStorage.getItem('mezz-gh-token') || ''; } catch (err) {}
 $('sh-copy').onclick = async () => {
   try { await navigator.clipboard.writeText($('sh-url').value); $('sh-copy').textContent = 'Lien copié'; }
   catch (err) { $('sh-url').select(); $('sh-copy').textContent = 'Sélectionné : Ctrl+C pour copier'; }
