@@ -232,6 +232,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
           <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
           <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
           <label class="toggle" id="bat-wrap" hidden><span>Bâtiment</span><select id="batmode"><option value="masque">masqué</option><option value="sol">au sol (2D)</option><option value="translucide" selected>3D translucide</option><option value="opaque">3D opaque</option></select></label>
+          <label class="toggle" id="bat2d-wrap" hidden><input id="bat2d" type="checkbox" checked><span>Bâtiment</span></label>
           <button class="ghost" id="light3d" type="button" aria-pressed="true" aria-label="Ombres" title="Ombres affichées"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M9.5 18.5h5M10.5 21h3"/></svg></button>
           <button class="ghost" id="re3d" type="button">Recentrer</button>
           <button class="ghost" id="zout2d" type="button" aria-label="Dézoomer le plan" title="Dézoomer"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M7.5 10.5h6"/></svg></button>
@@ -1001,6 +1002,7 @@ function render() {
 
   const svg = drawPlan(M);
   renderBat(p, M);
+  $('bat-wrap').hidden = mode !== '3d' || !p.bat; $('bat2d-wrap').hidden = mode === '3d' || !p.bat; // aussi au changement d'onglet
   const fill = RAL[e.couleurs?.poteaux] || '';
   if (fill && !fill.startsWith('linear')) svg.style.setProperty('--ral', fill);
   $('lg-pole').style.cssText = `background:${fill && !fill.startsWith('linear') ? fill : 'var(--steel-ink)'};border:1px solid var(--ink)`;
@@ -1130,7 +1132,7 @@ $('planbox').addEventListener('pointermove', ev => {
 let rot2d = 0;
 function drawPlan(M) {
   $('planbox').innerHTML = MEZZ.renderSVG(M);
-  const svg = $('planbox').querySelector('svg'), p = projects[cur], pl = placeOf(p, M);
+  const svg = $('planbox').querySelector('svg'), p = projects[cur], pl = $('bat2d').checked ? placeOf(p, M) : null; // bâtiment masqué : mezzanine seule, sens d'origine
   if (pl) {
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'g-mezz'); g.setAttribute('transform', `translate(${pl.tx} ${pl.ty}) rotate(${pl.r})`);
@@ -1297,7 +1299,7 @@ function setMode(m) {
   try { localStorage.setItem('mezz-vue', m); } catch (err) {}
   $('vw-3d').setAttribute('aria-pressed', m === '3d'); $('vw-plan').setAttribute('aria-pressed', m === 'plan');
   $('planbox').hidden = $('legend').hidden = $('rot2d').hidden = $('zin2d').hidden = $('zout2d').hidden = m === '3d';
-  $('bat-wrap').hidden = m !== '3d' || !projects[cur]?.bat;
+  $('bat-wrap').hidden = m !== '3d' || !projects[cur]?.bat; $('bat2d-wrap').hidden = m === '3d' || !projects[cur]?.bat;
   $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
@@ -1306,6 +1308,8 @@ $('vw-plan').onclick = () => setMode('plan');
 $('rot2d').onclick = () => { rot2d = (rot2d + 90) % 360; c2d = null; render(); };
 $('pl3d').onchange = () => { if (V3.floor) V3.floor.visible = $('pl3d').checked; };
 try { const m = localStorage.getItem('mezz-bat'); if (m && $('batmode').querySelector(`[value="${m}"]`)) $('batmode').value = m; } catch (err) {}
+try { $('bat2d').checked = localStorage.getItem('mezz-bat2d') !== '0'; } catch (err) {}
+$('bat2d').onchange = () => { try { localStorage.setItem('mezz-bat2d', $('bat2d').checked ? '1' : '0'); } catch (err) {} render(); };
 $('batmode').onchange = () => { // la caméra ne bouge pas : on compare les rendus sur place
   if (V3.r) bat3D(projects[cur]);
   try { localStorage.setItem('mezz-bat', $('batmode').value); } catch (err) {}
@@ -1367,6 +1371,7 @@ $('imp-bat').onchange = async ev => {
   if (!p) return say("Importez d'abord le JSON de la mezzanine, puis ajoutez son bâtiment.");
   try {
     const B = JSON.parse(await f.text());
+    if (B.app === 'PlanCoté' && Array.isArray(B.items)) throw new Error("c'est le plan PlanCoté « réouvrable ». Dans PlanCoté, faites Exporter → « Bâtiment pour le plan gondoles » et importez ce fichier-là");
     if (B.kind !== 'batiment' || !batOk(B)) throw new Error("ce n'est pas un bâtiment exporté par PlanCoté");
     if (B.unit && B.unit !== 'mm') throw new Error(`unité « ${B.unit} » non prise en charge (mm attendus)`);
     p.bat = { data: B, x: 0, y: 0, r: 0 }; centrer(p, model(p));
