@@ -267,6 +267,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
         <div class="tools">
           <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
           <label class="toggle" id="sas-wrap" hidden><input id="sas3d" type="checkbox"><span>Basculer le sas</span></label>
+          <label class="toggle" id="gate-wrap" hidden><input id="gate3d" type="checkbox"><span>Ouverture</span></label>
           <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
           <label class="toggle" id="bat-wrap" hidden><span>Bâtiment</span><select id="batmode"><option value="masque">masqué</option><option value="sol">au sol (2D)</option><option value="translucide" selected>3D translucide</option><option value="opaque">3D opaque</option></select></label>
           <label class="toggle" id="bat2d-wrap" hidden><input id="bat2d" type="checkbox" checked><span>Bâtiment</span></label>
@@ -1026,20 +1027,28 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const [jx, jz] = mean(J), [ox, oz] = mean(poles), dx = jx - ox, dz = jz - oz;
     const off = Math.max(...J.map(([x, z]) => Math.min(...poles.map(([a, b]) => Math.hypot(a + dx - x, b + dz - z)))));
     if (off > 0.03) throw new Error(`poteaux décalés de ${Math.round(off * 1000)} mm : ce n'est pas le même projet`);
-    // shortcut: noms de pièces relevés sur 3 exports (bois, caillebotis, sas) ; une pièce inconnue prend la couleur des lisses.
-    const part = n => /^SAS|SECURITY_LOCK/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
+    // shortcut: noms de pièces relevés sur 3 exports (bois, caillebotis, sas, portillon) ; une pièce inconnue prend la couleur des lisses.
+    const part = n => /^SAS|SECURITY_LOCK|^GATE/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
       : /RAIL|GUARD|BASEBOARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
     const hasGC = meshes.some(o => /RAIL|GUARD/.test(o.name) && !/^STAIR/.test(o.name));
-    let floorBot = null; const sas = [];
+    let floorBot = null, gr = null; const sas = [], gate = [];
     for (const o of meshes) {
       if (/^FLOOR/.test(o.name)) { // FLOOR-BOT_PART (bois) ou FLOOR-LAYER-n (caillebotis) ; le palier a son propre plancher
         o.geometry.computeBoundingBox(); if (!/RECEPTION/.test(o.name)) floorBot = Math.min(floorBot ?? Infinity, o.geometry.boundingBox.min.y);
         o.parent.remove(o); o.geometry.dispose(); continue;
       }
+      if (/^STAIR-STEP_/.test(o.name)) { // marches en caillebotis, comme le reste de l'escalier (tôle pleine sinon)
+        gr = gr || grating(T); o.material = gr; o.castShadow = false; o.receiveShadow = true;
+        const pos = o.geometry.attributes.position, uv = new T.BufferAttribute(new Float32Array(pos.count * 2), 2);
+        for (let j = 0; j < pos.count; j++) uv.setXY(j, pos.getX(j) / 0.06, pos.getZ(j) / 0.038);
+        o.geometry.setAttribute('uv', uv);
+        continue;
+      }
       o.material = mat(part(o.name)); o.castShadow = o.receiveShadow = true;
       if (/^SAS|SECURITY_LOCK/.test(o.name)) { const s = sasPivot(T, o); if (s) sas.push(s); }
+      else if (/^GATE/.test(o.name)) { const s = gatePivot(T, o, { x: ox, z: oz }); if (s) gate.push(s); }
     }
-    g.userData.sas = sas;
+    g.userData.sas = sas; g.userData.gate = gate;
     obj.position.set(dx, 0, dz);
     const keep = new T.Group();
     for (const o of g.children.slice()) { g.remove(o); if (o === floor || (o.userData.gc && !hasGC)) keep.add(o); else if (o.geometry) o.geometry.dispose(); }
@@ -1091,6 +1100,61 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     m.name = o.name + '-MOBILE'; m.castShadow = m.receiveShadow = true; pivot.position.copy(piv); pivot.add(m); o.parent.add(pivot);
     // axe = haut × intérieur : à +90° la barrière de rive monte et le cadre haut descend côté plateforme
     return { pivot, axis: Pp === X ? new T.Vector3(0, 0, -s) : new T.Vector3(s, 0, 0) };
+  }
+
+  // Portillon à 2 vantaux : l'OBJ le donne fermé, en une seule pièce faite de tubes qui ne partagent aucun sommet.
+  // On regroupe les triangles en morceaux connexes : les morceaux courts le long de l'ouverture (tube de poteau,
+  // platine au sol) restent fixes ; les autres (cadre + lisses de chaque vantail) sont partagés au milieu et pivotent
+  // sur leur bord côté poteau (la charnière), à l'angle tourné vers la plateforme, comme en vue de dessus fournisseur.
+  // shortcut: vérifié sur un seul export (portillon 1500 mm, PEP2606-86-A) ; un portillon d'un seul tenant reste fixe.
+  function gatePivot(T, o, center) {
+    const geo = o.geometry, pos = geo.attributes.position, n = pos.count;
+    if (geo.index || n % 3) return null;
+    geo.computeBoundingBox(); const b = geo.boundingBox;
+    const X = i => pos.getX(i), Z = i => pos.getZ(i);
+    const [A, Pp] = (b.max.x - b.min.x) > (b.max.z - b.min.z) ? [X, Z] : [Z, X]; // A le long de l'ouverture
+    const nt = n / 3, root = [...Array(nt).keys()], find = t => root[t] === t ? t : (root[t] = find(root[t])), seen = new Map();
+    for (let i = 0; i < n; i++) { // triangles reliés par un sommet commun = même tube
+      const k = [X(i), pos.getY(i), Z(i)].map(v => Math.round(v * 1e4)).join(), t = (i / 3) | 0;
+      if (seen.has(k)) root[find(t)] = find(seen.get(k)); else seen.set(k, t);
+    }
+    const comps = new Map();
+    for (let t = 0; t < nt; t++) { const r = find(t); if (!comps.has(r)) comps.set(r, []); comps.get(r).push(t); }
+    const a0 = A === X ? b.min.x : b.min.z, a1 = A === X ? b.max.x : b.max.z, am = (a0 + a1) / 2;
+    const idx = ts => ts.flatMap(t => [3 * t, 3 * t + 1, 3 * t + 2]), left = [], right = [], fixed = [];
+    for (const ts of comps.values()) {
+      const as = idx(ts).map(A), lo = Math.min(...as), hi = Math.max(...as);
+      (hi - lo < (a1 - a0) * 0.25 ? fixed : (lo + hi) / 2 < am ? left : right).push(...idx(ts));
+    }
+    if (!left.length || !right.length) return null;
+    const part = is => {
+      const g2 = new T.BufferGeometry();
+      for (const [k, at] of Object.entries(geo.attributes)) {
+        const w = at.itemSize, a = new Float32Array(is.length * w);
+        is.forEach((i, j) => { for (let c = 0; c < w; c++) a[j * w + c] = at.array[i * w + c]; });
+        g2.setAttribute(k, new T.BufferAttribute(a, w));
+      }
+      return g2;
+    };
+    // ouverture vers le centre de la plateforme (pas dans le vide)
+    const gatePp = Pp === X ? (b.min.x + b.max.x) / 2 : (b.min.z + b.max.z) / 2, centerPp = Pp === X ? center.x : center.z;
+    const s = Math.sign(centerPp - gatePp) || 1, py = b.min.y;
+    const mk = (is, apiv) => {
+      const ps = is.map(Pp), ppiv = s > 0 ? Math.max(...ps) : Math.min(...ps); // charnière : face du vantail côté plateforme
+      const piv = Pp === X ? new T.Vector3(ppiv, py, apiv) : new T.Vector3(apiv, py, ppiv);
+      const g2 = part(is); g2.translate(-piv.x, -piv.y, -piv.z);
+      const pivot = new T.Group(), m = new T.Mesh(g2, o.material);
+      m.name = o.name + '-LEAF'; m.castShadow = m.receiveShadow = true; pivot.position.copy(piv); pivot.add(m); o.parent.add(pivot);
+      return pivot;
+    };
+    const leftPivot = mk(left, Math.min(...left.map(A))), rightPivot = mk(right, Math.max(...right.map(A)));
+    if (fixed.length) { const m = new T.Mesh(part(fixed), o.material); m.name = o.name + '-POTEAU'; m.castShadow = m.receiveShadow = true; o.parent.add(m); }
+    const dirPp = Pp === X ? v => v.x : v => v.z, aAxis = A === X ? new T.Vector3(1, 0, 0) : new T.Vector3(0, 0, 1);
+    const testQ = new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), 0.1);
+    const sign = dir => Math.sign(dirPp(aAxis.clone().multiplyScalar(dir).applyQuaternion(testQ))) === s ? 1 : -1;
+    const leftSign = sign(1), rightSign = sign(-1); // le vantail gauche part vers +A depuis sa charnière, le droit vers -A
+    o.parent.remove(o); geo.dispose();
+    return { left: leftPivot, right: rightPivot, leftSign, rightSign };
   }
 
   function building(T, B, mode) {
@@ -1392,7 +1456,7 @@ function init3D() {
   scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground, place); // lumière d'en bas assez claire pour voir un dessous blanc
   Object.assign(V3, { r, scene, cam, ctl, sun, ground, place });
   new ResizeObserver(size3D).observe($('v3d'));
-  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); sas3D(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
+  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); sas3D(); gate3D(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
   loop();
   return true;
 }
@@ -1403,6 +1467,14 @@ function sas3D() {
   V3.sasA = k > V3.sasA ? Math.min(k, V3.sasA + 0.03) : Math.max(k, V3.sasA - 0.03);
   const e = V3.sasA * V3.sasA * (3 - 2 * V3.sasA); // départ et arrivée en douceur
   for (const s of S) s.pivot.quaternion.setFromAxisAngle(s.axis, e * Math.PI / 2);
+}
+// Ouverture du portillon (deux vantaux à 90°), même animation que le sas
+function gate3D() {
+  const G = V3.model.userData.gate, k = $('gate3d').checked ? 1 : 0;
+  if (!G || !G.length || V3.gateA === k) return;
+  V3.gateA = k > V3.gateA ? Math.min(k, V3.gateA + 0.03) : Math.max(k, V3.gateA - 0.03);
+  const e = V3.gateA * V3.gateA * (3 - 2 * V3.gateA);
+  for (const g of G) { g.left.rotation.y = g.leftSign * e * Math.PI / 2; g.right.rotation.y = g.rightSign * e * Math.PI / 2; }
 }
 function size3D() {
   const b = $('v3d'), w = b.clientWidth, h = b.clientHeight;
@@ -1461,8 +1533,9 @@ function draw3D() {
   catch (err) { say(`3D du fournisseur ignorée : ${err.message}.`); p.obj = null; built = MEZZ3D.build(THREE, M, opt); }
   const { group, floor } = built;
   $('hint-est').hidden = !!p.obj;
-  Object.assign(V3, { model: group, floor, key: p, M, sasA: 0 });
+  Object.assign(V3, { model: group, floor, key: p, M, sasA: 0, gateA: 0 });
   $('sas-wrap').hidden = !(group.userData.sas || []).length; // seulement si l'OBJ du fournisseur contient un sas
+  $('gate-wrap').hidden = !(group.userData.gate || []).length; // seulement si l'OBJ du fournisseur contient un portillon
   floor.visible = $('pl3d').checked;
   V3.place.add(group); place3D(); dims3D(); size3D(); fit3D();
 }
@@ -1476,6 +1549,7 @@ function setMode(m) {
   $('planbox').hidden = $('legend').hidden = $('rot2d').hidden = $('zin2d').hidden = $('zout2d').hidden = m === '3d';
   $('bat-wrap').hidden = m !== '3d' || !projects[cur]?.bat; $('bat2d-wrap').hidden = m === '3d' || !projects[cur]?.bat;
   $('sas-wrap').hidden = m !== '3d' || !V3.model?.userData.sas?.length;
+  $('gate-wrap').hidden = m !== '3d' || !V3.model?.userData.gate?.length;
   $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
