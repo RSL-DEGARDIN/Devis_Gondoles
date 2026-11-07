@@ -273,6 +273,9 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
           <label class="toggle" id="bat2d-wrap" hidden><input id="bat2d" type="checkbox" checked><span>Bâtiment</span></label>
           <button class="ghost" id="light3d" type="button" aria-pressed="true" aria-label="Ombres" title="Ombres affichées"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/><path d="M9.5 18.5h5M10.5 21h3"/></svg></button>
           <button class="ghost" id="re3d" type="button">Recentrer</button>
+          <button class="ghost" id="faceL3d" type="button" aria-label="Tourner la vue à gauche" title="Tourner la vue à gauche"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button class="ghost" id="face3d" type="button">Face</button>
+          <button class="ghost" id="faceR3d" type="button" aria-label="Tourner la vue à droite" title="Tourner la vue à droite"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           <button class="ghost" id="zout2d" type="button" aria-label="Dézoomer le plan" title="Dézoomer"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M7.5 10.5h6"/></svg></button>
           <button class="ghost" id="zin2d" type="button" aria-label="Zoomer dans le plan" title="Zoomer (ou molette sur le plan)"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M7.5 10.5h6M10.5 7.5v6"/></svg></button>
           <button class="ghost" id="rot2d" type="button" aria-label="Tourner le plan de 90°"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tourner 90°</button>
@@ -1506,13 +1509,26 @@ function fit3D() {
   if (V3.bat && V3.bat.visible) b.expandByObject(V3.bat);
   const c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
   const span = Math.max(s.x, s.y, s.z), d = span * 1.5;
-  Object.assign(V3, { c, span });
+  Object.assign(V3, { c, span, face: null });
   V3.ground.scale.set(span * 5, span * 5, 1); V3.ground.position.set(c.x, 0, c.z);
   V3.cam.position.set(c.x - d * 0.6, d * 0.72, c.z + d * 0.95);
   V3.ctl.target.set(c.x, s.y * 0.25, c.z); V3.ctl.maxDistance = span * 5; V3.ctl.minDistance = 0.5; V3.ctl.update();
   V3.sun.position.set(c.x - span * 0.8, span * 2, c.z + span); V3.sun.target.position.copy(c);
   const sc = V3.sun.shadow.camera; sc.left = sc.bottom = -span; sc.right = sc.top = span; sc.near = 0.1; sc.far = span * 6; sc.updateProjectionMatrix();
   theme3D();
+}
+// Vue de face/côté : caméra à l'horizontale (hauteur du centre du modèle), par incréments de 90° autour de la plateforme.
+function faceView(i) {
+  if (!V3.model) return;
+  V3.face = ((i % 4) + 4) % 4;
+  V3.scene.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(V3.model);
+  if (V3.dims && V3.dims.visible) b.expandByObject(V3.dims);
+  if (V3.bat && V3.bat.visible) b.expandByObject(V3.bat);
+  const c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
+  const d = Math.max(s.x, s.y, s.z) * 1.8, eyeY = c.y + s.y * 0.15, ang = V3.face * Math.PI / 2;
+  V3.cam.position.set(c.x + Math.sin(ang) * d, eyeY, c.z + Math.cos(ang) * d);
+  V3.ctl.target.set(c.x, eyeY, c.z); V3.ctl.update();
 }
 function bat3D(p) {
   if (V3.bat) { V3.scene.remove(V3.bat); V3.bat.traverse(o => o.geometry && o.geometry.dispose()); V3.bat = null; }
@@ -1551,6 +1567,7 @@ function setMode(m) {
   $('sas-wrap').hidden = m !== '3d' || !V3.model?.userData.sas?.length;
   $('gate-wrap').hidden = m !== '3d' || !V3.model?.userData.gate?.length;
   $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
+  $('face3d').hidden = $('faceL3d').hidden = $('faceR3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
 $('vw-3d').onclick = () => setMode('3d');
@@ -1570,6 +1587,9 @@ $('cot3d').onchange = () => {
   try { localStorage.setItem('mezz-cotes', $('cot3d').checked ? '1' : '0'); } catch (err) {}
 };
 $('re3d').onclick = fit3D;
+$('face3d').onclick = () => faceView(0);
+$('faceL3d').onclick = () => faceView((V3.face ?? 0) - 1);
+$('faceR3d').onclick = () => faceView((V3.face ?? 0) + 1);
 // Ampoule : ombres portées affichées ou masquées (le choix est retenu sur cet appareil)
 function setShadows(on) {
   $('light3d').setAttribute('aria-pressed', on); $('light3d').title = on ? 'Ombres affichées' : 'Ombres masquées';
