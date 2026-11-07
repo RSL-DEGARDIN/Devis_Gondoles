@@ -119,8 +119,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .dv-dims dd { margin: 0; font-weight: 600; text-align: left; }
 .dv-dims .large { grid-column: 1 / -1; }
 .dv input[type=number] { width: 104px; text-align: right; font: 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
-.dv .dv-inline { display: inline-flex; gap: 6px; align-items: center; margin-top: 4px; font-size: 13px; color: var(--muted); }
-.dv .dv-inline input { width: 72px; }
+.dv input.qte { width: 72px; }
+.share-row label.dv-marge { flex: 0 1 220px; }
 .dv tr.off td:not(:first-child) { opacity: .45; }
 .dv tfoot td { font-weight: 700; border-bottom: 0; }
 
@@ -238,11 +238,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     <h3>Devis client</h3>
     <p class="dv-imp"><label class="btn" for="imp-docx">Importer le devis Word Manorga<input id="imp-docx" type="file" accept=".docx" hidden></label></p>
     <div class="share-row">
-      <label>Marge sur la vente (%)<input id="dv-marge" type="number" step="0.1" min="0" max="95"></label>
-      <label>Montage (€ / jour / monteur)<input id="dv-taux" type="number" step="1" min="0"></label>
-      <label>Monteurs<input id="dv-pers" type="number" step="1" min="1"></label>
-      <label>Nacelle (€ / jour)<input id="dv-nacj" type="number" step="1" min="0"></label>
-      <label>Nacelle, livraison et reprise (€)<input id="dv-nacf" type="number" step="1" min="0"></label>
+      <label class="dv-marge">Marge sur la vente (%)<input id="dv-marge" type="number" step="0.1" min="0" max="95"></label>
     </div>
     <div id="dv-body"></div>
     <p class="note">Le devis Word est lu dans ce navigateur : rien n'est envoyé ni rangé sur GitHub, et le lien 3D client ne l'emporte jamais. Marge et taux restent sur ce poste.</p>
@@ -1560,7 +1556,8 @@ $('imp-mezz').onchange = async ev => {
     const b = d.bat;
     projects.push({ name: d.name || f.name.replace(/\.[^.]+$/, ''), json: d.json, dxf: typeof d.dxf === 'string' ? d.dxf : null,
       bat: batOk(b?.data) ? { data: b.data, x: +b.x || 0, y: +b.y || 0, r: [0, 90, 180, 270].includes(b.r) ? b.r : 0 } : null,
-      devis: Array.isArray(d.devis?.lignes) ? d.devis : null });
+      devis: Array.isArray(d.devis?.lignes) ? { options: [], premium: 15, jours: {}, pj: {}, ...d.devis, // dossier enregistré par une version précédente
+        opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false, ...d.devis.opts } } : null });
     cur = projects.length - 1; V3.key = null; $('msg').hidden = true; render(); setMode(mode);
     $('sh-nom').value = d.nom || $('sh-nom').value; $('sh-projet').value = d.projet || '';
   } catch (err) { say(`${f.name} : ${err.message}`); }
@@ -1606,50 +1603,59 @@ function lireDevis(xml) {
   const transport = eur(val('Frais de transport')), livre = eur(val('Prix total net H.T. livré')), somme = lignes.reduce((s, l) => s + l.achat, 0);
   if (!(Math.abs(somme - total) < 0.02 && Math.abs(total + transport - livre) < 0.02))
     throw new Error(`totaux incohérents (lignes ${somme.toFixed(2)} € pour un total de ${total} €) : présentation de devis non reconnue`);
+  // « Autres équipements (Non inclus dans l'offre) » : désignation | coloris | quantité (vide) | prix unitaire
+  const optT = tables.find(t => t !== prixT && t.some(r => r.some(c => c.startsWith('Autres équipements'))));
+  const options = (optT || []).map(r => r.filter(Boolean)).filter(cs => cs.length >= 2 && /€/.test(cs[cs.length - 1]) && !cs[0].startsWith('Autres équipements'))
+    .map(cs => ({ des: cs[0], col: cs.length > 2 ? cs[1] : '', pu: eur(cs[cs.length - 1]), qte: 1, on: false }));
+  const prem = /([\d.,]+)\s*%/.exec(val('Frais de livraison premium'));
   const i = paras.findIndex(p => p.startsWith('Conformité de la Plate-forme')), sec = i < 0 ? null : /sections carrés (\d+)\s*mm/.exec(paras.slice(i + 1, i + 4).join(' '));
   return { ref, projet: ((/Nom du projet\s*:\s*(.*)/.exec(entete) || [])[1] || '').trim(), paires, lignes, transport,
     heures: +((/\d+/.exec(val('Le temps théorique')) || [])[0] || 0), section: sec ? `${sec[1]}x${sec[1]}` : '',
     equip: tables.filter(t => t.length && t.every(r => r.length === 1)).flatMap(t => t.map(r => r[0]).filter(Boolean)),
-    opts: { transport: true, montage: true, nacelle: true, chariot: false, platine: false }, chariot: 0, platine: 0, nacJours: null };
+    options, premium: prem ? eur(prem[1]) : 15, // +15 % : supplément Manorga pour livraison à horaire garanti
+    opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false }, jours: {}, pj: { ...devisReg().pj } };
 }
 // Colonnes de l'onglet WORD du classeur Fermisol (mêmes noms : le modèle Word de publipostage garde ses champs)
 const DV_DIMS = [['dim1', 'Longueur en tête'], ['dim2', 'Longueur au sol'], ['dim3', 'Profondeur au sol'], ['dim4', 'Profondeur en tête'], ['dim5', 'Hauteur sur plancher'],
   ['dim6', 'Hauteur minimum sous lisses'], ['dim7', 'Hauteur minimum sous solives'], ['dim8', 'Entraxe maximal'], ['contr', 'Nombre de contreventements'],
   ['charge', 'Charge de service'], ['roul', 'Charge roulante'], ['ch_maxi', 'Charge maximale par montants'], ['decente', 'Descente de charge']];
-const DV_REG = ['marge', 'taux', 'pers', 'nacj', 'nacf'];
-const reglages = () => Object.fromEntries(DV_REG.map(k => [k, parseFloat($('dv-' + k).value) || 0]));
+// Réglages gardés dans ce navigateur : la marge, et le dernier prix/jour saisi pour le montage, la nacelle et le chariot
+const devisReg = () => { try { return { pj: {}, ...JSON.parse(localStorage.getItem('mezz-devis') || '{}') }; } catch (err) { return { pj: {} }; } };
+const devisRegSave = r => { try { localStorage.setItem('mezz-devis', JSON.stringify(r)); } catch (err) {} };
 const eurFr = v => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const fr1 = v => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
-try { const r = JSON.parse(localStorage.getItem('mezz-devis') || '{}'); DV_REG.forEach(k => { if (r[k]) $('dv-' + k).value = r[k]; }); } catch (err) {}
-DV_REG.forEach(k => { $('dv-' + k).oninput = () => {
-  try { localStorage.setItem('mezz-devis', JSON.stringify(Object.fromEntries(DV_REG.map(k => [k, $('dv-' + k).value])))); } catch (err) {}
-  devisCalc();
-}; });
-// Montage comme le classeur : jours = heures / 7 / monteurs, achat = jours × monteurs × taux ; nacelle = jours × €/jour + livraison et reprise.
-function devisRows(d, R) {
-  const jours = d.heures / 7 / (R.pers || 1), nj = d.nacJours ?? jours;
-  return [...d.lignes.map((l, i) => ({ key: String(i), cat: l.cat, des: [l.des.replace(/\n/g, ', '), l.col !== '-' && l.col.replace(/\n/g, ' / '), l.qte].filter(Boolean).join(' · '), achat: l.achat, on: l.on })),
-    { key: 'transport', cat: 'Transport', des: 'Frais de transport Manorga', achat: d.transport, on: d.opts.transport },
-    { key: 'montage', cat: 'Montage', des: `soit ${fr1(jours)} jour(s) à ${R.pers || '?'} monteur(s)`, achat: jours * (R.pers || 1) * R.taux, on: d.opts.montage, jours },
-    { key: 'nacelle', cat: 'Nacelle', des: 'location, livraison et reprise', achat: nj * R.nacj + R.nacf, on: d.opts.nacelle, jours: nj },
-    { key: 'chariot', cat: 'Chariot', des: 'chariot élévateur', achat: d.chariot, on: d.opts.chariot },
-    { key: 'platine', cat: 'Platine de calage', des: 'platine de calage 3 mm', achat: d.platine, on: d.opts.platine }];
+$('dv-marge').value = devisReg().marge || '';
+$('dv-marge').oninput = () => { devisRegSave({ ...devisReg(), marge: $('dv-marge').value }); devisCalc(); };
+const JOURS = { montage: 'Montage', nacelle: 'Nacelle', chariot: 'Chariot' };
+// csv : colonne du CSV qui reçoit la vente de la ligne (par défaut, le nom du poste)
+function devisRows(d) {
+  return [...d.lignes.map((l, i) => ({ key: String(i), cat: l.cat, des: [l.des.replace(/\n/g, ', '), l.col !== '-' && l.col.replace(/\n/g, ' / ')].filter(Boolean).join(' · '), qte: l.qte, achat: l.achat, on: l.on, saisie: 'achat' })),
+    { key: 'transport', cat: 'Transport', des: 'Frais de transport Manorga', achat: d.transport, on: d.opts.transport, saisie: 'achat' },
+    { key: 'premium', cat: 'Livraison premium', des: `horaire garanti, +${fr1(d.premium)} % sur le transport`, achat: d.transport * d.premium / 100, on: d.opts.premium, csv: 'transport' },
+    ...Object.entries(JOURS).map(([k, cat]) => ({ key: k, cat, des: (k === 'montage' ? `${d.heures} h théoriques (devis Manorga), soit ${fr1(d.heures / 7)} jours pour un monteur` : k === 'nacelle' ? 'location' : 'chariot élévateur') + ' · quantité en jours',
+      achat: (d.jours[k] || 0) * (d.pj[k] || 0), on: d.opts[k], saisie: 'jours' })),
+    ...d.options.map((o, i) => ({ key: 'o' + i, cat: o.des, des: o.col, achat: o.qte * o.pu, on: o.on, saisie: 'option', csv: 'options' }))];
 }
 function devisUI() {
   const d = projects[cur]?.devis;
   if (!d) { $('dv-body').innerHTML = '<p class="note">Importez le devis Word reçu de Manorga pour ce projet.</p>'; return; }
   const val = lib => d.paires[Object.keys(d.paires).find(k => k.startsWith(lib))] || '—';
+  const num = (attr, v, lib, step = '0.01', cls = '') => `<input type="number" step="${step}" min="0" ${attr} value="${v ?? ''}" aria-label="${esc(lib)}"${cls}>`;
+  const o = r => d.options[r.key.slice(1)];
+  const qte = r => r.saisie === 'jours' ? num(`data-jours="${r.key}"`, d.jours[r.key], `${r.cat} : nombre de jours`, '0.5', ' class="qte"')
+    : r.saisie === 'option' ? num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1', ' class="qte"') : esc(r.qte || '');
+  const pu = r => r.saisie === 'jours' ? num(`data-pj="${r.key}"`, d.pj[r.key], `${r.cat} : prix par jour`, '1')
+    : r.saisie === 'option' ? num(`data-pu="${r.key}"`, o(r).pu, `${r.cat} : prix unitaire`) : '';
   $('dv-body').innerHTML = `<p class="dv-head">Devis Manorga <b>${esc(d.ref)}</b>${d.projet ? ' · ' + esc(d.projet) : ''}</p>
     <dl class="dv-dims">${DV_DIMS.map(([, lib]) => `<div><dt>${esc(lib)}</dt><dd>${esc(val(lib))}</dd></div>`).join('')}
       <div><dt>Section des poteaux</dt><dd>${esc(d.section || '—')}</dd></div><div class="large"><dt>Équipements</dt><dd>${esc(d.equip.join(' / ') || 'aucun')}</dd></div></dl>
-    <div class="nomen-wrap"><table class="dv"><thead><tr><th><span class="sr">Inclure</span></th><th>Poste</th><th style="text-align:right">Achat HT</th><th style="text-align:right">Vente HT</th></tr></thead><tbody>
-    ${devisRows(d, reglages()).map(r => `<tr><td><input type="checkbox" data-on="${r.key}"${r.on ? ' checked' : ''} aria-label="Inclure : ${esc(r.cat)}"></td>
-      <td>${esc(r.cat)}<span class="det" id="dv-d-${r.key}">${esc(r.des)}</span>${r.key === 'montage' ? `<label class="dv-inline">Heures <input id="dv-heures" type="number" step="1" min="0" value="${d.heures}"></label>`
-        : r.key === 'nacelle' ? `<label class="dv-inline">Jours <input id="dv-nacjours" type="number" step="0.5" min="0"></label>` : ''}</td>
-      <td class="q">${r.key === 'montage' || r.key === 'nacelle' ? `<span id="dv-a-${r.key}"></span>`
-        : `<input type="number" step="0.01" min="0" data-achat="${r.key}" value="${r.achat || ''}" aria-label="Prix d'achat : ${esc(r.cat)}">`}</td>
+    <div class="nomen-wrap"><table class="dv"><thead><tr><th><span class="sr">Inclure</span></th><th>Poste</th><th style="text-align:right">Quantité</th><th style="text-align:right">Prix unitaire</th><th style="text-align:right">Achat HT</th><th style="text-align:right">Vente HT</th></tr></thead><tbody>
+    ${devisRows(d).map(r => `<tr><td><input type="checkbox" data-on="${r.key}"${r.on ? ' checked' : ''} aria-label="Inclure : ${esc(r.cat)}"></td>
+      <td>${esc(r.cat)}<span class="det">${esc(r.des)}</span></td><td class="q">${qte(r)}</td><td class="q">${pu(r)}</td>
+      <td class="q">${r.saisie === 'achat' ? num(`data-achat="${r.key}"`, r.achat || '', `Prix d'achat : ${r.cat}`) : `<span id="dv-a-${r.key}"></span>`}</td>
       <td class="q" id="dv-v-${r.key}"></td></tr>`).join('')}</tbody>
-    <tfoot><tr><td></td><td>Total HT <span class="det" id="dv-m"></span></td><td class="q" id="dv-ta"></td><td class="q" id="dv-tv"></td></tr></tfoot></table></div>
+    <tfoot><tr><td></td><td>Total HT <span class="det" id="dv-m"></span></td><td></td><td></td><td class="q" id="dv-ta"></td><td class="q" id="dv-tv"></td></tr></tfoot></table></div>
+    ${d.options.length ? '' : '<p class="note">Pas de tableau « Autres équipements » dans ce devis Word : aucune option proposée.</p>'}
     <p><button class="btn" id="dv-csv" type="button">Exporter le CSV pour le publipostage</button></p>`;
   $('dv-csv').onclick = devisCSV;
   devisCalc();
@@ -1657,7 +1663,7 @@ function devisUI() {
 function devisCalc() {
   const d = projects[cur]?.devis;
   if (!d || !$('dv-tv')) return null;
-  const R = reglages(), coef = R.marge > 0 && R.marge < 100 ? 1 / (1 - R.marge / 100) : 1, rows = devisRows(d, R);
+  const marge = parseFloat($('dv-marge').value) || 0, coef = marge > 0 && marge < 100 ? 1 / (1 - marge / 100) : 1, rows = devisRows(d);
   let ta = 0, tv = 0;
   for (const r of rows) {
     r.vente = r.achat * coef;
@@ -1666,20 +1672,20 @@ function devisCalc() {
     $('dv-v-' + r.key).closest('tr').classList.toggle('off', !r.on);
     if ($('dv-a-' + r.key)) $('dv-a-' + r.key).textContent = eurFr(r.achat);
   }
-  $('dv-d-montage').textContent = rows.find(r => r.key === 'montage').des;
-  if (d.nacJours == null && document.activeElement !== $('dv-nacjours')) $('dv-nacjours').value = +rows.find(r => r.key === 'nacelle').jours.toFixed(2);
   $('dv-ta').textContent = eurFr(ta); $('dv-tv').textContent = eurFr(tv);
-  $('dv-m').textContent = `marge ${eurFr(tv - ta)}` + (R.marge ? ` · coef ${coef.toFixed(4).replace('.', ',')}` : '');
+  $('dv-m').textContent = `marge ${eurFr(tv - ta)}` + (marge ? ` · coef ${coef.toFixed(4).replace('.', ',')}` : '');
   return { rows, tv };
 }
 $('dv-body').addEventListener('input', ev => {
-  const d = projects[cur]?.devis, t = ev.target, v = parseFloat(t.value);
+  const d = projects[cur]?.devis, t = ev.target, v = parseFloat(t.value), n = Number.isFinite(v) ? v : 0, ds = t.dataset;
   if (!d) return;
-  const k = t.dataset.on ?? t.dataset.achat, ligne = /^\d+$/.test(k || '') ? d.lignes[k] : null;
-  if (t.dataset.on != null) { if (ligne) ligne.on = t.checked; else d.opts[k] = t.checked; }
-  else if (t.dataset.achat != null) { if (ligne) ligne.achat = v || 0; else d[k] = v || 0; } // transport, chariot, platine
-  else if (t.id === 'dv-heures') d.heures = v || 0;
-  else if (t.id === 'dv-nacjours') d.nacJours = Number.isFinite(v) ? v : null;
+  const k = ds.on ?? ds.achat ?? ds.jours ?? ds.pj ?? ds.qte ?? ds.pu, ligne = /^\d+$/.test(k || '') ? d.lignes[k] : null, opt = /^o\d+$/.test(k || '') ? d.options[k.slice(1)] : null;
+  if (ds.on != null) { if (ligne) ligne.on = t.checked; else if (opt) opt.on = t.checked; else d.opts[k] = t.checked; }
+  else if (ds.achat != null) { if (ligne) ligne.achat = n; else d.transport = n; }
+  else if (ds.jours != null) d.jours[k] = n;
+  else if (ds.pj != null) { d.pj[k] = n; const r = devisReg(); r.pj[k] = n; devisRegSave(r); } // proposé au prochain devis
+  else if (ds.qte != null) opt.qte = n;
+  else if (ds.pu != null) opt.pu = n;
   devisCalc();
 });
 function devisCSV() {
@@ -1690,13 +1696,16 @@ function devisCSV() {
   const val = lib => d.paires[Object.keys(d.paires).find(k => k.startsWith(lib))] || '', n2 = v => v.toFixed(2).replace('.', ',');
   const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   const pl = d.lignes.find(l => l.cat === 'Plancher'), gc = Math.max(0, ...d.lignes.filter(l => l.cat === 'Garde-corps').map(l => parseFloat(l.qte.replace(',', '.')) || 0));
+  const jr = k => d.opts[k] && d.jours[k] ? String(d.jours[k]).replace('.', ',') : '';
   const f = { devis: d.ref, nom: d.projet || p.json.client?.reference_client || '', ...Object.fromEntries(DV_DIMS.map(([k, lib]) => [k, val(lib)])),
     section: d.section, prix: n2(res.tv), plancher: pl ? pl.qte.replace(/\s*m²/, ' m²') : '', GC: gc ? String(gc).replace('.', ',') : '',
-    montage_h: String(d.heures), equipements: d.equip.join(' / ') || 'aucun' };
+    montage_h: String(d.heures), montage_j: jr('montage'), nacelle_j: jr('nacelle'), chariot_j: jr('chariot'),
+    horaire_garanti: d.opts.transport && d.opts.premium ? 'oui' : '', equipements: d.equip.join(' / ') || 'aucun',
+    options: d.options.filter(o => o.on && o.qte).map(o => `${String(o.qte).replace('.', ',')} × ${o.des}`).join(' / ') };
   f.contr = String(parseInt(f.contr) || ''); f.decente = f.decente.replace('.', ',');
   // vente par poste, colonnes toujours présentes (Word refuse un modèle dont un champ manque) ; vide si le poste est absent ou décoché
-  const s = Object.fromEntries(['structure', 'croisillon', 'jambe_de_force', 'plancher', 'boulonnerie', 'escalier', 'garde_corps', 'transport', 'montage', 'nacelle', 'chariot', 'platine_de_calage'].map(k => ['prix_' + k, null]));
-  for (const r of res.rows) { const k = 'prix_' + slug(r.cat); s[k] ??= null; if (r.on) s[k] = (s[k] || 0) + r.vente; }
+  const s = Object.fromEntries(['structure', 'croisillon', 'jambe_de_force', 'plancher', 'boulonnerie', 'escalier', 'garde_corps', 'transport', 'montage', 'nacelle', 'chariot', 'options'].map(k => ['prix_' + k, null]));
+  for (const r of res.rows) { const k = 'prix_' + (r.csv || slug(r.cat)); s[k] ??= null; if (r.on) s[k] = (s[k] || 0) + r.vente; }
   for (const [k, v] of Object.entries(s)) f[k] = v == null ? '' : n2(v);
   const q = v => /[;"\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   const csv = '﻿' + [Object.keys(f), Object.values(f)].map(r => r.map(v => q(String(v))).join(';')).join('\r\n') + '\r\n';
