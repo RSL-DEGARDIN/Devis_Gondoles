@@ -36,6 +36,7 @@
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
 .seg button { font: 600 15px var(--f-display); letter-spacing: .03em; padding: 7px 16px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--rsl); color: var(--surface); }
+#devis[aria-pressed="true"] { background: var(--rsl); border-color: var(--rsl); color: var(--surface); }
 .seg button:focus-visible, .ghost:focus-visible { outline: 2px solid var(--rsl); outline-offset: 2px; }
 .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .ghost { display: inline-flex; align-items: center; gap: 6px; font: 500 14px var(--f-body); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
@@ -73,6 +74,10 @@ header { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 .tab[aria-selected="true"] { border-color: var(--rsl); background: var(--rsl-soft); box-shadow: inset 0 -3px 0 var(--rsl); }
 .msg { padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+@media (min-width: 1081px) { .main > aside { grid-column: 2; grid-row: 1 / span 2; } }
+#devis-box { grid-column: 1; }
+.main:has(> #devis-box:not([hidden])) .sheet { position: static; } /* le devis est sous la vue : elle ne reste plus collée en haut */
+.main.vide > :not(#devis-box) { display: none; } /* devis Word sans projet ouvert */
 @media (max-width: 1080px) { .main { grid-template-columns: minmax(0, 1fr); } }
 .sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
 .sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
@@ -120,7 +125,15 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .dv-dims .large { grid-column: 1 / -1; }
 .dv input[type=number] { width: 104px; text-align: right; font: 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .dv input.qte { width: 72px; }
-.share-row label.dv-marge { flex: 0 1 220px; }
+.dv .pas { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.dv .pas button { width: 28px; height: 28px; padding: 0; justify-content: center; font: 600 16px/1 var(--f-body); }
+.dv .pas input { width: 56px; text-align: center; -moz-appearance: textfield; }
+.dv .pas.prix input { width: 70px; }
+.dv .ar { display: inline-flex; align-items: center; gap: 4px; margin-left: 12px; font: 400 13px var(--f-body); color: var(--muted); }
+.dv .ar input { width: 64px; }
+#dv-marge { width: 72px; }
+.dv .pas input::-webkit-inner-spin-button, .dv .pas input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.dv .u { margin-left: 4px; color: var(--muted); font: 400 13px var(--f-body); }
 .dv tr.off td:not(:first-child) { opacity: .45; }
 .dv tfoot td { font-weight: 700; border-bottom: 0; }
 
@@ -208,7 +221,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     <div class="actions"><button class="ghost" id="print" type="button">📄 Dossier PDF</button></div>
     <div class="actions internal">
       <button class="ghost" id="share" type="button">🔗 Lien 3D</button>
-      <button class="ghost" id="devis" type="button">🧾 Devis client</button>
+      <button class="ghost" id="devis" type="button" aria-pressed="false">🧾 Devis client</button>
       <label class="ghost" for="imp-mezz">📂 Ouvrir<input id="imp-mezz" type="file" accept=".mezz" hidden></label>
       <button class="ghost" id="save" type="button">💾 Enregistrer</button>
       <label class="btn" for="imp-json">Importer un JSON<input id="imp-json" type="file" accept=".json,application/json" hidden></label>
@@ -233,15 +246,6 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       <a class="ghost" id="sh-open" target="_blank" rel="noopener">Ouvrir</a>
     </div>
     <p class="note">Avec le jeton, le lien est court : le projet (plateforme, cotes, couleurs, sans vos codes fournisseur ni votre compte) est rangé dans un gist secret de votre compte GitHub ; supprimer le gist désactive le lien. Sans jeton, le projet est contenu dans le lien, que Outlook et certaines messageries coupent au-delà d'environ 2 000 caractères.</p>
-  </div>
-  <div class="card internal" id="devis-box" hidden>
-    <h3>Devis client</h3>
-    <p class="dv-imp"><label class="btn" for="imp-docx">Importer le devis Word Manorga<input id="imp-docx" type="file" accept=".docx" hidden></label></p>
-    <div class="share-row">
-      <label class="dv-marge">Marge sur la vente (%)<input id="dv-marge" type="number" step="0.1" min="0" max="95"></label>
-    </div>
-    <div id="dv-body"></div>
-    <p class="note">Le devis Word est lu dans ce navigateur : rien n'est envoyé ni rangé sur GitHub, et le lien 3D client ne l'emporte jamais. Marge et taux restent sur ce poste.</p>
   </div>
   <div class="msg" id="msg" role="status" hidden></div>
   <div class="main" id="main">
@@ -275,6 +279,12 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
         <span><i style="border:1px solid var(--croix)"></i>Croisillon, jambe de force</span>
       </div>
     </section>
+    <div class="card internal" id="devis-box" hidden>
+      <h3>Devis client</h3>
+      <p class="dv-imp"><label class="btn" for="imp-docx">Importer le devis Word Manorga<input id="imp-docx" type="file" accept=".docx" hidden></label></p>
+      <div id="dv-body"></div>
+      <p class="note">Le devis Word est lu dans ce navigateur : rien n'est envoyé ni rangé sur GitHub, et le lien 3D client ne l'emporte jamais. Marge et taux restent sur ce poste.</p>
+    </div>
     <aside>
       <div class="card" id="cartouche"></div>
       <div class="card internal" id="bat-card" hidden>
@@ -1130,7 +1140,7 @@ function renderTabs() {
 
 function render() {
   renderTabs();
-  $('main').hidden = !projects.length;
+  $('main').hidden = !projects.length && $('devis-box').hidden; $('main').classList.toggle('vide', !projects.length);
   if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON d'un projet, puis ajoutez son DXF (boutons en haut à droite), pour afficher sa vue 3D, son plan et sa nomenclature."; $('msg').hidden = false; } return; }
   const p = projects[cur], J = p.json, c = J.client || {}, e = J.environement || {};
   if (!$('devis-box').hidden) devisUI();
@@ -1323,7 +1333,7 @@ function caracRows(M) {
     ['Hauteur sous lisse', M.sousLisse != null ? `${M.sousLisse} mm` : '—'],
     ['Charge de service', `${e.charge} kg/m²`],
     ['Flèche maximale', `1/${e.fleche}e`],
-    ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2000 × 1000'}, ép. ${M.ep} mm`],
+    ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2050 × 910'}, ép. ${M.ep} mm`],
     ['Structure', [nb(P.length + (M.landing ? M.landing.poles.length : 0), 'poteau', 'poteaux'), nb(M.lisses.length, 'lisse', 'lisses'), M.solives.length && nb(M.solives.length, 'solive', 'solives')].filter(Boolean).join(', ')], // palier compris ; solives seulement avec le DXF
     ['Stabilité', stab],
     esc0 && ['Escalier', [s0 && `${Math.round(Math.atan2(e.hauteur, s0.L) * 180 / Math.PI)}°`, w && `passage ${+w[1]} mm`, M.landing && 'avec palier'].filter(Boolean).join(', ')],
@@ -1556,7 +1566,7 @@ $('imp-mezz').onchange = async ev => {
     const b = d.bat;
     projects.push({ name: d.name || f.name.replace(/\.[^.]+$/, ''), json: d.json, dxf: typeof d.dxf === 'string' ? d.dxf : null,
       bat: batOk(b?.data) ? { data: b.data, x: +b.x || 0, y: +b.y || 0, r: [0, 90, 180, 270].includes(b.r) ? b.r : 0 } : null,
-      devis: Array.isArray(d.devis?.lignes) ? { options: [], premium: 15, jours: {}, pj: {}, ...d.devis, // dossier enregistré par une version précédente
+      devis: Array.isArray(d.devis?.lignes) ? { options: [], premium: 15, jours: {}, ar: {}, ...d.devis, pj: { ...DV_PJ, ...d.devis.pj }, // dossier enregistré par une version précédente
         opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false, ...d.devis.opts } } : null });
     cur = projects.length - 1; V3.key = null; $('msg').hidden = true; render(); setMode(mode);
     $('sh-nom').value = d.nom || $('sh-nom').value; $('sh-projet').value = d.projet || '';
@@ -1613,39 +1623,47 @@ function lireDevis(xml) {
     heures: +((/\d+/.exec(val('Le temps théorique')) || [])[0] || 0), section: sec ? `${sec[1]}x${sec[1]}` : '',
     equip: tables.filter(t => t.length && t.every(r => r.length === 1)).flatMap(t => t.map(r => r[0]).filter(Boolean)),
     options, premium: prem ? eur(prem[1]) : 15, // +15 % : supplément Manorga pour livraison à horaire garanti
-    opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false }, jours: {}, pj: { ...devisReg().pj } };
+    opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false }, jours: {}, pj: { ...DV_PJ }, ar: {} };
 }
 // Colonnes de l'onglet WORD du classeur Fermisol (mêmes noms : le modèle Word de publipostage garde ses champs)
 const DV_DIMS = [['dim1', 'Longueur en tête'], ['dim2', 'Longueur au sol'], ['dim3', 'Profondeur au sol'], ['dim4', 'Profondeur en tête'], ['dim5', 'Hauteur sur plancher'],
   ['dim6', 'Hauteur minimum sous lisses'], ['dim7', 'Hauteur minimum sous solives'], ['dim8', 'Entraxe maximal'], ['contr', 'Nombre de contreventements'],
   ['charge', 'Charge de service'], ['roul', 'Charge roulante'], ['ch_maxi', 'Charge maximale par montants'], ['decente', 'Descente de charge']];
-// Réglages gardés dans ce navigateur : la marge, et le dernier prix/jour saisi pour le montage, la nacelle et le chariot
-const devisReg = () => { try { return { pj: {}, ...JSON.parse(localStorage.getItem('mezz-devis') || '{}') }; } catch (err) { return { pj: {} }; } };
+// Réglage gardé dans ce navigateur : la marge (pas dans le code, public sur GitHub)
+const devisReg = () => { try { return JSON.parse(localStorage.getItem('mezz-devis') || '{}'); } catch (err) { return {}; } };
+const dvLibre = { json: {}, devis: null }; // devis importé sans projet ouvert
+const dvp = () => projects[cur] || dvLibre;
+const DV_PJ = { montage: 250, nacelle: 60, chariot: 70 }; // prix par jour proposés à chaque devis (modifiables)
 const devisRegSave = r => { try { localStorage.setItem('mezz-devis', JSON.stringify(r)); } catch (err) {} };
 const eurFr = v => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const fr1 = v => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
-$('dv-marge').value = devisReg().marge || '';
-$('dv-marge').oninput = () => { devisRegSave({ ...devisReg(), marge: $('dv-marge').value }); devisCalc(); };
 const JOURS = { montage: 'Montage', nacelle: 'Nacelle', chariot: 'Chariot' };
 // csv : colonne de l'Excel qui reçoit la vente de la ligne (par défaut, le nom du poste)
 function devisRows(d) {
   return [...d.lignes.map((l, i) => ({ key: String(i), cat: l.cat, des: [l.des.replace(/\n/g, ', '), l.col !== '-' && l.col.replace(/\n/g, ' / ')].filter(Boolean).join(' · '), qte: l.qte, achat: l.achat, on: l.on, saisie: 'achat' })),
     { key: 'transport', cat: 'Transport', des: 'Frais de transport Manorga', achat: d.transport, on: d.opts.transport, saisie: 'achat' },
     { key: 'premium', cat: 'Livraison premium', des: `horaire garanti, +${fr1(d.premium)} % sur le transport`, achat: d.transport * d.premium / 100, on: d.opts.premium, csv: 'transport' },
-    ...Object.entries(JOURS).map(([k, cat]) => ({ key: k, cat, des: (k === 'montage' ? `${d.heures} h théoriques (devis Manorga), soit ${fr1(d.heures / 7)} jours pour un monteur` : k === 'nacelle' ? 'location' : 'chariot élévateur') + ' · quantité en jours',
-      achat: (d.jours[k] || 0) * (d.pj[k] || 0), on: d.opts[k], saisie: 'jours' })),
+    ...Object.entries(JOURS).map(([k, cat]) => ({ key: k, cat, des: k === 'montage' ? `${d.heures} h théoriques (devis Manorga), soit ${fr1(d.heures / 7)} jours pour un monteur` : k === 'nacelle' ? 'location' : 'chariot élévateur',
+      achat: (d.jours[k] || 0) * (d.pj[k] || 0) + (k === 'montage' ? 0 : d.ar[k] || 0), on: d.opts[k], saisie: 'jours' })), // prix × jours + transport A/R
     ...d.options.map((o, i) => ({ key: 'o' + i, cat: o.des, des: o.col, achat: o.qte * o.pu, on: o.on, saisie: 'option', csv: 'options' }))];
 }
 function devisUI() {
-  const d = projects[cur]?.devis;
-  if (!d) { $('dv-body').innerHTML = '<p class="note">Importez le devis Word reçu de Manorga pour ce projet.</p>'; return; }
+  const p = dvp();
+  if (p !== dvLibre && !p.devis && dvLibre.devis?.ref === p.json.client?.reference_interne) { p.devis = dvLibre.devis; dvLibre.devis = null; }
+  const d = p.devis;
+  if (!d) { $('dv-body').innerHTML = '<p class="note">Importez le devis Word reçu de Manorga.</p>'; return; }
   const val = lib => d.paires[Object.keys(d.paires).find(k => k.startsWith(lib))] || '—';
   const num = (attr, v, lib, step = '0.01', cls = '') => `<input type="number" step="${step}" min="0" ${attr} value="${v ?? ''}" aria-label="${esc(lib)}"${cls}>`;
   const o = r => d.options[r.key.slice(1)];
-  const qte = r => r.saisie === 'jours' ? num(`data-jours="${r.key}"`, d.jours[r.key], `${r.cat} : nombre de jours`, '0.5', ' class="qte"')
+  // champ entre deux boutons − / + ; pas : 0,5 jour pour les jours, 10 € pour les prix
+  const pm = (r, sg, pas, u) => `<button class="ghost" type="button" data-pm="${sg}${pas}" aria-label="${esc(r.cat)} : ${sg === '+' ? 'plus' : 'moins'} ${String(pas).replace('.', ',')} ${u}">${sg === '+' ? '+' : '−'}</button>`;
+  const pas = (r, champ, pas, u, cls = '') => `<span class="pas${cls}">${pm(r, '-', pas, u)}${champ}${pm(r, '+', pas, u)}</span>`;
+  const qte = r => r.saisie === 'jours' ? pas(r, num(`data-jours="${r.key}"`, d.jours[r.key], `${r.cat} : nombre de jours`, '0.5'), 0.5, 'jour') + '<span class="u">jour(s)</span>'
     : r.saisie === 'option' ? num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1', ' class="qte"') : esc(r.qte || '');
-  const pu = r => r.saisie === 'jours' ? num(`data-pj="${r.key}"`, d.pj[r.key], `${r.cat} : prix par jour`, '1')
-    : r.saisie === 'option' ? num(`data-pu="${r.key}"`, o(r).pu, `${r.cat} : prix unitaire`) : '';
+  const prixJour = r => num(`data-pj="${r.key}"`, d.pj[r.key], `${r.cat} : prix par jour`, '1');
+  const ar = r => `<label class="ar">+ transport A/R ${num(`data-ar="${r.key}"`, d.ar[r.key], `${r.cat} : transport aller-retour`, '1')}<span class="u">€</span></label>`;
+  const pu = r => r.saisie === 'jours' ? (r.key === 'montage' ? prixJour(r) + '<span class="u">€/J/P</span>' : pas(r, prixJour(r), 10, '€') + '<span class="u">€/J</span>' + ar(r))
+    : r.saisie === 'option' ? num(`data-pu="${r.key}"`, o(r).pu, `${r.cat} : prix unitaire`) + '<span class="u">€</span>' : '';
   $('dv-body').innerHTML = `<p class="dv-head">Devis Manorga <b>${esc(d.ref)}</b>${d.projet ? ' · ' + esc(d.projet) : ''}</p>
     <dl class="dv-dims">${DV_DIMS.map(([, lib]) => `<div><dt>${esc(lib)}</dt><dd>${esc(val(lib))}</dd></div>`).join('')}
       <div><dt>Section des poteaux</dt><dd>${esc(d.section || '—')}</dd></div><div class="large"><dt>Équipements</dt><dd>${esc(d.equip.join(' / ') || 'aucun')}</dd></div></dl>
@@ -1654,16 +1672,18 @@ function devisUI() {
       <td>${esc(r.cat)}<span class="det">${esc(r.des)}</span></td><td class="q">${qte(r)}</td><td class="q">${pu(r)}</td>
       <td class="q">${r.saisie === 'achat' ? num(`data-achat="${r.key}"`, r.achat || '', `Prix d'achat : ${r.cat}`) : `<span id="dv-a-${r.key}"></span>`}</td>
       <td class="q" id="dv-v-${r.key}"></td></tr>`).join('')}</tbody>
-    <tfoot><tr><td></td><td>Total HT <span class="det" id="dv-m"></span></td><td></td><td></td><td class="q" id="dv-ta"></td><td class="q" id="dv-tv"></td></tr></tfoot></table></div>
+    <tfoot><tr><td></td><td>Total HT <span class="det" id="dv-m"></span></td>
+      <td class="q" colspan="2"><label for="dv-marge" class="u">Marge sur la vente</label> <input id="dv-marge" type="number" step="0.1" min="0" max="95" value="${esc(devisReg().marge || '')}"><span class="u">%</span></td>
+      <td class="q" id="dv-ta"></td><td class="q" id="dv-tv"></td></tr></tfoot></table></div>
     ${d.options.length ? '' : '<p class="note">Pas de tableau « Autres équipements » dans ce devis Word : aucune option proposée.</p>'}
     <p><button class="btn" id="dv-xlsx" type="button">Exporter l'Excel pour le publipostage</button></p>`;
   $('dv-xlsx').onclick = devisXLSX;
   devisCalc();
 }
 function devisCalc() {
-  const d = projects[cur]?.devis;
+  const d = dvp().devis;
   if (!d || !$('dv-tv')) return null;
-  const marge = parseFloat($('dv-marge').value) || 0, coef = marge > 0 && marge < 100 ? 1 / (1 - marge / 100) : 1, rows = devisRows(d);
+  const marge = parseFloat($('dv-marge')?.value) || 0, coef = marge > 0 && marge < 100 ? 1 / (1 - marge / 100) : 1, rows = devisRows(d);
   let ta = 0, tv = 0;
   for (const r of rows) {
     r.vente = r.achat * coef;
@@ -1676,14 +1696,23 @@ function devisCalc() {
   $('dv-m').textContent = `marge ${eurFr(tv - ta)}` + (marge ? ` · coef ${coef.toFixed(4).replace('.', ',')}` : '');
   return { rows, tv };
 }
+// boutons − / + : ajoutent ou retirent leur pas (data-pm = « +0.5 », « -10 »…), puis le même traitement qu'une saisie
+$('dv-body').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-pm]'), i = b?.parentElement.querySelector('input');
+  if (!i) return;
+  i.value = Math.max(0, Math.round(((parseFloat(i.value) || 0) + parseFloat(b.dataset.pm)) * 100) / 100);
+  i.dispatchEvent(new Event('input', { bubbles: true }));
+});
 $('dv-body').addEventListener('input', ev => {
-  const d = projects[cur]?.devis, t = ev.target, v = parseFloat(t.value), n = Number.isFinite(v) ? v : 0, ds = t.dataset;
+  const d = dvp().devis, t = ev.target, v = parseFloat(t.value), n = Number.isFinite(v) ? v : 0, ds = t.dataset;
   if (!d) return;
-  const k = ds.on ?? ds.achat ?? ds.jours ?? ds.pj ?? ds.qte ?? ds.pu, ligne = /^\d+$/.test(k || '') ? d.lignes[k] : null, opt = /^o\d+$/.test(k || '') ? d.options[k.slice(1)] : null;
+  if (t.id === 'dv-marge') { devisRegSave({ ...devisReg(), marge: t.value }); devisCalc(); return; }
+  const k = ds.on ?? ds.achat ?? ds.jours ?? ds.pj ?? ds.ar ?? ds.qte ?? ds.pu, ligne = /^\d+$/.test(k || '') ? d.lignes[k] : null, opt = /^o\d+$/.test(k || '') ? d.options[k.slice(1)] : null;
   if (ds.on != null) { if (ligne) ligne.on = t.checked; else if (opt) opt.on = t.checked; else d.opts[k] = t.checked; }
   else if (ds.achat != null) { if (ligne) ligne.achat = n; else d.transport = n; }
   else if (ds.jours != null) d.jours[k] = n;
-  else if (ds.pj != null) { d.pj[k] = n; const r = devisReg(); r.pj[k] = n; devisRegSave(r); } // proposé au prochain devis
+  else if (ds.pj != null) d.pj[k] = n;
+  else if (ds.ar != null) d.ar[k] = n;
   else if (ds.qte != null) opt.qte = n;
   else if (ds.pu != null) opt.pu = n;
   devisCalc();
@@ -1721,7 +1750,7 @@ function xlsxWord(f) {
   ]);
 }
 function devisXLSX() {
-  const p = projects[cur], d = p?.devis, res = devisCalc();
+  const p = dvp(), d = p.devis, res = devisCalc();
   if (!res) return;
   if (!(location.protocol === 'file:' || /github\.io$|^localhost$|^127\./.test(location.hostname)))
     return say("Ici, le navigateur bloque le téléchargement : ouvrez la version publiée sur GitHub pour exporter l'Excel.");
@@ -1743,15 +1772,18 @@ function devisXLSX() {
   a.href = URL.createObjectURL(xlsxWord(f));
   a.download = `Devis client ${d.ref}.xlsx`.replace(/[\\/:*?"<>|]/g, '-'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
-$('devis').onclick = () => { $('devis-box').hidden = !$('devis-box').hidden; if (!$('devis-box').hidden) devisUI(); };
+$('devis').onclick = () => {
+  $('devis-box').hidden = !$('devis-box').hidden; $('devis').setAttribute('aria-pressed', !$('devis-box').hidden);
+  if (!projects.length) render(); // sans projet, le bloc principal ne s'affiche que pour le devis
+  if (!$('devis-box').hidden) { devisUI(); $('devis-box').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+};
 $('imp-docx').onchange = async ev => {
   const f = ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  const p = projects[cur];
-  if (!p) return say("Importez d'abord le JSON du projet, puis son devis Word.");
+  const p = dvp();
   try {
     p.devis = lireDevis(await docxXML(await f.arrayBuffer())); devisUI();
-    const ref = p.json.client?.reference_interne;
+    const ref = p.json?.client?.reference_interne;
     if (ref && p.devis.ref !== ref) say(`Attention : ce devis Word est le ${p.devis.ref}, le projet affiché est le ${ref}.`);
   } catch (err) { say(`${f.name} : ${err.message}`); }
 };
