@@ -230,6 +230,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
         <div class="seg" role="group" aria-label="Type de vue"><button id="vw-3d" type="button" aria-pressed="true">Vue 3D</button><button id="vw-plan" type="button" aria-pressed="false">Vue 2D</button></div>
         <div class="tools">
           <label class="toggle" id="cot-wrap"><input id="cot3d" type="checkbox"><span>Cotes</span></label>
+          <label class="toggle" id="sas-wrap" hidden><input id="sas3d" type="checkbox"><span>Basculer le sas</span></label>
           <label class="toggle" id="pl-wrap"><input id="pl3d" type="checkbox" checked><span>Plancher</span></label>
           <label class="toggle" id="bat-wrap" hidden><span>Bâtiment</span><select id="batmode"><option value="masque">masqué</option><option value="sol">au sol (2D)</option><option value="translucide" selected>3D translucide</option><option value="opaque">3D opaque</option></select></label>
           <label class="toggle" id="bat2d-wrap" hidden><input id="bat2d" type="checkbox" checked><span>Bâtiment</span></label>
@@ -369,6 +370,17 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
   const DIR = { nord: [0, -1], sud: [0, 1], est: [1, 0], ouest: [-1, 0] };
   const nums = s => String(s).split('x').map(Number);
   const code5 = s => { const m = /T(\d{5})/.exec(s || ''); return m ? +m[1] : null; };
+  // Accessoires du catalogue fournisseur (accessoire_mezzanine.xlsx de RSL), référence complète de 17 caractères :
+  // les 2 derniers chiffres donnent le coloris (Coloris.xlsx). Le JSON n'en garde que les 15 premiers.
+  const COLORIS = { '00': 'sans', '01': 'RAL 5015', '02': 'RAL 7035', '03': 'RAL 7024', '05': 'RAL 5010', '06': 'RAL 9005', '07': 'RAL 1013',
+    '10': 'RAL 2004', '12': 'RAL 9010', '13': 'RAL 3000', '16': 'RAL 1028', '98': 'RAL 7040', '99': 'galva' };
+  const ACCESSOIRES = {
+    AI04048122R000099: 'Plaque de déchargement palettes 480 × 1200 × 2 mm, tôle perforée anti-dérapante',
+    AI25018015ED00016: 'Sas de sécurité H. 1800 × L. 1500 mm', AI25018023ED00016: 'Sas de sécurité H. 1800 × L. 2300 mm', AI25018030ED00016: 'Sas de sécurité H. 1800 × L. 3000 mm',
+    AI04D44020D000016: 'Protection de poteau H. 440, 4 faces, platine 200', AI04D44020D000116: 'Protection de poteau H. 440, 2 pièces, platine 200',
+    AI04D44030D000016: 'Protection de poteau H. 440, 4 faces, platine 300', AI04D44030D000116: 'Protection de poteau H. 440, 2 pièces, platine 300',
+    AIZ0015011A000016: 'Portillon à retour automatique avec vérins L. 1500 mm', AIZ0020011A000016: 'Portillon à retour automatique avec vérins L. 2000 mm',
+  };
 
   function buildPlan(J, D) {
     let env = J.environement || {};
@@ -438,7 +450,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     // ---------- Ce que seul le DXF contient ----------
     const ents = D ? D.entities : [];
     const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
-    const solives = [], entretoises = [], gc = [], stair = [], stairDims = [], foundLisses = new Set();
+    const solives = [], entretoises = [], gc = [], stair = [], stairDims = [], sas = [], foundLisses = new Set();
     let dxfSousLisse = null;
     for (const o of ents) {
       if (o.type === 'LWPOLYLINE' && o.color === 30) {
@@ -458,6 +470,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
         if (len > 150) entretoises.push({ a, b, len });
       } else if (o.type === 'INSERT' && /^(STAIR|RECEPTION)_/.test(o.name || '')) stair.push(o);
       else if (o.type === 'INSERT' && /^MEASURE_/.test(o.name || '')) stairDims.push(o);
+      else if (o.type === 'INSERT' && /^SECURITY_LOCK/.test(o.name || '')) sas.push({ c: [o.k10[0], -o.k10[1]], m: insertM(o), L: +((/(\d{4})$/.exec(o.name) || [])[1] || 1500) }); // c : centre de l'ouverture
       else if (o.type === 'TEXT' && /sous lisse/i.test(o.text || '')) dxfSousLisse = +((/(\d+)\s*mm/.exec(o.text) || [])[1]);
     }
 
@@ -506,7 +519,18 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     if (env.souslisse && env.hauteur && ep != null) env = { ...env, hauteur: env.hauteur + maxHt + ep };
     const sousLisse = env.hauteur && ep != null && L.length ? env.hauteur - maxHt - ep : null;
     const gcAcc = (J.accessoires || []).find(a => /^P.29T/.test(a.codearticle || '')); // shortcut: garde-corps = article P?29T…, constaté sur 3 projets
-    const gcModules = gc.reduce((s, g) => s + g.modules, 0);
+    // Un tronçon par polyligne, sauf de part et d'autre d'un sas : le fournisseur en fait un seul garde-corps
+    // (PEP2611-182 : 522 + 2276 mm → 3 modules, pas 1 + 3). Escalier ou tronçons bout à bout restent séparés (PEP2610-1250, -846).
+    const run = gc.map((g, i) => i), root = i => run[i] === i ? i : root(run[i]);
+    for (const { c } of sas) {
+      // shortcut: bouts alignés sur le centre du sas à moins de 1,7 m (sas de 3000 au plus), revoir si un sas touche un angle
+      const ends = gc.map((g, i) => [i, g.pts[0], g.pts[g.pts.length - 1]]).filter(([, a, b]) => [a, b].some(p =>
+        (Math.abs(p[0] - c[0]) < 5 || Math.abs(p[1] - c[1]) < 5) && Math.hypot(p[0] - c[0], p[1] - c[1]) < 1700)).map(([i]) => i);
+      if (ends.length === 2) run[root(ends[1])] = root(ends[0]);
+    }
+    const runs = {};
+    gc.forEach((g, i) => { runs[root(i)] = (runs[root(i)] || 0) + g.len; });
+    const gcModules = Object.values(runs).reduce((s, l) => s + Math.ceil(l / 1000 - 1e-6), 0);
 
     const checks = D ? [
       { ok: foundLisses.size === L.length, label: 'Lisses recalculées et retrouvées dans le DXF', val: `${foundLisses.size} / ${L.length}` },
@@ -529,7 +553,12 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     if (entretoises.length) byKey(entretoises, e => String(Math.round(e.len)).padStart(6, '0'), (k, xs) => rows.push({ g: 'Plancher', el: 'Entretoise', det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
     if (gc.length) rows.push({ g: 'Sécurité et accès', el: 'Garde-corps', det: `${(gc.reduce((s, g) => s + g.len, 0) / 1000).toFixed(2).replace('.', ',')} ml en ${gc.length} tronçon${gc.length > 1 ? 's' : ''}`, q: gcModules, src: 'DXF' });
     for (const e of S.escalier || []) rows.push({ g: 'Sécurité et accès', el: `Escalier ${e.modele}`, det: [`emmarchement ${code5(e.modele)} mm`, `sur lisse ${e.lisse}, vers ${/^[eo]/.test(e.orientation) ? "l'" : 'le '}${e.orientation}`].concat(e.options || []).join(' · '), q: 1, src: 'JSON' });
-    for (const a of J.accessoires || []) rows.push({ g: 'Accessoires', el: a.codearticle, det: a === gcAcc ? 'modules de garde-corps' : '', q: a.count, src: 'JSON', mono: true });
+    for (const a of J.accessoires || []) {
+      // shortcut: une seule teinte par article au catalogue ; s'il en vient deux, la première l'emporte
+      const ref = Object.keys(ACCESSOIRES).find(r => r.slice(0, 15) === (a.codearticle || '').slice(0, 15));
+      const det = ref && `${ref} · ${COLORIS[ref.slice(-2)] || 'coloris ' + ref.slice(-2)}`;
+      rows.push({ g: 'Accessoires', el: ref ? ACCESSOIRES[ref] : a.codearticle, det: [det, a === gcAcc && 'modules de garde-corps'].filter(Boolean).join(' · '), q: a.count, src: 'JSON', mono: !ref });
+    }
 
     // ---------- Encombrement ----------
     const bb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
@@ -539,7 +568,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const stairSVG = [], stairDimSVG = [];
     if (D) { drawDXF(stair, D.blocks, ID, stairSVG, bb); drawDXF(stairDims, D.blocks, ID, stairDimSVG, bb); }
 
-    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, landing: landing.poles.length ? landing : null };
+    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, sas, landing: landing.poles.length ? landing : null };
   }
 
   // shortcut: une plateforme en U pourrait voir son échancrure remplie (test « entouré dans les 4 directions ») ; passer à un vrai contour si un projet le montre.
@@ -641,6 +670,10 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 
   // shortcut: hauteur des solives déduite de leur largeur (50 → 150, 80 → 250, relevé sur PEP2610-1250 et PEP2610-846) ; la lire si un export la donne un jour.
   const soliveHt = w => (w <= 60 ? 150 : 250);
+
+  // Sas 1500 extrait de l'OBJ fournisseur de PEP2611-182 (tools/sas-extract.js) : Int16 [nb sommets, x y h…, triangles…] en mm,
+  // dans le repère du bloc DXF SECURITY_LOCK (x le long du bord, y vers l'intérieur, h au-dessus du plancher).
+  const SAS_1500 = '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VQJS/eT/UwKpAuT/UwJS/d3/TAKpAt3/TAJS/dv/RAKpAtv/RAJS/d3/OwKpAt3/OwJS/eT/NAKpAuT/NAJS/ez/JwRS/fX/KQSpAvX/KQSpAuz/JwRS/fz/MASpAvz/MARS/f7/OASpAv7/OARS/fz/QQSpAvz/QQRS/fX/SASpAvX/SARS/ez/SgSpAuz/SgRS/eT/SASpAuT/SARS/d3/QQSpAt3/QQRS/dv/OASpAtv/OARS/d3/MASpAt3/MARS/eT/KQSpAuT/KQRS/csChwhS/dMCigipAtMCigipAssChwhS/doCkAipAtoCkAhS/dwCmQipAtwCmQhS/doCogipAtoCoghS/dMCqAipAtMCqAhS/csCqgipAssCqghS/cICqAipAsICqAhS/bsCogipArsCoghS/bkCmQipArkCmQhS/bsCkAipArsCkAhS/cICigipAsICighS/b4EfwhS/ccEggipAscEggipAr4EfwhS/c4EiAipAs4EiAhS/dAEkQipAtAEkQhS/c4EmgipAs4EmghS/ccEoAipAscEoAhS/b4EowipAr4EowhS/bUEoAipArUEoAhS/a8EmgipAq8EmghS/a0EkQipAq0EkQhS/a8EiAipAq8EiAhS/bUEggipArUEgggAAAEAAgAAAAIAAwAEAAUABgAFAAcABgAAAAQABgADAAQAAAABAAYABwAAAAYAAQACAAcABQABAAcAAgADAAUABAACAAUAAwAIAAkACgAIAAoACwAMAA0ADgANAA8ADgAIAAwADgALAAwACAAJAA4ADwAIAA4ACQAKAA8ADQAJAA8ACgALAA0ADAAKAA0ACwAQABEAEgAQABIAEwAUABUAFgAVABcAFgAQABQAFgATABQAEAARABYAFwAQABYAEQASABcAFQARABcAEgATABUAFAASABUAEwAYABkAGgAYABoAGwAcAB0AHgAdAB8AHgAYABwAHgAbABwAGAAZAB4AHwAYAB4AGQAaAB8AHQAZAB8AGgAbAB0AHAAaAB0AGwAgACEAIgAgACIAIwAkACUAJgAlACcAJgAgACQAJgAjACQAIAAhACYAJwAgACYAIQAiACcAJQAhACcAIgAjACUAJAAiACUAIwAoACkAKgAoACoAKwAsAC0ALgAtAC8ALgAoACwALgArACwAKAApAC4ALwAoAC4AKQAqAC8ALQApAC8AKgArAC0ALAAqAC0AKwAwADEAMgAwADIAMwA0ADUANgA1ADcANgAwADQANgAzADQAMAAxADYANwAwADYAMQAyADcANQAxADcAMgAzADUANAAyADUAMwA4ADkAOgA4ADoAOwA8AD0APgA9AD8APgA4ADwAPgA7ADwAOAA5AD4APwA4AD4AOQA6AD8APQA5AD8AOgA7AD0APAA6AD0AOwBAAEEAQgBAAEIAQwBEAEUARgBFAEcARgBAAEQARgBDAEQAQABBAEYARwBAAEYAQQBCAEcARQBBAEcAQgBDAEUARABCAEUAQwBIAEkASgBIAEoASwBMAE0ATgBNAE8ATgBIAEwATgBLAEwASABJAE4ATwBIAE4ASQBKAE8ATQBJAE8ASgBLAE0ATABKAE0ASwBQAFEAUgBQAFIAUwBUAFUAVgBVAFcAVgBQAFQAVgBTAFQAUABRAFYAVwBQAFYAUQBSAFcAVQBRAFcAUgBTAFUAVABSAFUAUwBYAFkAWgBYAFoAWwBcAF0AXgBdAF8AXgBYAFwAXgBbAFwAWABZAF4AXwBYAF4AWQBaAF8AXQBZAF8AWgBbAF0AXABaAF0AWwBgAGEAYgBgAGIAYwBkAGUAZgBlAGcAZgBgAGQAZgBjAGQAYABhAGYAZwBgAGYAYQBiAGcAZQBhAGcAYgBjAGUAZABiAGUAYwBoAGkAagBoAGoAawBsAG0AbgBtAG8AbgBoAGwAbgBrAGwAaABpAG4AbwBoAG4AaQBqAG8AbQBpAG8AagBrAG0AbABqAG0AawBwAHEAcgBwAHIAcwB0AHUAdgB1AHcAdgBzAHQAcABxAHYAdwBwAHYAcQByAHcAdQBzAHUAdAByAHUAcwB4AHkAegB4AHoAewB8AH0AfgB9AH8AfgB4AHwAfgB7AHwAeAB5AH4AfwB4AH4AeQB6AH8AfQB5AH8AegB7AH0AfAB6AH0AewCAAIEAggCAAIIAgwCEAIUAhgCFAIcAhgCAAIQAhgCDAIQAgACBAIYAhwCAAIYAgQCCAIcAhQCBAIcAggCDAIUAhACCAIUAgwCIAIkAigCJAIsAigCMAIoAiwCNAIoAjACOAIsAiQCMAIsAjgCPAIkAiACOAIkAjwCQAJEAkgCQAJIAkwCUAJUAlgCVAJcAlgCQAJQAlgCTAJQAkACRAJYAlwCQAJYAkQCSAJcAlQCRAJcAkgCTAJUAlACSAJUAkwCYAJkAmgCZAJsAmgCcAJoAmwCdAJoAnACeAJsAmQCcAJsAngCfAJkAmACeAJkAnwCgAKEAogCgAKIAowCkAKUApgClAKcApgCgAKQApgCjAKQAoAChAKYApwCgAKYAoQCiAKcApQChAKcAogCjAKUApACiAKUAowCoAKkAqgCoAKoAqwCsAK0ArgCtAK8ArgCoAKwArgCrAKwAqACpAK4ArwCoAK4AqQCqAK8ArQCpAK8AqgCrAK0ArACqAK0AqwCwALEAsgCwALIAswC0ALUAtgC1ALcAtgCwALQAtgCzALQAsACxALYAtwCwALYAsQCyALcAtQCxALcAsgCzALUAtACyALUAswC4ALkAugC4ALoAuwC8AL0AvgC9AL8AvgC4ALwAvgC7ALwAuAC5AL4AvwC4AL4AuQC6AL8AvQC5AL8AugC7AL0AvAC6AL0AuwDAAMEAwgDAAMIAwwDEAMUAxgDFAMcAxgDAAMQAxgDDAMQAwADBAMYAxwDAAMYAwQDCAMcAxQDBAMcAwgDDAMUAxADCAMUAwwDIAMkAygDIAMoAywDMAM0AzgDNAM8AzgDIAMwAzgDLAMwAyADJAM4AzwDIAM4AyQDKAM8AzQDJAM8AygDLAM0AzADKAM0AywDQANEA0gDQANIA0wDUANUA1gDVANcA1gDQANQA1gDTANQA0ADRANYA1wDQANYA0QDSANcA1QDRANcA0gDTANUA1ADSANUA0wDYANkA2gDYANoA2wDcAN0A3gDdAN8A3gDYANwA3gDbANwA2ADZAN4A3wDYAN4A2QDaAN8A3QDZAN8A2gDbAN0A3ADaAN0A2wDgAOEA4gDgAOIA4wDgAOQA5QDjAOQA4ADhAOUA5gDgAOUA4QDhAOYA4gDjAJ0A5ADiAJ0A4wDnAOgA6QDnAOkA6gDrAOwA7QDsAO4A7QDnAOsA7QDqAOsA5wDoAO0A7gDnAO0A6ADpAO4A7ADoAO4A6QDqAOwA6wDpAOwA6gDvAPAA8QDvAPEA8gDvAPMA9ADyAPMA7wDwAPQA9QDvAPQA8ADwAPUA8QDyAI0A8wDxAI0A8gD2APcA+AD2APgA+QD6APsA/AD7AP0A/AD2APoA/AD5APoA9gD3APwA/QD2APwA9wD4AP0A+wD3AP0A+AD5APsA+gD4APsA+QD+AP8AAAH+AAABAQECAQMBBAEDAQUBBAH+AAIBBAEBAQIB/gD/AAQBBQH+AAQB/wAAAQUBAwH/AAUBAAEBAQMBAgEAAQMBAQEGAQcBCAEGAQgBCQEKAQsBDAELAQ0BDAEGAQoBDAEJAQoBBgEHAQwBDQEGAQwBBwEIAQ0BCwEHAQ0BCAEJAQsBCgEIAQsBCQEOAQ8BEAEOARABEQESARMBFAETARUBFAEOARIBFAERARIBDgEPARQBFQEOARQBDwEQARUBEwEPARUBEAERARMBEgEQARMBEQEWARcBGAEWARgBGQEaARsBHAEbAR0BHAEWARoBHAEZARoBFgEXARwBHQEWARwBFwEYAR0BGwEXAR0BGAEZARsBGgEYARsBGQFwAHQAdgBxAHcAcgCNAIwAjgCNAI4AjwCNAIgAigCPAIgAjQCdAJwAngCdAJ4AnwCdAJgAmgCfAJgAnQDkAJ0A5QCdAOYA5QDiAOYAnQDzAI0A9ACNAPUA9ADxAPUAjQAeAR8BIAEgASEBHgEfASIBIwEjASABHwEiASQBJQElASMBIgEkASYBJwEnASUBJAEmASgBKQEpAScBJgEoASoBKwErASkBKAEqASwBLQEtASsBKgEsAS4BLwEvAS0BLAEuATABMQExAS8BLgEwATIBMwEzATEBMAEyATQBNQE1ATMBMgE0AR4BIQEhATUBNAE2ATcBOAE4ATkBNgE3AToBOwE7ATgBNwE6ATwBPQE9ATsBOgE8AT4BPwE/AT0BPAE+AUABQQFBAT8BPgFAAUIBQwFDAUEBQAFCAUQBRQFFAUMBQgFEAUYBRwFHAUUBRAFGAUgBSQFJAUcBRgFIAUoBSwFLAUkBSAFKAUwBTQFNAUsBSgFMATYBOQE5AU0BTAFOAU8BUAFQAVEBTgFPAVIBUwFTAVABTwFSAVQBVQFVAVMBUgFUAVYBVwFXAVUBVAFWAVgBWQFZAVcBVgFYAVoBWwFbAVkBWAFaAVwBXQFdAVsBWgFcAV4BXwFfAV0BXAFeAWABYQFhAV8BXgFgAWIBYwFjAWEBYAFiAWQBZQFlAWMBYgFkAU4BUQFRAWUBZAFmAWcBaAFoAWkBZgFnAWoBawFrAWgBZwFqAWwBbQFtAWsBagFsAW4BbwFvAW0BbAFuAXABcQFxAW8BbgFwAXIBcwFzAXEBcAFyAXQBdQF1AXMBcgF0AXYBdwF3AXUBdAF2AXgBeQF5AXcBdgF4AXoBewF7AXkBeAF6AXwBfQF9AXsBegF8AWYBaQFpAX0BfAE=';
 
   function build(T, M, opt) {
     opt = opt || {};
@@ -767,14 +800,35 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       for (const [a, b] of M.landing.gc) rail(a, b, H, mat('rambardes'));
     }
 
+    // Sas de sécurité posé sur son bloc DXF : le lien client n'emporte pas l'OBJ. S'il y a un OBJ, son propre sas le remplace.
+    const sasList = [];
+    for (const s of M.sas || []) {
+      const d = new Int16Array(Uint8Array.from(atob(SAS_1500), ch => ch.charCodeAt(0)).buffer), nv = d[0], m = s.m;
+      // shortcut: sas 2300 / 3000 obtenus en écartant les extrémités du 1500 (montant central gardé), sans export pour vérifier
+      const dl = (s.L - 1500) / 2, pos = new Float32Array((d.length - 1 - nv * 3) * 3);
+      for (let t = 1 + nv * 3, j = 0; t < d.length; t++, j += 3) {
+        const v = 1 + d[t] * 3, x = d[v] + (Math.abs(d[v]) > 60 ? Math.sign(d[v]) * dl : 0), y = d[v + 1];
+        pos[j] = (m[0] * x + m[2] * y + m[4]) * K; pos[j + 1] = (H + d[v + 2]) * K; pos[j + 2] = -(m[1] * x + m[3] * y + m[5]) * K;
+      }
+      const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(pos, 3)); geo.computeVertexNormals();
+      const o = add(geo, mat('accessoires')); o.name = 'SAS-' + s.L;
+      const p = sasPivot(T, o); if (p) sasList.push(p);
+    }
+    g.userData.sas = sasList;
+
     // Plancher : caillebotis (code …T00030C…) ajouré, sinon panneau aggloméré
     const cb = /T\d{5}C/.test(M.env.plancher || ''), floor = new T.Group();
-    const fm = cb ? grating(T) : chipboard(T);
+    // Aggloméré 2050 × 910 : côté 2050 en travers des solives, joints de bout sur l'axe d'une solive, 2e rangée décalée d'un entraxe
+    // (683,33 = 2050 / 3 ; 512,5 = 2050 / 4). Le plancher déborde de 50 mm des lisses tout autour.
+    const alongX = String(M.env.solivage).toUpperCase() === 'HORIZONTAL', ac = r => alongX ? [r[1], r[3]] : [r[0], r[2]];
+    const sc = M.solives.map(s => (ac(s.rect)[0] + ac(s.rect)[1]) / 2).sort((a, b) => a - b);
+    const gaps = sc.slice(1).map((v, i) => v - sc[i]).filter(d => d > 100).sort((a, b) => a - b);
+    const entraxe = gaps.length ? gaps[gaps.length >> 1] : 2050 / 3, deb = cb ? 0 : 50;
+    const fm = cb ? grating(T) : chipboard(T, entraxe / 2050);
     // sous-face peinte en blanc : matière non éclairée, sinon elle sort grise (aucune lumière ne vient d'en bas)
     const under = !cb && opt.dessous === 'blanc' ? new T.MeshBasicMaterial({ color: '#f4f3ef' }) : fm;
-    // Calepinage depuis l'angle de la plateforme ; côté 1000 des panneaux dans le sens des solives.
-    const alongX = String(M.env.solivage).toUpperCase() === 'HORIZONTAL';
     const fr = M.floor.concat(M.landing ? [M.landing.rect] : []), ox = Math.min(...fr.map(r => r[0])) * K, oz = Math.min(...fr.map(r => r[1])) * K;
+    const u0 = (sc.length ? sc[0] : Math.min(...fr.map(r => ac(r)[0])) - deb) * K; // origine des panneaux : axe de la première solive
     const slab = r => {
       const geo = new T.BoxGeometry((r[2] - r[0]) * K, ep * K, (r[3] - r[1]) * K);
       geo.translate((r[0] + r[2]) / 2 * K, (top + ep / 2) * K, (r[1] + r[3]) / 2 * K);
@@ -782,20 +836,38 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       for (let i = 0; i < p.count; i++) {
         const x = p.getX(i) - ox, z = p.getZ(i) - oz;
         if (cb) uv.setXY(i, x / 0.06, z / 0.038); // maille 30×19 dessinée au double
-        else uv.setXY(i, (alongX ? z : x) / 2, (alongX ? x : z) / 2); // tuile de 2 m × 2 m = deux rangées de panneaux
+        else uv.setXY(i, ((alongX ? z + oz : x + ox) - u0) / 2.05, ((alongX ? x : z) + deb * K) / 1.82); // tuile : un panneau de long, deux rangées de 910
       }
       const o = new T.Mesh(geo, under === fm ? fm : [fm, fm, fm, under, fm, fm]); // faces du pavé : +x −x +y −y +z −z
       o.receiveShadow = true; o.castShadow = !cb; floor.add(o);
     };
-    M.floor.forEach(slab);
-    if (M.landing) slab(M.landing.rect);
+    // Rectangles agrandis du débord, puis réunis en bandes sans recouvrement (sinon les faces confondues scintillent aux jonctions)
+    // Bords à moins de 60 mm fusionnés sur le plus proche du centre : les bandes au droit des poteaux dépassent de 35 à 45 mm
+    // la face des lisses et laissaient un ergot dans les angles.
+    const big = fr.map(r => [r[0] - deb, r[1] - deb, r[2] + deb, r[3] + deb]);
+    const snap = vs => {
+      const s = vs.slice().sort((a, b) => a - b), c = (s[0] + s[s.length - 1]) / 2, out = [];
+      for (const v of s) { const l = out[out.length - 1]; if (l && v - l.max < 60) { l.max = v; if (Math.abs(v - c) < Math.abs(l.v - c)) l.v = v; } else out.push({ v, max: v }); }
+      return out.map(o => o.v);
+    };
+    const xs = snap(big.flatMap(r => [r[0], r[2]])), ys = snap(big.flatMap(r => [r[1], r[3]]));
+    for (let j = 0; j + 1 < ys.length; j++) {
+      let run = null; const cy = (ys[j] + ys[j + 1]) / 2;
+      for (let i = 0; i + 1 < xs.length; i++) {
+        const cx = (xs[i] + xs[i + 1]) / 2;
+        if (big.some(r => cx > r[0] && cx < r[2] && cy > r[1] && cy < r[3])) { if (run) run[2] = xs[i + 1]; else run = [xs[i], ys[j], xs[i + 1], ys[j + 1]]; }
+        else if (run) { slab(run); run = null; }
+      }
+      if (run) slab(run);
+    }
     g.add(floor);
     if (opt.obj) supplier(T, M, g, floor, opt.obj, mat, top);
     return { group: g, floor };
   }
 
-  // Panneaux d'aggloméré 2000 × 1000 à joints décalés : u = 2000 en travers des solives, v = 2 rangées de 1000 dans leur sens.
-  function chipboard(T) {
+  // Panneaux d'aggloméré 2050 × 910 à joints décalés : u = 2050 en travers des solives, v = 2 rangées de 910 dans leur sens ;
+  // la 2e rangée est décalée de la fraction s du panneau (un entraxe de solives).
+  function chipboard(T, s) {
     const m = new T.MeshStandardMaterial({ color: '#b98f5e', roughness: 0.85 });
     if (typeof document === 'undefined') return m;
     const c = document.createElement('canvas'); c.width = c.height = 512;
@@ -807,7 +879,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     }
     x.fillStyle = '#4a3420';
     x.fillRect(0, 0, 512, 4); x.fillRect(0, 254, 512, 4); // joints entre rangées
-    x.fillRect(0, 0, 4, 256); x.fillRect(254, 256, 4, 256); // joints de bout, décalés d'un demi-panneau
+    x.fillRect(0, 0, 4, 256); x.fillRect(Math.round((s % 1) * 512) - 2, 256, 4, 256); // joints de bout, sur l'axe d'une solive
     const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8;
     m.color.set('#ffffff'); m.map = t; return m;
   }
@@ -911,23 +983,71 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const [jx, jz] = mean(J), [ox, oz] = mean(poles), dx = jx - ox, dz = jz - oz;
     const off = Math.max(...J.map(([x, z]) => Math.min(...poles.map(([a, b]) => Math.hypot(a + dx - x, b + dz - z)))));
     if (off > 0.03) throw new Error(`poteaux décalés de ${Math.round(off * 1000)} mm : ce n'est pas le même projet`);
-    // shortcut: noms de pièces relevés sur un seul export (PEP2610-1250 bois) ; une pièce inconnue prend la couleur des lisses.
-    const part = n => /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
+    // shortcut: noms de pièces relevés sur 3 exports (bois, caillebotis, sas) ; une pièce inconnue prend la couleur des lisses.
+    const part = n => /^SAS|SECURITY_LOCK/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
       : /RAIL|GUARD|BASEBOARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
     const hasGC = meshes.some(o => /RAIL|GUARD/.test(o.name) && !/^STAIR/.test(o.name));
-    let floorBot = null;
+    let floorBot = null; const sas = [];
     for (const o of meshes) {
       if (/^FLOOR/.test(o.name)) { // FLOOR-BOT_PART (bois) ou FLOOR-LAYER-n (caillebotis) ; le palier a son propre plancher
         o.geometry.computeBoundingBox(); if (!/RECEPTION/.test(o.name)) floorBot = Math.min(floorBot ?? Infinity, o.geometry.boundingBox.min.y);
         o.parent.remove(o); o.geometry.dispose(); continue;
       }
       o.material = mat(part(o.name)); o.castShadow = o.receiveShadow = true;
+      if (/^SAS|SECURITY_LOCK/.test(o.name)) { const s = sasPivot(T, o); if (s) sas.push(s); }
     }
+    g.userData.sas = sas;
     obj.position.set(dx, 0, dz);
     const keep = new T.Group();
     for (const o of g.children.slice()) { g.remove(o); if (o === floor || (o.userData.gc && !hasGC)) keep.add(o); else if (o.geometry) o.geometry.dispose(); }
     keep.position.y = floorBot != null ? floorBot - top * K : 0; // notre plancher posé sur les solives du fournisseur (ses poteaux partent de la platine de 10 mm)
     g.add(keep, obj);
+  }
+
+  // Sas basculant : deux cadres latéraux fixes et une partie en L (barrière de rive + cadre haut) qui pivote de 90°
+  // au droit des montants à pivot. On la sépare du maillage (un seul objet dans l'OBJ) et on la monte sur un pivot.
+  // shortcut: géométrie relevée sur un seul export (sas 1500 de PEP2611-182) ; revoir sur un sas 2300 ou 3000.
+  function sasPivot(T, o) {
+    const geo = o.geometry, pos = geo.attributes.position, nor = geo.attributes.normal, n = pos.count;
+    if (geo.index || n % 3 || !nor) return null;
+    geo.computeBoundingBox(); const b = geo.boundingBox;
+    const X = i => pos.getX(i), Y = i => pos.getY(i), Z = i => pos.getZ(i), all = [...Array(n).keys()];
+    const top = all.filter(i => Y(i) > b.min.y + 0.75 * (b.max.y - b.min.y)); // cadre haut : mobile, plus haut que les montants fixes
+    const span = f => Math.max(...top.map(f)) - Math.min(...top.map(f));
+    const [A, Pp] = span(X) > span(Z) ? [X, Z] : [Z, X]; // A le long du bord, Pp en travers
+    const a0 = Math.min(...top.map(A)) - 1e-3, a1 = Math.max(...top.map(A)) + 1e-3;
+    // Une face appartient au volume derrière elle (à l'opposé de sa normale) : la face d'un montant fixe collée à la partie mobile
+    // reste fixe. Les platines au sol (6 mm) débordent sous la partie mobile : on les garde fixes par la hauteur.
+    const NA = A === X ? i => nor.getX(i) : i => nor.getZ(i);
+    const mob = t => {
+      const c = (A(3 * t) + A(3 * t + 1) + A(3 * t + 2)) / 3 - 0.002 * NA(3 * t), h = (Y(3 * t) + Y(3 * t + 1) + Y(3 * t + 2)) / 3 - 0.002 * nor.getY(3 * t);
+      return c > a0 && c < a1 && h > b.min.y + 0.008;
+    };
+    const tri = [...Array(n / 3).keys()];
+    const idx = ts => ts.flatMap(t => [3 * t, 3 * t + 1, 3 * t + 2]), mv = idx(tri.filter(mob)), fx = idx(tri.filter(t => !mob(t)));
+    if (!mv.length || !fx.length) return null;
+    const mean = (is, f) => is.reduce((s, i) => s + f(i), 0) / is.length;
+    const fy = Math.max(...fx.map(Y)), pp = mean(fx.filter(i => Y(i) > fy - 0.1), Pp); // axe des montants à pivot
+    const s = Math.sign(mean(top, Pp) - mean(mv.filter(i => Y(i) < b.min.y + 0.3), Pp)) || 1; // de la barrière de rive vers l'intérieur
+    // Hauteur de l'axe : basculé de 90°, le cadre haut doit se poser au sol comme la barrière de rive (h' = py - distance vers l'intérieur).
+    // shortcut: déduite de cette condition, pas de la pièce ; le point où les bras se rejoignent (1,29 m) donnait un sas suspendu à 39 cm.
+    const py = Math.min(...mv.map(Y)) + Math.max(...mv.map(i => s * (Pp(i) - pp)));
+    const part = is => {
+      const g2 = new T.BufferGeometry();
+      for (const [k, at] of Object.entries(geo.attributes)) {
+        const w = at.itemSize, a = new Float32Array(is.length * w);
+        is.forEach((i, j) => { for (let c = 0; c < w; c++) a[j * w + c] = at.array[i * w + c]; });
+        g2.setAttribute(k, new T.BufferAttribute(a, w));
+      }
+      return g2;
+    };
+    const am = (a0 + a1) / 2, piv = Pp === X ? new T.Vector3(pp, py, am) : new T.Vector3(am, py, pp);
+    const mg = part(mv); mg.translate(-piv.x, -piv.y, -piv.z);
+    o.geometry = part(fx); geo.dispose();
+    const pivot = new T.Group(), m = new T.Mesh(mg, o.material);
+    m.name = o.name + '-MOBILE'; m.castShadow = m.receiveShadow = true; pivot.position.copy(piv); pivot.add(m); o.parent.add(pivot);
+    // axe = haut × intérieur : à +90° la barrière de rive monte et le cadre haut descend côté plateforme
+    return { pivot, axis: Pp === X ? new T.Vector3(0, 0, -s) : new T.Vector3(s, 0, 0) };
   }
 
   function building(T, B, mode) {
@@ -968,7 +1088,7 @@ function applyClient() {
   $('sub').textContent = `Proposition RSL pour ${CLIENT.nom}${CLIENT.projet ? ' · projet ' + CLIENT.projet : ''}`;
   $('brand-rsl').outerHTML = `<img class="logo" src="${LOGO}" alt="RSL">`;
 }
-const RAL = { RAL7024: '#474b4e', RAL5015: '#2271b3', RAL1028: '#f4a900', RAL7035: '#d7d7d7', RAL7016: '#383e42', RAL9005: '#0a0a0a', RAL9010: '#f1ece1', RAL9016: '#f6f6f6', RAL5010: '#0e294b', RAL3020: '#cc0605', RAL6011: '#587246', RAL2004: '#f44611', RAL1013: '#e3d9c6', RAL3000: '#a72920', RAL5018: '#058b8c', RAL9006: '#a5a8a6', GALVA: 'linear-gradient(135deg,#c9ced3,#9aa1a8 55%,#d6dadd)' };
+const RAL = { RAL7024: '#474b4e', RAL5015: '#2271b3', RAL1028: '#f4a900', RAL7035: '#d7d7d7', RAL7016: '#383e42', RAL9005: '#0a0a0a', RAL9010: '#f1ece1', RAL9016: '#f6f6f6', RAL5010: '#0e294b', RAL3020: '#cc0605', RAL6011: '#587246', RAL2004: '#f44611', RAL1013: '#e3d9c6', RAL3000: '#a72920', RAL5018: '#058b8c', RAL7040: '#9da1aa', RAL9006: '#a5a8a6', GALVA: 'linear-gradient(135deg,#c9ced3,#9aa1a8 55%,#d6dadd)' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const projects = PRESETS.slice();
@@ -1226,9 +1346,17 @@ function init3D() {
   scene.add(new THREE.HemisphereLight('#ffffff', '#d3d6db', 0.8), sun, sun.target, ground, place); // lumière d'en bas assez claire pour voir un dessous blanc
   Object.assign(V3, { r, scene, cam, ctl, sun, ground, place });
   new ResizeObserver(size3D).observe($('v3d'));
-  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
+  const loop = () => { requestAnimationFrame(loop); if (!$('v3d').hidden && V3.model) { ctl.update(); sas3D(); if (V3.grid) V3.grid.visible = cam.position.y > 0; r.render(scene, cam); } }; // quadrillage masqué vu de dessous
   loop();
   return true;
+}
+// Bascule du sas, animée vers l'état de la case (environ une demi-seconde)
+function sas3D() {
+  const S = V3.model.userData.sas, k = $('sas3d').checked ? 1 : 0;
+  if (!S || !S.length || V3.sasA === k) return;
+  V3.sasA = k > V3.sasA ? Math.min(k, V3.sasA + 0.03) : Math.max(k, V3.sasA - 0.03);
+  const e = V3.sasA * V3.sasA * (3 - 2 * V3.sasA); // départ et arrivée en douceur
+  for (const s of S) s.pivot.quaternion.setFromAxisAngle(s.axis, e * Math.PI / 2);
 }
 function size3D() {
   const b = $('v3d'), w = b.clientWidth, h = b.clientHeight;
@@ -1287,7 +1415,8 @@ function draw3D() {
   catch (err) { say(`3D du fournisseur ignorée : ${err.message}.`); p.obj = null; built = MEZZ3D.build(THREE, M, opt); }
   const { group, floor } = built;
   $('hint-est').hidden = !!p.obj;
-  Object.assign(V3, { model: group, floor, key: p, M });
+  Object.assign(V3, { model: group, floor, key: p, M, sasA: 0 });
+  $('sas-wrap').hidden = !(group.userData.sas || []).length; // seulement si l'OBJ du fournisseur contient un sas
   floor.visible = $('pl3d').checked;
   V3.place.add(group); place3D(); dims3D(); size3D(); fit3D();
 }
@@ -1300,6 +1429,7 @@ function setMode(m) {
   $('vw-3d').setAttribute('aria-pressed', m === '3d'); $('vw-plan').setAttribute('aria-pressed', m === 'plan');
   $('planbox').hidden = $('legend').hidden = $('rot2d').hidden = $('zin2d').hidden = $('zout2d').hidden = m === '3d';
   $('bat-wrap').hidden = m !== '3d' || !projects[cur]?.bat; $('bat2d-wrap').hidden = m === '3d' || !projects[cur]?.bat;
+  $('sas-wrap').hidden = m !== '3d' || !V3.model?.userData.sas?.length;
   $('v3d').hidden = $('hint3d').hidden = $('pl-wrap').hidden = $('cot-wrap').hidden = $('re3d').hidden = $('light3d').hidden = m !== '3d';
   if (m === '3d') draw3D();
 }
