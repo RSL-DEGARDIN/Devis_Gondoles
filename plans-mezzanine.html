@@ -125,7 +125,6 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .dv-dims dd { margin: 0; font-weight: 600; text-align: left; }
 .dv-dims .large { grid-column: 1 / -1; }
 .dv input[type=number] { width: 84px; text-align: right; font: 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
-.dv input.qte { width: 72px; }
 .dv .pas { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .dv .pas button { width: 24px; height: 26px; padding: 0; justify-content: center; font: 600 16px/1 var(--f-body); }
 .dv .pas input { width: 42px; text-align: center; -moz-appearance: textfield; }
@@ -135,6 +134,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .dv th, .dv td { width: 1%; white-space: nowrap; padding-left: 5px; padding-right: 5px; }
 .dv th:nth-child(2), .dv td:nth-child(2) { width: auto; white-space: normal; min-width: 136px; }
 .dv .pu { text-align: left; }
+.dv td.jr > span { display: inline-flex; align-items: center; margin-right: 14px; }
+.dv .x { margin-right: 4px; color: var(--muted); font: 600 15px var(--f-body); }
 #dv-marge { width: 72px; }
 .dv .pas input::-webkit-inner-spin-button, .dv .pas input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .dv .u { margin-left: 4px; color: var(--muted); font: 400 13px var(--f-body); }
@@ -425,7 +426,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 
   function buildPlan(J, D) {
     let env = J.environement || {};
-    const S = J.structure || {}, warn = [];
+    const S = J.structure || {}, warn = [], hasJson = !!J.structure; // DXF importé seul, sans JSON : poteaux/lisses inconnus, nomenclature non fiable
 
     const poles = {};
     for (const p of S.poteaux || []) {
@@ -574,9 +575,9 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const gcModules = Object.values(runs).reduce((s, l) => s + Math.ceil(l / 1000 - 1e-6), 0);
 
     const checks = D ? [
-      { ok: foundLisses.size === L.length, label: 'Lisses recalculées et retrouvées dans le DXF', val: `${foundLisses.size} / ${L.length}` },
+      hasJson ? { ok: foundLisses.size === L.length, label: 'Lisses recalculées et retrouvées dans le DXF', val: `${foundLisses.size} / ${L.length}` } : null,
       gcAcc ? { ok: gcModules === gcAcc.count, label: 'Modules de garde-corps = quantité du JSON', val: `${gcModules} / ${gcAcc.count}` } : null,
-      dxfSousLisse ? { ok: dxfSousLisse === sousLisse, label: 'Hauteur sous lisse = cartouche fournisseur', val: `${sousLisse} / ${dxfSousLisse} mm` } : null,
+      hasJson && dxfSousLisse ? { ok: dxfSousLisse === sousLisse, label: 'Hauteur sous lisse = cartouche fournisseur', val: `${sousLisse} / ${dxfSousLisse} mm` } : null,
     ].filter(Boolean) : [];
 
     // ---------- Nomenclature ----------
@@ -589,8 +590,9 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     if (semi.length) byKey(semi, x => String(x.s.section), (k, xs) => rows.push({ g: 'Structure', el: 'Semi-lisse', det: `${k} mm en débord`, q: xs.length, src: 'JSON' }));
     if (jdf.length) rows.push({ g: 'Structure', el: 'Jambe de force', det: jdf.map(j => `poteau ${j.p.id} → ${j.p.jdf}`).join(' · '), q: jdf.length, src: 'JSON' });
     if (croix.length) rows.push({ g: 'Structure', el: `Croisillon ${env.croisillon || ''}`.trim(), det: croix.map(c => `lisse ${c.l.id}`).join(' · '), q: croix.length, src: 'JSON' });
-    rows.push({ g: 'Plancher', el: `Plancher ${env.plancher || '?'}`, det: `ép. ${ep} mm · solivage ${String(env.solivage || '').toLowerCase()}`, q: null, src: 'JSON' });
-    byKey(solives, s => `${String(Math.round(s.w)).padStart(4, '0')}|${String(Math.round(s.len)).padStart(6, '0')}`, (k, xs) => rows.push({ g: 'Plancher', el: `Solive, ${Math.round(xs[0].w)} mm de large`, det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
+    if (hasJson) rows.push({ g: 'Plancher', el: `Plancher ${env.plancher || '?'}`, det: `ép. ${ep} mm · solivage ${String(env.solivage || '').toLowerCase()}`, q: null, src: 'JSON' });
+    // sans JSON, solives et lisses ne sont pas discernables dans le DXF (le plan reste dessiné tel quel, mais pas la nomenclature)
+    if (hasJson) byKey(solives, s => `${String(Math.round(s.w)).padStart(4, '0')}|${String(Math.round(s.len)).padStart(6, '0')}`, (k, xs) => rows.push({ g: 'Plancher', el: `Solive, ${Math.round(xs[0].w)} mm de large`, det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
     if (entretoises.length) byKey(entretoises, e => String(Math.round(e.len)).padStart(6, '0'), (k, xs) => rows.push({ g: 'Plancher', el: 'Entretoise', det: `L ${Math.round(xs[0].len)} mm`, q: xs.length, src: 'DXF' }));
     if (gc.length) rows.push({ g: 'Sécurité et accès', el: 'Garde-corps', det: `${(gc.reduce((s, g) => s + g.len, 0) / 1000).toFixed(2).replace('.', ',')} ml en ${gc.length} tronçon${gc.length > 1 ? 's' : ''}`, q: gcModules, src: 'DXF' });
     for (const e of S.escalier || []) rows.push({ g: 'Sécurité et accès', el: `Escalier ${e.modele}`, det: [`emmarchement ${code5(e.modele)} mm`, `sur lisse ${e.lisse}, vers ${/^[eo]/.test(e.orientation) ? "l'" : 'le '}${e.orientation}`].concat(e.options || []).join(' · '), q: 1, src: 'JSON' });
@@ -1151,13 +1153,14 @@ function renderTabs() {
 function render() {
   renderTabs();
   $('main').hidden = !projects.length && $('devis-box').hidden; $('main').classList.toggle('vide', !projects.length);
-  if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON d'un projet, puis ajoutez son DXF (boutons en haut à droite), pour afficher sa vue 3D, son plan et sa nomenclature."; $('msg').hidden = false; } return; }
+  if (!projects.length) { if ($('msg').hidden) { $('msg').textContent = "Importez le JSON d'un projet, puis ajoutez son DXF (boutons en haut à droite), pour afficher sa vue 3D, son plan et sa nomenclature. Sans JSON, le DXF seul affiche le plan 2D."; $('msg').hidden = false; } return; }
   const p = projects[cur], J = p.json, c = J.client || {}, e = J.environement || {};
   if (!$('devis-box').hidden) devisUI();
   let M;
   try { M = model(p); } catch (err) { $('msg').textContent = 'Lecture impossible : ' + err.message; $('msg').hidden = false; return; }
   const notes = [];
-  if (!p.dxf && !p.D) notes.push('Pas encore de DXF pour ce projet : ajoutez-le pour dessiner solives, entretoises, garde-corps et escalier.');
+  if (!J.structure) notes.push("Plan importé depuis le DXF seul, sans JSON : affichage uniquement (caractéristiques et nomenclature indisponibles).");
+  else if (!p.dxf && !p.D) notes.push('Pas encore de DXF pour ce projet : ajoutez-le pour dessiner solives, entretoises, garde-corps et escalier.');
   else if (p.dxf && M.checks[0] && !M.checks[0].ok) notes.push(`Ce DXF ne correspond pas entièrement au JSON : ${M.checks[0].val} lisses retrouvées. Vérifiez qu'il s'agit du même projet.`);
   notes.push(...M.warn.map(w => 'Non dessiné : ' + w + '.'));
   $('msg').textContent = notes.join(' '); $('msg').hidden = !notes.length;
@@ -1336,20 +1339,21 @@ function caracRows(M) {
   const esc0 = (M.J.structure?.escalier || [])[0], s0 = M.stairs3d[0], w = esc0 && /T(\d{5})/.exec(esc0.modele || '');
   const gcml = M.gc.reduce((s, g) => s + g.len, 0) / 1000;
   const nb = (k, un, plus) => `${k} ${k > 1 ? plus : un}`;
+  const hasJson = !!M.J.structure; // DXF importé seul : ces caractéristiques (issues du JSON) sont inconnues
   const rows = [
     P.length && ['Emprise au sol', `${n(ext('cx') / 1000, 2)} × ${n(ext('cy') / 1000, 2)} m hors tout platine`],
-    ['Surface de plancher', `${n(surf, 1)} m²`],
-    ['Hauteur sur plancher', `${e.hauteur} mm`],
+    hasJson && ['Surface de plancher', `${n(surf, 1)} m²`],
+    hasJson && ['Hauteur sur plancher', `${e.hauteur} mm`],
     ['Hauteur sous lisse', M.sousLisse != null ? `${M.sousLisse} mm` : '—'],
-    ['Charge de service', `${e.charge} kg/m²`],
-    ['Flèche maximale', `1/${e.fleche}e`],
-    ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2050 × 910'}, ép. ${M.ep} mm`],
-    ['Structure', [nb(P.length + (M.landing ? M.landing.poles.length : 0), 'poteau', 'poteaux'), nb(M.lisses.length, 'lisse', 'lisses'), M.solives.length && nb(M.solives.length, 'solive', 'solives')].filter(Boolean).join(', ')], // palier compris ; solives seulement avec le DXF
+    hasJson && ['Charge de service', `${e.charge} kg/m²`],
+    hasJson && ['Flèche maximale', `1/${e.fleche}e`],
+    hasJson && ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2050 × 910'}, ép. ${M.ep} mm`],
+    hasJson && ['Structure', [nb(P.length + (M.landing ? M.landing.poles.length : 0), 'poteau', 'poteaux'), nb(M.lisses.length, 'lisse', 'lisses'), M.solives.length && nb(M.solives.length, 'solive', 'solives')].filter(Boolean).join(', ')], // palier compris ; solives seulement avec le DXF
     ['Stabilité', stab],
     esc0 && ['Escalier', [s0 && `${Math.round(Math.atan2(e.hauteur, s0.L) * 180 / Math.PI)}°`, w && `passage ${+w[1]} mm`, M.landing && 'avec palier'].filter(Boolean).join(', ')],
     gcml && ['Garde-corps', `hauteur 1100 mm, ${n(gcml, 1)} ml en bord de plateforme`],
   ];
-  if (!CLIENT) rows.push(['Code plancher', e.plancher || '—'], ['Solivage', String(e.solivage || '').toLowerCase()]);
+  if (!CLIENT && hasJson) rows.push(['Code plancher', e.plancher || '—'], ['Solivage', String(e.solivage || '').toLowerCase()]);
   return rows.filter(Boolean);
 }
 const DESSOUS = { bois: { code: 'Bois', css: '#b98f5e' }, blanc: { code: 'Blanc', css: '#f4f3ef' } };
@@ -1360,8 +1364,8 @@ function colorRows(e) {
   const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
   const rows = Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
     .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
-  // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis)
-  if (!/T\d{5}C/.test(e.plancher || '')) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
+  // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis, ni sans JSON : code plancher inconnu)
+  if (e.plancher && !/T\d{5}C/.test(e.plancher)) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
   return rows;
 }
 
@@ -1521,10 +1525,11 @@ $('imp-json').onchange = async ev => {
 $('imp-dxf').onchange = async ev => {
   const f = ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  const p = projects[cur];
-  if (!p) return say("Importez d'abord le JSON du projet, puis ajoutez son DXF.");
   const txt = await f.text();
   if (!/SECTION/.test(txt.slice(0, 2000))) return say(`${f.name} : ce fichier n'est pas un DXF lisible (format texte attendu).`);
+  let p = projects[cur];
+  // DXF seul, sans JSON : plan 2D affiché tel quel (nomenclature et caractéristiques indisponibles, faute de poteaux/lisses connus)
+  if (!p) { projects.push(p = { name: f.name.replace(/\.[^.]+$/, ''), json: {}, dxf: null }); cur = projects.length - 1; }
   Object.assign(p, { dxf: txt, D: null, m: null }); V3.key = null; $('msg').hidden = true; render();
 };
 $('imp-obj').onchange = async ev => {
@@ -1648,7 +1653,7 @@ const devisReg = () => { try { return JSON.parse(localStorage.getItem('mezz-devi
 const dvLibre = { json: {}, devis: null }; // devis importé sans projet ouvert
 const dvp = () => projects[cur] || dvLibre;
 // quantités de la structure : poteaux (palier compris) et lisses du JSON, solives du DXF ; null sans projet ouvert
-const nbStruct = p => { try { if (p !== dvLibre) { const M = model(p); return [M.poles.length + (M.landing ? M.landing.poles.length : 0), M.lisses.length, M.solives.length]; } } catch (err) {} return null; };
+const nbStruct = p => { try { if (p !== dvLibre) { const M = model(p); if (!M.J.structure) return null; return [M.poles.length + (M.landing ? M.landing.poles.length : 0), M.lisses.length, M.solives.length]; } } catch (err) {} return null; };
 const DV_PJ = { montage: 250, nacelle: 60, chariot: 70 };
 // Options habituelles du devis Manorga (sans prix : ce sont des prix d'achat) ; coloris vide = celui des poteaux
 const DV_OPTIONS = [['Protection de montants 4 faces – Platines 200', 'RAL 1028'], ['Protection de montants 2 faces – Platines 200', 'RAL 1028'],
@@ -1682,18 +1687,18 @@ function devisUI() {
   const pm = (r, sg, pas, u) => `<button class="ghost" type="button" data-pm="${sg}${pas}" aria-label="${esc(r.cat)} : ${sg === '+' ? 'plus' : 'moins'} ${String(pas).replace('.', ',')} ${u}">${sg === '+' ? '+' : '−'}</button>`;
   const pas = (r, champ, pas, u, cls = '') => `<span class="pas${cls}">${pm(r, '-', pas, u)}${champ}${pm(r, '+', pas, u)}</span>`;
   const qte = r => r.saisie === 'jours' ? pas(r, num(`data-jours="${r.key}"`, d.jours[r.key], `${r.cat} : nombre de jours`, '0.5'), 0.5, 'jour') + '<span class="u">jour(s)</span>'
-    : r.saisie === 'option' ? num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1', ' class="qte"')
+    : r.saisie === 'option' ? pas(r, num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1'), 1, 'unité')
     : r.cat === 'Structure' && nbs ? nbs.map(n => `<span class="ral nb">${n}</span>`).join('') : esc(r.qte || '');
   const prixJour = r => num(`data-pj="${r.key}"`, d.pj[r.key], `${r.cat} : prix par jour`, '1');
   const ar = r => `<label class="ar">+ transport A/R ${num(`data-ar="${r.key}"`, d.ar[r.key], `${r.cat} : transport aller-retour`, '1')}<span class="u">€</span></label>`;
   const pu = r => r.saisie === 'jours' ? (r.key === 'montage' ? prixJour(r) + '<span class="u">€/J/P</span>' : pas(r, prixJour(r), 10, '€') + '<span class="u">€/J</span>' + ar(r))
-    : r.saisie === 'option' ? num(`data-pu="${r.key}"`, o(r).pu, `${r.cat} : prix unitaire`) + '<span class="u">€</span>' : '';
+    : r.saisie === 'option' ? '<span class="x">×</span>' + num(`data-pu="${r.key}"`, o(r).pu, `${r.cat} : prix unitaire`) + '<span class="u">€</span>' : '';
   $('dv-body').innerHTML = `<p class="dv-head">Devis Manorga <b>${esc(d.ref)}</b>${d.projet ? ' · ' + esc(d.projet) : ''}</p>
     <dl class="dv-dims">${DV_DIMS.map(([, lib]) => `<div><dt>${esc(lib)}</dt><dd>${esc(val(lib))}</dd></div>`).join('')}
       <div><dt>Section des poteaux</dt><dd>${esc(d.section || '—')}</dd></div><div class="large"><dt>Équipements</dt><dd>${esc(d.equip.join(' / ') || 'aucun')}</dd></div></dl>
     <div class="nomen-wrap"><table class="dv"><thead><tr><th><span class="sr">Inclure</span></th><th>Poste</th><th>Coloris</th><th style="text-align:right">Quantité</th><th class="pu">Prix unitaire</th><th style="text-align:right">Achat HT</th><th style="text-align:right">Vente HT</th></tr></thead><tbody>
     ${devisRows(d).map(r => `<tr><td><input type="checkbox" data-on="${r.key}"${r.on ? ' checked' : ''} aria-label="Inclure : ${esc(r.cat)}"></td>
-      <td>${esc(r.cat)}${r.des ? `<span class="det">${esc(r.des)}</span>` : ''}</td><td>${coloris(r)}</td><td class="q">${qte(r)}</td><td class="q pu">${pu(r)}</td>
+      <td>${esc(r.cat)}${r.des ? `<span class="det">${esc(r.des)}</span>` : ''}</td>${r.saisie === 'jours' ? `<td colspan="3" class="jr"><span>${qte(r)}</span><span>${pu(r)}</span></td>` : `<td>${coloris(r)}</td><td class="q">${qte(r)}</td><td class="q pu">${pu(r)}</td>`}
       <td class="q">${r.saisie === 'achat' ? num(`data-achat="${r.key}"`, r.achat || '', `Prix d'achat : ${r.cat}`) : `<span id="dv-a-${r.key}"></span>`}</td>
       <td class="q" id="dv-v-${r.key}"></td></tr>` + (r.key === 'transport' ? `<tr class="st"><td></td><td colspan="2">Sous-total devis Manorga<span class="det">${d.livre ? `devis Word : ${eurFr(d.livre)}` : 'lignes Manorga et transport'}</span></td><td></td><td></td><td class="q" id="dv-sa"></td><td class="q" id="dv-sv"></td></tr>` : '')).join('')}</tbody>
     <tfoot><tr><td></td><td colspan="2">Total HT <span class="det" id="dv-m"></span></td>
@@ -1806,7 +1811,7 @@ async function devisXLSX() {
     section: d.section, prix: r2(res.tv), plancher: pl ? pl.qte.replace(/\s*m²/, ' m²') : '', GC: gc || '',
     montage_h: d.heures, montage_j: jr('montage'), nacelle_j: jr('nacelle'), chariot_j: jr('chariot'),
     horaire_garanti: d.opts.transport && d.opts.premium ? 'oui' : '', equipements: d.equip.join(' / ') || 'aucun',
-    options: d.options.filter(o => o.on && o.qte).map(o => `${String(o.qte).replace('.', ',')} × ${o.des}`).join(' / ') };
+    coloris: (d.lignes.find(l => l.cat === 'Structure')?.col || '').split('\n')[0] || 'RAL 7024' }; // coloris des poteaux
   f.contr = parseInt(f.contr) || ''; f.decente = f.decente.replace('.', ',');
   // quantités de la structure, colonnes toujours présentes (Word refuse un modèle dont un champ manque) ; vides sans JSON ou sans DXF
   const [np, nl, ns] = nbStruct(p) || [];
