@@ -52,6 +52,7 @@
 @media (min-width: 1081px) { .sheet { position: sticky; top: max(16px, env(safe-area-inset-top, 0px)); } }
 body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 32px; }
 .wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
+.wrap:has(#devis-box:not([hidden])) { max-width: 1760px; } /* devis ouvert : la place en plus va à la colonne « Poste » */
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
 .brand { display: flex; align-items: baseline; gap: 12px; }
 .brand b { font: 700 34px/1 var(--f-display); color: var(--rsl); letter-spacing: .02em; }
@@ -123,19 +124,28 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 .dv-dims dt { font-size: 12px; color: var(--muted); }
 .dv-dims dd { margin: 0; font-weight: 600; text-align: left; }
 .dv-dims .large { grid-column: 1 / -1; }
-.dv input[type=number] { width: 104px; text-align: right; font: 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.dv input[type=number] { width: 84px; text-align: right; font: 14px var(--f-body); padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .dv input.qte { width: 72px; }
 .dv .pas { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.dv .pas button { width: 28px; height: 28px; padding: 0; justify-content: center; font: 600 16px/1 var(--f-body); }
-.dv .pas input { width: 56px; text-align: center; -moz-appearance: textfield; }
-.dv .pas.prix input { width: 70px; }
-.dv .ar { display: inline-flex; align-items: center; gap: 4px; margin-left: 12px; font: 400 13px var(--f-body); color: var(--muted); }
-.dv .ar input { width: 64px; }
+.dv .pas button { width: 24px; height: 26px; padding: 0; justify-content: center; font: 600 16px/1 var(--f-body); }
+.dv .pas input { width: 42px; text-align: center; -moz-appearance: textfield; }
+.dv .pas.prix input { width: 50px; }
+.dv .ar { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font: 400 13px var(--f-body); color: var(--muted); }
+.dv .ar input { width: 52px; }
+.dv th, .dv td { width: 1%; white-space: nowrap; padding-left: 5px; padding-right: 5px; }
+.dv th:nth-child(2), .dv td:nth-child(2) { width: auto; white-space: normal; min-width: 136px; }
+.dv .pu { text-align: left; }
 #dv-marge { width: 72px; }
 .dv .pas input::-webkit-inner-spin-button, .dv .pas input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .dv .u { margin-left: 4px; color: var(--muted); font: 400 13px var(--f-body); }
 .dv tr.off td:not(:first-child) { opacity: .45; }
 .dv tfoot td { font-weight: 700; border-bottom: 0; }
+.dv tr.st td { font-weight: 700; background: var(--paper); }
+.dv .ral { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 13px; }
+.dv .ral + .ral { margin-top: 3px; }
+.dv .ral .lab { width: 48px; color: var(--muted); }
+.dv .ral.nb { justify-content: flex-end; min-height: 16px; }
+.dv .ral i { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); }
 
 /* Plan SVG (unités = mm) */
 .plan path, .plan rect, .plan circle { vector-effect: non-scaling-stroke; }
@@ -1614,15 +1624,19 @@ function lireDevis(xml) {
   if (!(Math.abs(somme - total) < 0.02 && Math.abs(total + transport - livre) < 0.02))
     throw new Error(`totaux incohérents (lignes ${somme.toFixed(2)} € pour un total de ${total} €) : présentation de devis non reconnue`);
   // « Autres équipements (Non inclus dans l'offre) » : désignation | coloris | quantité (vide) | prix unitaire
-  const optT = tables.find(t => t !== prixT && t.some(r => r.some(c => c.startsWith('Autres équipements'))));
-  const options = (optT || []).map(r => r.filter(Boolean)).filter(cs => cs.length >= 2 && /€/.test(cs[cs.length - 1]) && !cs[0].startsWith('Autres équipements'))
+  // « Autres équipements » : dans le cadre du titre ou dans le tableau suivant (titre parfois dans son propre cadre)
+  const io = tables.findIndex(t => t !== prixT && t.some(r => r.some(c => c.startsWith('Autres équipements'))));
+  let options = (io < 0 ? [] : tables.slice(io, io + 2).flat()).map(r => r.filter(Boolean)).filter(cs => cs.length >= 2 && /€/.test(cs[cs.length - 1]) && !cs[0].startsWith('Autres équipements'))
     .map(cs => ({ des: cs[0], col: cs.length > 2 ? cs[1] : '', pu: eur(cs[cs.length - 1]), qte: 1, on: false }));
+  const reg = devisReg(), rp = (lignes.find(l => l.cat === 'Structure')?.col || '').split('\n')[0] || 'RAL 7024', optStd = !options.length;
+  if (optStd) options = DV_OPTIONS.map(([des, col]) => ({ des, col: col || rp, pu: reg.opt?.[des] || 0, qte: 1, on: false }));
+  else devisRegSave({ ...reg, opt: { ...reg.opt, ...Object.fromEntries(options.map(o => [o.des, o.pu])) } }); // prix d'achat gardés sur ce poste
   const prem = /([\d.,]+)\s*%/.exec(val('Frais de livraison premium'));
   const i = paras.findIndex(p => p.startsWith('Conformité de la Plate-forme')), sec = i < 0 ? null : /sections carrés (\d+)\s*mm/.exec(paras.slice(i + 1, i + 4).join(' '));
-  return { ref, projet: ((/Nom du projet\s*:\s*(.*)/.exec(entete) || [])[1] || '').trim(), paires, lignes, transport,
+  return { ref, projet: ((/Nom du projet\s*:\s*(.*)/.exec(entete) || [])[1] || '').trim(), paires, lignes, transport, livre,
     heures: +((/\d+/.exec(val('Le temps théorique')) || [])[0] || 0), section: sec ? `${sec[1]}x${sec[1]}` : '',
     equip: tables.filter(t => t.length && t.every(r => r.length === 1)).flatMap(t => t.map(r => r[0]).filter(Boolean)),
-    options, premium: prem ? eur(prem[1]) : 15, // +15 % : supplément Manorga pour livraison à horaire garanti
+    options, optStd, premium: prem ? eur(prem[1]) : 15, // +15 % : supplément Manorga pour livraison à horaire garanti
     opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false }, jours: {}, pj: { ...DV_PJ }, ar: {} };
 }
 // Colonnes de l'onglet WORD du classeur Fermisol (mêmes noms : le modèle Word de publipostage garde ses champs)
@@ -1633,19 +1647,23 @@ const DV_DIMS = [['dim1', 'Longueur en tête'], ['dim2', 'Longueur au sol'], ['d
 const devisReg = () => { try { return JSON.parse(localStorage.getItem('mezz-devis') || '{}'); } catch (err) { return {}; } };
 const dvLibre = { json: {}, devis: null }; // devis importé sans projet ouvert
 const dvp = () => projects[cur] || dvLibre;
-const DV_PJ = { montage: 250, nacelle: 60, chariot: 70 }; // prix par jour proposés à chaque devis (modifiables)
+// quantités de la structure : poteaux (palier compris) et lisses du JSON, solives du DXF ; null sans projet ouvert
+const nbStruct = p => { try { if (p !== dvLibre) { const M = model(p); return [M.poles.length + (M.landing ? M.landing.poles.length : 0), M.lisses.length, M.solives.length]; } } catch (err) {} return null; };
+const DV_PJ = { montage: 250, nacelle: 60, chariot: 70 };
+// Options habituelles du devis Manorga (sans prix : ce sont des prix d'achat) ; coloris vide = celui des poteaux
+const DV_OPTIONS = [['Protection de montants 4 faces – Platines 200', 'RAL 1028'], ['Protection de montants 2 faces – Platines 200', 'RAL 1028'],
+  ['Platine de calage 200x200x10 mm peinte', ''], ['Platine de calage 200x200x3 mm galvanisées', 'GALVA'], ['Spray de peinture', '']]; // prix par jour proposés à chaque devis (modifiables)
 const devisRegSave = r => { try { localStorage.setItem('mezz-devis', JSON.stringify(r)); } catch (err) {} };
 const eurFr = v => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const fr1 = v => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 const JOURS = { montage: 'Montage', nacelle: 'Nacelle', chariot: 'Chariot' };
-// csv : colonne de l'Excel qui reçoit la vente de la ligne (par défaut, le nom du poste)
 function devisRows(d) {
-  return [...d.lignes.map((l, i) => ({ key: String(i), cat: l.cat, des: [l.des.replace(/\n/g, ', '), l.col !== '-' && l.col.replace(/\n/g, ' / ')].filter(Boolean).join(' · '), qte: l.qte, achat: l.achat, on: l.on, saisie: 'achat' })),
-    { key: 'transport', cat: 'Transport', des: 'Frais de transport Manorga', achat: d.transport, on: d.opts.transport, saisie: 'achat' },
-    { key: 'premium', cat: 'Livraison premium', des: `horaire garanti, +${fr1(d.premium)} % sur le transport`, achat: d.transport * d.premium / 100, on: d.opts.premium, csv: 'transport' },
+  return [...d.lignes.map((l, i) => ({ key: String(i), cat: l.cat, des: /^Couleur des/.test(l.des) ? '' : l.des.replace(/\n/g, ', '), col: l.cat === 'Croisillon' ? 'GALVA' : l.col, qte: l.qte, achat: l.achat, on: l.on, saisie: 'achat', manorga: true })), // croisillons toujours galva (le Word y met la couleur des poteaux) // « Couleur des poteaux… » : dit par la colonne Coloris
+    { key: 'transport', cat: 'Transport', des: 'Frais de transport Manorga', achat: d.transport, on: d.opts.transport, saisie: 'achat', manorga: true },
+    { key: 'premium', cat: 'Livraison premium', des: `horaire garanti, +${fr1(d.premium)} % sur le transport`, achat: d.transport * d.premium / 100, on: d.opts.premium },
+    ...d.options.map((o, i) => ({ key: 'o' + i, cat: o.des, des: '', col: o.col, achat: o.qte * o.pu, on: o.on, saisie: 'option' })),
     ...Object.entries(JOURS).map(([k, cat]) => ({ key: k, cat, des: k === 'montage' ? `${d.heures} h théoriques (devis Manorga), soit ${fr1(d.heures / 7)} jours pour un monteur` : k === 'nacelle' ? 'location' : 'chariot élévateur',
-      achat: (d.jours[k] || 0) * (d.pj[k] || 0) + (k === 'montage' ? 0 : d.ar[k] || 0), on: d.opts[k], saisie: 'jours' })), // prix × jours + transport A/R
-    ...d.options.map((o, i) => ({ key: 'o' + i, cat: o.des, des: o.col, achat: o.qte * o.pu, on: o.on, saisie: 'option', csv: 'options' }))];
+      achat: (d.jours[k] || 0) * (d.pj[k] || 0) + (k === 'montage' ? 0 : d.ar[k] || 0), on: d.opts[k], saisie: 'jours' }))]; // prix × jours + transport A/R
 }
 function devisUI() {
   const p = dvp();
@@ -1655,11 +1673,17 @@ function devisUI() {
   const val = lib => d.paires[Object.keys(d.paires).find(k => k.startsWith(lib))] || '—';
   const num = (attr, v, lib, step = '0.01', cls = '') => `<input type="number" step="${step}" min="0" ${attr} value="${v ?? ''}" aria-label="${esc(lib)}"${cls}>`;
   const o = r => d.options[r.key.slice(1)];
+  // pastille de couleur + référence (« RAL 7024 », « GALVA ») ; la structure en a trois : poteaux, lisses, solives
+  const STRUCT = ['poteaux', 'lisses', 'solives'];
+  const coloris = r => (r.col || '').split(/\n|\s*\/\s*/).map(t => t.trim()).filter(t => t && t !== '-')
+    .map((t, i) => `<span class="ral"><i style="background:${RAL[t.replace(/\s+/g, '').toUpperCase()] || 'transparent'}"></i>${r.cat === 'Structure' && STRUCT[i] ? `<span class="lab">${STRUCT[i]}</span>` : ''}${esc(t)}</span>`).join('');
+  const nbs = nbStruct(p)?.map(n => n || '—'); // en face de chaque coloris de la structure
   // champ entre deux boutons − / + ; pas : 0,5 jour pour les jours, 10 € pour les prix
   const pm = (r, sg, pas, u) => `<button class="ghost" type="button" data-pm="${sg}${pas}" aria-label="${esc(r.cat)} : ${sg === '+' ? 'plus' : 'moins'} ${String(pas).replace('.', ',')} ${u}">${sg === '+' ? '+' : '−'}</button>`;
   const pas = (r, champ, pas, u, cls = '') => `<span class="pas${cls}">${pm(r, '-', pas, u)}${champ}${pm(r, '+', pas, u)}</span>`;
   const qte = r => r.saisie === 'jours' ? pas(r, num(`data-jours="${r.key}"`, d.jours[r.key], `${r.cat} : nombre de jours`, '0.5'), 0.5, 'jour') + '<span class="u">jour(s)</span>'
-    : r.saisie === 'option' ? num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1', ' class="qte"') : esc(r.qte || '');
+    : r.saisie === 'option' ? num(`data-qte="${r.key}"`, o(r).qte, `${r.cat} : quantité`, '1', ' class="qte"')
+    : r.cat === 'Structure' && nbs ? nbs.map(n => `<span class="ral nb">${n}</span>`).join('') : esc(r.qte || '');
   const prixJour = r => num(`data-pj="${r.key}"`, d.pj[r.key], `${r.cat} : prix par jour`, '1');
   const ar = r => `<label class="ar">+ transport A/R ${num(`data-ar="${r.key}"`, d.ar[r.key], `${r.cat} : transport aller-retour`, '1')}<span class="u">€</span></label>`;
   const pu = r => r.saisie === 'jours' ? (r.key === 'montage' ? prixJour(r) + '<span class="u">€/J/P</span>' : pas(r, prixJour(r), 10, '€') + '<span class="u">€/J</span>' + ar(r))
@@ -1667,15 +1691,15 @@ function devisUI() {
   $('dv-body').innerHTML = `<p class="dv-head">Devis Manorga <b>${esc(d.ref)}</b>${d.projet ? ' · ' + esc(d.projet) : ''}</p>
     <dl class="dv-dims">${DV_DIMS.map(([, lib]) => `<div><dt>${esc(lib)}</dt><dd>${esc(val(lib))}</dd></div>`).join('')}
       <div><dt>Section des poteaux</dt><dd>${esc(d.section || '—')}</dd></div><div class="large"><dt>Équipements</dt><dd>${esc(d.equip.join(' / ') || 'aucun')}</dd></div></dl>
-    <div class="nomen-wrap"><table class="dv"><thead><tr><th><span class="sr">Inclure</span></th><th>Poste</th><th style="text-align:right">Quantité</th><th style="text-align:right">Prix unitaire</th><th style="text-align:right">Achat HT</th><th style="text-align:right">Vente HT</th></tr></thead><tbody>
+    <div class="nomen-wrap"><table class="dv"><thead><tr><th><span class="sr">Inclure</span></th><th>Poste</th><th>Coloris</th><th style="text-align:right">Quantité</th><th class="pu">Prix unitaire</th><th style="text-align:right">Achat HT</th><th style="text-align:right">Vente HT</th></tr></thead><tbody>
     ${devisRows(d).map(r => `<tr><td><input type="checkbox" data-on="${r.key}"${r.on ? ' checked' : ''} aria-label="Inclure : ${esc(r.cat)}"></td>
-      <td>${esc(r.cat)}<span class="det">${esc(r.des)}</span></td><td class="q">${qte(r)}</td><td class="q">${pu(r)}</td>
+      <td>${esc(r.cat)}${r.des ? `<span class="det">${esc(r.des)}</span>` : ''}</td><td>${coloris(r)}</td><td class="q">${qte(r)}</td><td class="q pu">${pu(r)}</td>
       <td class="q">${r.saisie === 'achat' ? num(`data-achat="${r.key}"`, r.achat || '', `Prix d'achat : ${r.cat}`) : `<span id="dv-a-${r.key}"></span>`}</td>
-      <td class="q" id="dv-v-${r.key}"></td></tr>`).join('')}</tbody>
-    <tfoot><tr><td></td><td>Total HT <span class="det" id="dv-m"></span></td>
+      <td class="q" id="dv-v-${r.key}"></td></tr>` + (r.key === 'transport' ? `<tr class="st"><td></td><td colspan="2">Sous-total devis Manorga<span class="det">${d.livre ? `devis Word : ${eurFr(d.livre)}` : 'lignes Manorga et transport'}</span></td><td></td><td></td><td class="q" id="dv-sa"></td><td class="q" id="dv-sv"></td></tr>` : '')).join('')}</tbody>
+    <tfoot><tr><td></td><td colspan="2">Total HT <span class="det" id="dv-m"></span></td>
       <td class="q" colspan="2"><label for="dv-marge" class="u">Marge sur la vente</label> <input id="dv-marge" type="number" step="0.1" min="0" max="95" value="${esc(devisReg().marge || '')}"><span class="u">%</span></td>
       <td class="q" id="dv-ta"></td><td class="q" id="dv-tv"></td></tr></tfoot></table></div>
-    ${d.options.length ? '' : '<p class="note">Pas de tableau « Autres équipements » dans ce devis Word : aucune option proposée.</p>'}
+    ${d.optStd ? '<p class="note">Ce devis Word n\'a pas de tableau « Autres équipements » : options habituelles proposées, prix unitaires repris du dernier devis Word qui les contenait (sinon à saisir). Vérifiez-les.</p>' : ''}
     <p><button class="btn" id="dv-xlsx" type="button">Exporter l'Excel pour le publipostage</button></p>`;
   $('dv-xlsx').onclick = devisXLSX;
   devisCalc();
@@ -1684,15 +1708,16 @@ function devisCalc() {
   const d = dvp().devis;
   if (!d || !$('dv-tv')) return null;
   const marge = parseFloat($('dv-marge')?.value) || 0, coef = marge > 0 && marge < 100 ? 1 / (1 - marge / 100) : 1, rows = devisRows(d);
-  let ta = 0, tv = 0;
+  let ta = 0, tv = 0, sa = 0, sv = 0;
   for (const r of rows) {
     r.vente = r.achat * coef;
     if (r.on) { ta += r.achat; tv += r.vente; }
+    if (r.on && r.manorga) { sa += r.achat; sv += r.vente; } // sous-total à comparer au total livré du Word
     $('dv-v-' + r.key).textContent = r.on ? eurFr(r.vente) : '—';
     $('dv-v-' + r.key).closest('tr').classList.toggle('off', !r.on);
     if ($('dv-a-' + r.key)) $('dv-a-' + r.key).textContent = eurFr(r.achat);
   }
-  $('dv-ta').textContent = eurFr(ta); $('dv-tv').textContent = eurFr(tv);
+  $('dv-ta').textContent = eurFr(ta); $('dv-tv').textContent = eurFr(tv); $('dv-sa').textContent = eurFr(sa); $('dv-sv').textContent = eurFr(sv);
   $('dv-m').textContent = `marge ${eurFr(tv - ta)}` + (marge ? ` · coef ${coef.toFixed(4).replace('.', ',')}` : '');
   return { rows, tv };
 }
@@ -1714,22 +1739,25 @@ $('dv-body').addEventListener('input', ev => {
   else if (ds.pj != null) d.pj[k] = n;
   else if (ds.ar != null) d.ar[k] = n;
   else if (ds.qte != null) opt.qte = n;
-  else if (ds.pu != null) opt.pu = n;
+  else if (ds.pu != null) { opt.pu = n; const r = devisReg(); devisRegSave({ ...r, opt: { ...r.opt, [opt.des]: n } }); }
   devisCalc();
 });
-// Excel minimal sans bibliothèque : un .xlsx est un zip de fichiers XML ; ici « stocké » (non compressé), avec son CRC32.
-function zipStocke(files) {
+// Excel sans bibliothèque : un .xlsx est un zip de fichiers XML. Le publipostage de Word (pilote ACE) refusait le fichier minimal
+// (« la table externe n'est pas dans le format attendu ») : on écrit les mêmes parties qu'Excel (styles, propriétés), compressées.
+async function zipXlsx(files) {
   const enc = new TextEncoder(), T = [...Array(256)].map((_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xEDB88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
   const crc = u => { let c = ~0; for (const x of u) c = T[(c ^ x) & 255] ^ (c >>> 8); return ~c >>> 0; };
+  const t = new Date(), heure = (t.getHours() << 11) | (t.getMinutes() << 5) | (t.getSeconds() >> 1), jour = ((t.getFullYear() - 1980) << 9) | ((t.getMonth() + 1) << 5) | t.getDate();
+  const set = (dv, champs) => champs.forEach(([o, v, w]) => w ? dv.setUint32(o, v, true) : dv.setUint16(o, v, true));
   const parts = [], cen = []; let off = 0;
   for (const [nom, txt] of files) {
-    const n = enc.encode(nom), d = enc.encode(txt), c = crc(d), h = new DataView(new ArrayBuffer(30)), e = new DataView(new ArrayBuffer(46));
-    [[0, 0x04034b50, 4], [4, 20], [6, 0x0800], [12, 0x21], [14, c, 4], [18, d.length, 4], [22, d.length, 4], [26, n.length]].forEach(([o, v, w]) => w ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
-    [[0, 0x02014b50, 4], [4, 20], [6, 20], [8, 0x0800], [14, 0x21], [16, c, 4], [20, d.length, 4], [24, d.length, 4], [28, n.length], [42, off, 4]].forEach(([o, v, w]) => w ? e.setUint32(o, v, true) : e.setUint16(o, v, true));
-    parts.push(h, n, d); cen.push(e, n); off += 30 + n.length + d.length;
+    const n = enc.encode(nom), d = enc.encode(txt), z = await pipeZ(d, CompressionStream), c = crc(d), h = new DataView(new ArrayBuffer(30)), e = new DataView(new ArrayBuffer(46));
+    set(h, [[0, 0x04034b50, 4], [4, 20], [8, 8], [10, heure], [12, jour], [14, c, 4], [18, z.length, 4], [22, d.length, 4], [26, n.length]]);
+    set(e, [[0, 0x02014b50, 4], [4, 20], [6, 20], [10, 8], [12, heure], [14, jour], [16, c, 4], [20, z.length, 4], [24, d.length, 4], [28, n.length], [42, off, 4]]);
+    parts.push(h, n, z); cen.push(e, n); off += 30 + n.length + z.length;
   }
   const fin = new DataView(new ArrayBuffer(22));
-  [[0, 0x06054b50, 4], [8, files.length], [10, files.length], [12, cen.reduce((t, x) => t + x.byteLength, 0), 4], [16, off, 4]].forEach(([o, v, w]) => w ? fin.setUint32(o, v, true) : fin.setUint16(o, v, true));
+  set(fin, [[0, 0x06054b50, 4], [8, files.length], [10, files.length], [12, cen.reduce((s, x) => s + x.byteLength, 0), 4], [16, off, 4]]);
   return new Blob([...parts, ...cen, fin], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 // Classeur d'un seul onglet « WORD » : ligne 1 les noms de champs, ligne 2 les valeurs (nombres en nombres, texte en chaînes partagées)
@@ -1738,24 +1766,40 @@ function xlsxWord(f) {
   const col = i => { let t = ''; for (i++; i; i = (i - 1) / 26 | 0) t = String.fromCharCode(65 + (i - 1) % 26) + t; return t; };
   const sst = [], si = t => { let i = sst.indexOf(t); if (i < 0) i = sst.push(t) - 1; return i; };
   const cell = (v, ref) => typeof v === 'number' ? `<c r="${ref}"><v>${v}</v></c>` : v === '' || v == null ? '' : `<c r="${ref}" t="s"><v>${si(String(v))}</v></c>`;
-  const rows = [Object.keys(f), Object.values(f)].map((r, j) => `<row r="${j + 1}">${r.map((v, i) => cell(v, col(i) + (j + 1))).join('')}</row>`).join('');
-  const ns = 'http://schemas.openxmlformats.org/', xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
-  return zipStocke([
-    ['[Content_Types].xml', xml + `<Types xmlns="${ns}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>`],
-    ['_rels/.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${ns}officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
-    ['xl/workbook.xml', xml + `<workbook xmlns="${ns}spreadsheetml/2006/main" xmlns:r="${ns}officeDocument/2006/relationships"><sheets><sheet name="WORD" sheetId="1" r:id="rId1"/></sheets></workbook>`],
-    ['xl/_rels/workbook.xml.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${ns}officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${ns}officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>`],
-    ['xl/worksheets/sheet1.xml', xml + `<worksheet xmlns="${ns}spreadsheetml/2006/main"><sheetData>${rows}</sheetData></worksheet>`],
-    ['xl/sharedStrings.xml', xml + `<sst xmlns="${ns}spreadsheetml/2006/main" count="${sst.length}" uniqueCount="${sst.length}">${sst.map(t => `<si><t xml:space="preserve">${x(t)}</t></si>`).join('')}</sst>`],
+  const cles = Object.keys(f), rows = [cles, Object.values(f)].map((r, j) => `<row r="${j + 1}">${r.map((v, i) => cell(v, col(i) + (j + 1))).join('')}</row>`).join('');
+  const ns = 'http://schemas.openxmlformats.org/', M = `${ns}spreadsheetml/2006/main`, R = `${ns}officeDocument/2006/relationships`, CT = 'application/vnd.openxmlformats-';
+  const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n', iso = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  return zipXlsx([
+    ['[Content_Types].xml', xml + `<Types xmlns="${ns}package/2006/content-types"><Default Extension="rels" ContentType="${CT}package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>`
+      + `<Override PartName="/xl/workbook.xml" ContentType="${CT}officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${CT}officedocument.spreadsheetml.worksheet+xml"/>`
+      + `<Override PartName="/xl/styles.xml" ContentType="${CT}officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="${CT}officedocument.spreadsheetml.sharedStrings+xml"/>`
+      + `<Override PartName="/docProps/core.xml" ContentType="${CT}package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="${CT}officedocument.extended-properties+xml"/></Types>`],
+    ['_rels/.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId3" Type="${R}/extended-properties" Target="docProps/app.xml"/>`
+      + `<Relationship Id="rId2" Type="${ns}package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId1" Type="${R}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['docProps/app.xml', xml + `<Properties xmlns="${ns}officeDocument/2006/extended-properties" xmlns:vt="${ns}officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>`
+      + `<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Feuilles de calcul</vt:lpstr></vt:variant><vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs>`
+      + `<TitlesOfParts><vt:vector size="1" baseType="lpstr"><vt:lpstr>WORD</vt:lpstr></vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>`],
+    ['docProps/core.xml', xml + `<cp:coreProperties xmlns:cp="${ns}package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`
+      + `<dc:creator>RSL</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${iso}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${iso}</dcterms:modified></cp:coreProperties>`],
+    ['xl/workbook.xml', xml + `<workbook xmlns="${M}" xmlns:r="${R}"><fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="27425"/><workbookPr/>`
+      + `<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews><sheets><sheet name="WORD" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029"/></workbook>`],
+    ['xl/_rels/workbook.xml.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${R}/worksheet" Target="worksheets/sheet1.xml"/>`
+      + `<Relationship Id="rId2" Type="${R}/styles" Target="styles.xml"/><Relationship Id="rId3" Type="${R}/sharedStrings" Target="sharedStrings.xml"/></Relationships>`],
+    ['xl/styles.xml', xml + `<styleSheet xmlns="${M}"><fonts count="1"><font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font></fonts>`
+      + `<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>`
+      + `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>`
+      + `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>`],
+    ['xl/worksheets/sheet1.xml', xml + `<worksheet xmlns="${M}" xmlns:r="${R}"><dimension ref="A1:${col(cles.length - 1)}2"/><sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>`
+      + `<sheetFormatPr defaultRowHeight="15"/><sheetData>${rows}</sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`],
+    ['xl/sharedStrings.xml', xml + `<sst xmlns="${M}" count="${sst.length}" uniqueCount="${sst.length}">${sst.map(t => `<si><t xml:space="preserve">${x(t)}</t></si>`).join('')}</sst>`],
   ]);
 }
-function devisXLSX() {
+async function devisXLSX() {
   const p = dvp(), d = p.devis, res = devisCalc();
   if (!res) return;
   if (!(location.protocol === 'file:' || /github\.io$|^localhost$|^127\./.test(location.hostname)))
     return say("Ici, le navigateur bloque le téléchargement : ouvrez la version publiée sur GitHub pour exporter l'Excel.");
   const val = lib => d.paires[Object.keys(d.paires).find(k => k.startsWith(lib))] || '', r2 = v => Math.round(v * 100) / 100; // prix arrondis au centime
-  const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   const pl = d.lignes.find(l => l.cat === 'Plancher'), gc = Math.max(0, ...d.lignes.filter(l => l.cat === 'Garde-corps').map(l => parseFloat(l.qte.replace(',', '.')) || 0));
   const jr = k => d.opts[k] && d.jours[k] ? d.jours[k] : '';
   const f = { devis: d.ref, nom: d.projet || p.json.client?.reference_client || '', ...Object.fromEntries(DV_DIMS.map(([k, lib]) => [k, val(lib)])),
@@ -1764,12 +1808,11 @@ function devisXLSX() {
     horaire_garanti: d.opts.transport && d.opts.premium ? 'oui' : '', equipements: d.equip.join(' / ') || 'aucun',
     options: d.options.filter(o => o.on && o.qte).map(o => `${String(o.qte).replace('.', ',')} × ${o.des}`).join(' / ') };
   f.contr = parseInt(f.contr) || ''; f.decente = f.decente.replace('.', ',');
-  // vente par poste, colonnes toujours présentes (Word refuse un modèle dont un champ manque) ; vide si le poste est absent ou décoché
-  const s = Object.fromEntries(['structure', 'croisillon', 'jambe_de_force', 'plancher', 'boulonnerie', 'escalier', 'garde_corps', 'transport', 'montage', 'nacelle', 'chariot', 'options'].map(k => ['prix_' + k, null]));
-  for (const r of res.rows) { const k = 'prix_' + (r.csv || slug(r.cat)); s[k] ??= null; if (r.on) s[k] = (s[k] || 0) + r.vente; }
-  for (const [k, v] of Object.entries(s)) f[k] = v == null ? '' : r2(v);
+  // quantités de la structure, colonnes toujours présentes (Word refuse un modèle dont un champ manque) ; vides sans JSON ou sans DXF
+  const [np, nl, ns] = nbStruct(p) || [];
+  Object.assign(f, { nb_poteaux: np || '', nb_lisses: nl || '', nb_solives: ns || '' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(xlsxWord(f));
+  a.href = URL.createObjectURL(await xlsxWord(f));
   a.download = `Devis client ${d.ref}.xlsx`.replace(/[\\/:*?"<>|]/g, '-'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 $('devis').onclick = () => {
