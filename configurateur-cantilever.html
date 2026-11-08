@@ -21,12 +21,24 @@ h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 a{color:var(--bleu2)}
 
 /* ---- bandeau ---- */
-header{background:var(--bleu);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-header img{height:34px}
-header .t{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1}
-header .s{font-size:13px;color:#A9C4DA;margin-top:2px}
-header .back{margin-left:auto;font-size:13px;color:#A9C4DA;text-decoration:none;border:1px solid #2C5F8C;padding:6px 12px;border-radius:3px}
-header .back:hover{background:#1B4A73;color:#fff}
+header{background:#22272C;color:#fff;padding:11px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+header .t{font-family:'Barlow Condensed',sans-serif;font-size:27px;font-weight:700;line-height:1;white-space:nowrap}
+/* logos reconstitués en CSS : remplacer par les vrais fichiers si besoin */
+header .lrsl,header .lray{background:#fff;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;text-decoration:none;flex:none}
+header .lrsl{width:44px;height:38px;font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;
+  font-style:italic;color:#1B3F8F;letter-spacing:.5px}
+header .lray{height:38px;padding:0 13px;font-size:17px;font-weight:700;color:#14181C}
+header .lray i{font-style:normal;color:#D52B1E}
+header .co{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:#fff;
+  text-decoration:none;white-space:nowrap}
+header .co:hover{color:#F3C218}
+header .co svg{flex:none;opacity:.85}
+header .s{margin-left:auto;font-size:13px;color:#9BA3AA;text-align:right}
+header .back{background:#F3C218;color:#1A1D21;font-weight:700;font-size:14px;text-decoration:none;
+  padding:9px 15px;border-radius:5px;white-space:nowrap}
+header .back:hover{background:#E0B10C}
+@media(max-width:860px){header .s{display:none}}
 
 .wrap{max-width:1240px;margin:0 auto;padding:22px}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:start}
@@ -72,6 +84,20 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu2);outline-o
   border-radius:0;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:600;
   color:var(--bleu);-moz-appearance:textfield}
 .step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.colo label b{color:var(--bleu);font-weight:700}
+.swatches{display:flex;flex-wrap:wrap;gap:5px}
+.sw{width:26px;height:26px;border:1px solid var(--trait);border-radius:3px;padding:0;cursor:pointer;position:relative}
+.sw[aria-pressed=true]{outline:2px solid var(--bleu);outline-offset:1px}
+.sw.plus::after{content:"+";position:absolute;right:1px;bottom:-2px;font-size:11px;font-weight:700;color:#fff;
+  text-shadow:0 0 2px #000,0 0 2px #000}
+.swgap{width:14px}
+.dot{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.25);
+  margin-right:7px;vertical-align:-2px}
+.dot.galva{background:linear-gradient(135deg,#dfe4e7,#b4bcc1)}
+td.colo-c{white-space:nowrap;font-size:13.5px}
+.sstitre{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;color:var(--graphite2);
+  margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--trait)}
+.sstitre:first-of-type{margin-top:0}
 .check{display:flex;gap:9px;align-items:flex-start;margin-bottom:10px;font-size:14px;cursor:pointer}
 .check input{margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--bleu)}
 .check span b{font-weight:600}
@@ -164,17 +190,26 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
 <body>
 
 <header>
-  <!-- Remplacer par le logo RSL (URL CDN ou base64) -->
-  <svg width="72" height="34" viewBox="0 0 72 34" aria-label="RSL" role="img">
-    <rect x="0" y="0" width="72" height="34" rx="3" fill="#E8701A"/>
-    <text x="36" y="25" text-anchor="middle" font-family="Barlow Condensed,sans-serif"
-          font-size="23" font-weight="700" fill="#fff" letter-spacing="1">RSL</text>
-  </svg>
-  <div>
-    <div class="t">Configurateur Cantilever</div>
-    <div class="s">Stockage de charges longues — barres, tubes, profilés, panneaux</div>
-  </div>
-  <a class="back" href="https://rsl.eu/choisissez-que-produit-a-chiffrer/">← Autres produits</a>
+  <a class="lrsl" href="https://rsl.eu/" target="_blank" rel="noopener"
+     title="Rayonnage, gondole &amp; mezzanine – Nancy, Lorraine, Grand Est | RSL">RSL</a>
+
+  <div class="t">Devis Cantilever</div>
+
+  <a class="lray" href="https://rayonnages.eu/" target="_blank" rel="noopener"
+     title="Rayonnages.eu · Rayonnages, racks et gondoles en ligne">rayonnages<i>.eu</i></a>
+
+  <a class="co" href="tel:+33383554950">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.4.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>
+    03 83 55 49 50</a>
+
+  <a class="co" href="mailto:info@rsl.eu">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5h18c.6 0 1 .4 1 1v12c0 .6-.4 1-1 1H3c-.6 0-1-.4-1-1V6c0-.6.4-1 1-1zm9 7.1L19.6 7H4.4l7.6 5.1zM4 17h16V8.9l-7.4 5c-.4.3-.8.3-1.2 0L4 8.9V17z"/></svg>
+    info@rsl.eu</a>
+
+  <div class="s">RSL — Rayonnages Services Lorraine · tarif au 01/09/2026</div>
+
+  <a class="back" href="https://rayonnages.eu/cantilever/" target="_blank" rel="noopener"
+     title="Cantilever et Râtelier · Rayonnages.eu">← Retour au site</a>
 </header>
 
 <div class="wrap">
@@ -243,6 +278,17 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
             <button type="button" class="lien" id="btnUnif">Tout aligner sur la première</button></div>
         </div>
 
+        <div class="row">
+          <div class="f colo">
+            <label>Coloris colonnes <b id="coloColNom"></b></label>
+            <div class="swatches" id="coloCol"></div>
+          </div>
+          <div class="f colo">
+            <label>Coloris bras <b id="coloBrasNom"></b></label>
+            <div class="swatches" id="coloBras"></div>
+          </div>
+        </div>
+
         <div class="f" style="margin-bottom:0">
           <label>Options</label>
           <label class="check"><input type="checkbox" id="optBB">
@@ -296,10 +342,20 @@ footer{text-align:center;padding:26px;color:var(--gris);font-size:12.5px}
 
 <!-- ============ NOMENCLATURE ============ -->
 <div class="card">
-  <h2><span class="n">3</span>Nomenclature complète du devis</h2>
+  <h2><span class="n">3</span>Nomenclature</h2>
   <div class="body" style="overflow-x:auto">
+    <div class="vide" id="nomenVide">La nomenclature se remplit dès que la configuration est valide.</div>
+
+    <h3 class="sstitre" id="titreCours">Rayonnage en cours de configuration</h3>
+    <table id="nomenCours">
+      <thead><tr><th>Référence</th><th>Désignation</th><th>Coloris</th><th class="n">Qté</th>
+                 <th class="n">P.U. HT</th><th class="n">Total HT</th><th class="n">Poids</th></tr></thead>
+      <tbody></tbody><tfoot></tfoot>
+    </table>
+
+    <h3 class="sstitre" id="titreDevis">Ensemble du devis</h3>
     <table id="nomen">
-      <thead><tr><th>Référence</th><th>Désignation</th><th class="n">Qté</th>
+      <thead><tr><th>Référence</th><th>Désignation</th><th>Coloris</th><th class="n">Qté</th>
                  <th class="n">P.U. HT</th><th class="n">Total HT</th><th class="n">Poids</th></tr></thead>
       <tbody></tbody><tfoot></tfoot>
     </table>
@@ -383,9 +439,40 @@ const CAP_BRAS = {
 const BUTEE_BRAS = { LG:{"40X40X2":"145","80X40X2":"185"},
                      ML:{"40X40X2":"145","80X40X2":"145","80X60X3":"165"} };
 
+/* coloris rayonnages.eu : trois standards sans surcoût, les autres +5 % sur le prix tarif */
+const RAL = {
+  "7024":{nom:"Gris graphite", hex:"#474B4E", sup:0},
+  "7035":{nom:"Gris perle",    hex:"#C5C7C4", sup:0},
+  "1028":{nom:"Sécurité",      hex:"#F39F18", sup:0},
+  "1013":{nom:"Blanc perlé",   hex:"#E3DAC9", sup:.05},
+  "5010":{nom:"Bleu gentiane", hex:"#14517B", sup:.05},
+  "9005":{nom:"Noir foncé",    hex:"#0E0E10", sup:.05},
+  "2004":{nom:"Orange pur",    hex:"#C85A1B", sup:.05},
+  "7040":{nom:"Gris fenêtre",  hex:"#9DA3A6", sup:.05},
+  "5015":{nom:"Bleu ciel",     hex:"#2375B0", sup:.05},
+  "9010":{nom:"Blanc pur",     hex:"#F1EDE4", sup:.05},
+  "3000":{nom:"Rouge feu",     hex:"#A72920", sup:.05}
+};
+const RAL_STD = "7024";
+/* Les deux derniers caractères d'une référence à 17 codent le coloris :
+   03 = RAL 7024 (tarif), 99 = zingué, 00 = sans peinture. */
+const SUFFIXE = {"5015":"01","7035":"02","7024":"03","5010":"05","9005":"06","1013":"07",
+                 "2004":"10","9010":"12","3000":"13","1028":"16","7040":"98"};
+const refColoris = (ref, colo) =>
+  (colo && SUFFIXE[colo] && ref.length === 17) ? ref.slice(0,15) + SUFFIXE[colo] : ref;
+const ral = c => RAL[c] || RAL[RAL_STD];
+/* éclaircit (t>0) ou assombrit (t<0) une couleur hex, pour les faces du volume */
+function teinte(hex, t){
+  const n = parseInt(hex.slice(1),16), c = [n>>16, (n>>8)&255, n&255]
+    .map(v => Math.round(t >= 0 ? v + (255-v)*t : v*(1+t)));
+  return "#" + c.map(v => v.toString(16).padStart(2,"0")).join("");
+}
+const facesDe = hex => ({f:hex, t:teinte(hex,.18), r:teinte(hex,-.28)});
+
 const LARG_COL   = {LG:40,  ML:80};    // colonne vue de face : 40 (léger) ou 80 (mi-lourd) mm
 const PROF_COL   = {LG:140, ML:200};   // colonne vue de côté : profondeur du profil
 const LARG_EMB   = {LG:95,  ML:130};   // largeur du profilé d'embase
+const DEBORD     = {LG:146, ML:246};   // débord catalogue, ajouté à la somme des travées
 const H_MIN_N1   = 470;                // hauteur mini du 1er niveau
 
 const DEPTS = ["Ain","Aisne","Allier","Alpes-de-Haute-Provence","Hautes-Alpes","Alpes-Maritimes",
@@ -407,11 +494,12 @@ const ENTRAXES = [500,750,1000,1250,1500];
 
 /* ===================== ÉTAT ===================== */
 const S = { face:"SF", H:3000, L:800, N:4, C:200, bays:[1000,1000,1000], qte:1,
+            coloCol:RAL_STD, coloBras:RAL_STD,
             dep:"54", bb:false, be:false, vue:"axo" };
 
 const nbTravees  = s => s.bays.length;
-// Longueur totale = somme des contreventements + largeur de chaque colonne.
-const longueurHT = (s, r) => s.bays.reduce((a,b)=>a+b,0) + LARG_COL[r.g] * (s.bays.length + 1);
+// Longueur hors tout (catalogue) = somme des travées + 146 mm en léger, 246 mm en mi-lourd.
+const longueurHT = (s, r) => s.bays.reduce((a,b)=>a+b,0) + DEBORD[r.g];
 // Abscisses du bord gauche de chaque colonne.
 function abscisses(s, r){
   const xs = [0];
@@ -477,19 +565,27 @@ function chiffrer(s, c){
   const nbCol = nbTravees(s) + 1;
   const nbFace = s.face === "DF" ? 2 : 1;
   const lignes = [];
-  const add = (art, q, lib) => { if(art && q>0) lignes.push({ref:art.ref, lib:lib||art.d, q, pu:art.p, pw:art.w,
-                                                             total:+(art.p*q).toFixed(2), poids:+(art.w*q).toFixed(2)}); };
+  // sup = majoration du coloris ; les pièces galvanisées (butées, goujons) n'en portent pas.
+  const add = (art, q, lib, colo) => { if(!art || q<=0) return;
+    const sup = colo ? ral(colo).sup : 0;              // colo absent = pièce galvanisée
+    const pu = +(art.p*(1 + sup)).toFixed(2);
+    lignes.push({ref:refColoris(art.ref, colo), lib:lib||art.d, q, pu, pw:art.w, ral:colo || null,
+                 total:+(pu*q).toFixed(2), poids:+(art.w*q).toFixed(2)}); };
+  const coCol = s.coloCol || RAL_STD, coBras = s.coloBras || RAL_STD;
+  const rc = ral(coCol), rb = ral(coBras);
+  const teinteCol  = ` — RAL ${coCol} ${rc.nom}`;
+  const teinteBras = ` — RAL ${coBras} ${rb.nom}`;
 
   const col = TARIF.colonnes[c.g][s.face][s.H][c.P];
-  add(col, nbCol, `Colonne ${s.face==="DF"?"double":"simple"} face ${c.g==="LG"?"140 × 40 × 3":"200 × 80 × 3"} mm — H. ${s.H} mm, embase ${c.P} mm`);
+  add(col, nbCol, `Colonne ${s.face==="DF"?"double":"simple"} face ${c.g==="LG"?"140 × 40 × 3":"200 × 80 × 3"} mm — H. ${s.H} mm, embase ${c.P} mm${teinteCol}`, coCol);
 
   const parLargeur = {};
   s.bays.forEach(e => parLargeur[e] = (parLargeur[e] || 0) + 1);
   Object.keys(parLargeur).sort((a,b)=>a-b).forEach(e =>
-    add(TARIF.contrev[c.g][e], parLargeur[e], `Contreventement ${nb(+e)} mm — largeur de travée`));
+    add(TARIF.contrev[c.g][e], parLargeur[e], `Contreventement ${nb(+e)} mm — largeur de travée${teinteCol}`, coCol));
 
   const br = TARIF.bras[c.g][c.sect][s.L];
-  add(br, nbCol * s.N * nbFace, `Bras ${c.sect.replace(/X/g,' × ')} mm — L. ${s.L} mm (${c.capB} kg max)`);
+  add(br, nbCol * s.N * nbFace, `Bras ${c.sect.replace(/X/g,' × ')} mm — L. ${s.L} mm (${c.capB} kg max)${teinteBras}`, coBras);
 
   // 1 fixation par colonne en simple face, 2 en double face.
   // Aucun décompte dans le libellé : il est réutilisé tel quel dans la nomenclature
@@ -572,13 +668,15 @@ function svgAxo(s, r){
   const yBras = yC0 - s.L;                               // nez du bras avant
   const yMax = df ? 2*r.P + CD : r.P + CD;               // = emprise au sol
 
-  const T = nbTravees(s), xs = abscisses(s, r), LT = longueurHT(s, r);
+  const T = nbTravees(s), xs = abscisses(s, r);
+  const LD = xs[T] + CW;          // longueur réellement dessinée (travées + colonnes)
+  const LT = longueurHT(s, r);    // longueur hors tout annoncée, formule catalogue
   // Le libellé d'emprise se prolonge à droite de la cote : la marge droite s'y adapte.
   const libEmprise = `${nb(yMax)} mm`;
   const W = 760, HMAX = 442, mL = 72, mT = 38, mB = 54;
   const mR = Math.round(26 + libEmprise.length * 3.4);
   const FX = 0.46, FZ = 0.30;                            // fuite oblique
-  const wMM = LT + yMax*FX;
+  const wMM = LD + yMax*FX;
   const hMM = s.H + yMax*FZ;
   const k = Math.min((W-mL-mR)/wMM, (HMAX-mT-mB)/hMM);
   const ox = mL + Math.max(0, (W-mL-mR - wMM*k)/2), oy = mT + k*hMM;
@@ -593,9 +691,10 @@ function svgAxo(s, r){
     + pol([[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], c.t)
     + pol([[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]], c.f);
 
-  const COL = {f:"#54585F", t:"#6E747C", r:"#43474D"};
-  const BRA = {f:"#6A7078", t:"#848B93", r:"#565A61"};
-  const EMB = {f:"#393D43", t:"#4E535A", r:"#2E3238"};
+  const hexC = ral(s.coloCol).hex, hexB = ral(s.coloBras).hex;
+  const COL = facesDe(hexC);
+  const BRA = facesDe(hexB);
+  const EMB = facesDe(teinte(hexC, -.22));
 
   // trait orange vertical de 100 mm figurant une butée
   const butee = (x,y,z) => { const a = P(x,y,z), b = P(x,y,z+100);
@@ -607,8 +706,8 @@ function svgAxo(s, r){
   let g = "";
 
   // --- sol ---
-  const [gx0,gy0] = P(-140, 0, 0), [gx1,gy1] = P(LT+140, 0, 0);
-  const [hx0,hy0] = P(-140, yMax, 0), [hx1,hy1] = P(LT+140, yMax, 0);
+  const [gx0,gy0] = P(-140, 0, 0), [gx1,gy1] = P(LD+140, 0, 0);
+  const [hx0,hy0] = P(-140, yMax, 0), [hx1,hy1] = P(LD+140, yMax, 0);
   g += `<polygon points="${gx0},${gy0} ${gx1},${gy1} ${hx1},${hy1} ${hx0},${hy0}" fill="#EDF0F3"/>`;
   g += `<line x1="${gx0}" y1="${gy0}" x2="${gx1}" y2="${gy1}" stroke="#B9C1C9" stroke-width="1.4"/>`;
 
@@ -631,7 +730,7 @@ function svgAxo(s, r){
     const a = colX(i)+CW, b = colX(i+1);
     const seg = (x1,z1,x2,z2) => { const p=P(x1,yM,z1), q=P(x2,yM,z2);
       return `<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}"
-              stroke="#5F656D" stroke-width="${sw}" stroke-linecap="round"/>`; };
+              stroke="${teinte(hexC,-.14)}" stroke-width="${sw}" stroke-linecap="round"/>`; };
     g += seg(a,zA,b,zA) + seg(a,zB,b,zB) + seg(a,zA,a,zB) + seg(b,zA,b,zB) + seg(a,zA,b,zB);
   }
 
@@ -688,7 +787,7 @@ function svgAxo(s, r){
   g += coteFuite(ex1(T), 0, yMax, 0, 20, 14, libEmprise);
 
   // --- cotes d'encombrement ---
-  const c1 = P(0,0,0), c2 = P(LT,0,0), yc = Math.max(c1[1],c2[1]) + 24;
+  const c1 = P(0,0,0), c2 = P(LD,0,0), yc = Math.max(c1[1],c2[1]) + 24;
   g += `<line x1="${c1[0]}" y1="${yc}" x2="${c2[0]}" y2="${yc}" stroke="#E8701A" stroke-width="1.3"/>
         <line x1="${c1[0]}" y1="${yc-5}" x2="${c1[0]}" y2="${yc+5}" stroke="#E8701A" stroke-width="1.3"/>
         <line x1="${c2[0]}" y1="${yc-5}" x2="${c2[0]}" y2="${yc+5}" stroke="#E8701A" stroke-width="1.3"/>
@@ -717,6 +816,7 @@ function svgProfil(s, r){
   const k = Math.min((W-230)/emprise, (HMAX-mT-mB)/s.H);
   const Hs = Math.round(s.H*k) + mT + mB;
   const y0 = Hs - mB, px = mm => mm*k;
+  const hexC = ral(s.coloCol).hex, hexB = ral(s.coloBras).hex;
   const cx = (df ? W/2 : W/2 - px(s.L)/2) + 40;
   const cw = Math.max(5, px(CD));
 
@@ -726,20 +826,20 @@ function svgProfil(s, r){
 
   const ebH = px(r.g==="LG"?150:200), ebL = px(s.L)+cw*0.7;
   const ebX = df ? cx-ebL : cx-cw/2, ebW = df ? ebL*2 : ebL+cw/2;
-  g += `<rect x="${ebX}" y="${y0-ebH}" width="${ebW}" height="${ebH}" fill="#393D43" rx="1"/>`;
+  g += `<rect x="${ebX}" y="${y0-ebH}" width="${ebW}" height="${ebH}" fill="${teinte(hexC,-.22)}" rx="1"/>`;
   if(s.be){
     g += `<rect x="${ebX+ebW-2.4}" y="${y0-ebH-px(100)}" width="2.4" height="${px(100)}" fill="#E8701A"/>`;
     if(df) g += `<rect x="${ebX}" y="${y0-ebH-px(100)}" width="2.4" height="${px(100)}" fill="#E8701A"/>`;
   }
-  g += `<rect x="${cx-cw/2}" y="${y0-px(s.H)}" width="${cw}" height="${px(s.H)}" fill="#54585F" rx="1"/>`;
-  for(let h=200; h<s.H; h+=100) g += `<circle cx="${cx}" cy="${y0-px(h)}" r="1.3" fill="#828992"/>`;
+  g += `<rect x="${cx-cw/2}" y="${y0-px(s.H)}" width="${cw}" height="${px(s.H)}" fill="${hexC}" rx="1"/>`;
+  for(let h=200; h<s.H; h+=100) g += `<circle cx="${cx}" cy="${y0-px(h)}" r="1.3" fill="${teinte(hexC,.3)}"/>`;
 
   const bh = Math.max(3.5, px(A.h));
   nv.forEach((h,i)=>{
     const y = y0-px(h);
     const draw = dir => {
       const x = dir>0 ? cx+cw/2 : cx-cw/2-px(s.L);
-      g += `<rect x="${x}" y="${y-bh}" width="${px(s.L)}" height="${bh}" fill="#6A7078" rx="1"/>`;
+      g += `<rect x="${x}" y="${y-bh}" width="${px(s.L)}" height="${bh}" fill="${hexB}" rx="1"/>`;
       if(s.bb){ const bx = dir>0 ? x+px(s.L)-2 : x+1;
                 g += `<rect x="${bx}" y="${y-bh-px(100)}" width="2.4" height="${px(100)}" fill="#E8701A"/>`; }
     };
@@ -773,10 +873,12 @@ function repere(i){
 }
 
 const cfgCourante = () => ({face:S.face, H:S.H, L:S.L, N:S.N, C:S.C,
-                            bays:S.bays.slice(), bb:S.bb, be:S.be});
+                            bays:S.bays.slice(), bb:S.bb, be:S.be,
+                            coloCol:S.coloCol, coloBras:S.coloBras});
 const majQte = v => { S.qte = v; $("Q").value = v; };
 const memeCfg = (a,b) => a.face===b.face && a.H===b.H && a.L===b.L && a.N===b.N &&
                          a.C===b.C && a.bb===b.bb && a.be===b.be &&
+                         a.coloCol===b.coloCol && a.coloBras===b.coloBras &&
                          a.bays.length===b.bays.length && a.bays.every((v,i)=>v===b.bays[i]);
 
 // Résout et chiffre chaque ligne, puis agrège le devis complet.
@@ -814,9 +916,30 @@ function detail(cfg, r){
                ? `${t} travée${t>1?"s":""} de ${nb(cfg.bays[0])} mm`
                : `${t} travées : ${cfg.bays.map(v=>nb(v)).join(" / ")} mm`];
   if(r && r.ok) d.push(`longueur ${nb(longueurHT(cfg,r))} mm`, `profondeur ${nb(empriseSol(cfg,r))} mm`);
+  d.push(`colonnes RAL ${cfg.coloCol||RAL_STD}`, `bras RAL ${cfg.coloBras||RAL_STD}`);
   if(cfg.bb) d.push("butées de bras");
   if(cfg.be) d.push("butées d'embase");
   return d.join(" · ");
+}
+
+/* ===================== COLORIS ===================== */
+function rendreColoris(){
+  ["coloCol","coloBras"].forEach(key => {
+    const host = $(key);
+    const sw = r => '<button type="button" class="sw'+(RAL[r].sup?" plus":"")+'" data-ral="'+r+'"'
+      + ' style="background:'+RAL[r].hex+'" aria-pressed="'+(S[key]===r)+'"'
+      + ' title="RAL '+r+' — '+RAL[r].nom+(RAL[r].sup?" (+5 %)":"")+'"></button>';
+    // le standard reste en tête, détaché du reste de la palette par un espace
+    host.innerHTML = sw(RAL_STD) + '<span class="swgap"></span>'
+      + Object.keys(RAL).filter(r => r !== RAL_STD).map(sw).join("");
+    host.querySelectorAll("[data-ral]").forEach(el => el.onclick = () => {
+      S[key] = el.dataset.ral;
+      if(EDITION !== null){ PANIER[EDITION].cfg[key] = S[key]; rendrePanier(); }
+      calculer();
+    });
+    const r = ral(S[key]);
+    $(key+"Nom").textContent = "RAL "+S[key]+" · "+r.nom+(r.sup ? " (+5 %)" : "");
+  });
 }
 
 /* ===================== RENDU ===================== */
@@ -827,17 +950,16 @@ function calculer(){
   const r = resoudre(s);
   COURANT = r;
 
+  rendreColoris();
   dessiner(s, r);
 
   // cotes
   if(r.ok){
-    const nv = niveaux(s);
-    const pas = s.N>1 ? nv[1]-nv[0] : 0;
     const emprise = empriseSol(s, r), nbCol = nbTravees(s) + 1;
     $("cotes").innerHTML = [
       ["Longueur hors tout", nb(longueurHT(s,r))+" mm"],
       ["Profondeur hors tout", nb(emprise)+" mm"],
-      ["Entraxe des niveaux", pas ? nb(pas)+" mm" : "—"],
+      ["Charge maxi colonne", nb(r.capCol)+" kg"],
       [`Charge maxi d'un niveau horizontal de ${nbCol} bras`, nb(r.capB*nbCol)+" kg"],
       ["Charge maxi des bras", nb(r.capB)+" kg"]
     ].map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
@@ -876,6 +998,7 @@ function calculer(){
     <span class="op">× ${s.qte} =</span>
     <span class="tt">${eur(+(r.totalHT*s.qte).toFixed(2))}<em>&nbsp;HT</em></span>`;
 
+  rendreNomenclature();   // la liste des pièces suit la configuration en direct
   ecrireUrl();
 }
 
@@ -884,8 +1007,11 @@ function nomenclatureDevis(){
   const m = new Map();
   devis().lignes.forEach(l => { if(!l.r.ok) return;
     l.r.lignes.forEach(x => {
-      const e = m.get(x.ref) || {ref:x.ref, lib:x.lib, pu:x.pu, pw:x.pw, q:0};
-      e.q += x.q * l.qte; m.set(x.ref, e);
+      // Clé = référence + prix : deux coloris du même article ont la même référence
+      // mais pas le même tarif, les fusionner ferait disparaître la majoration.
+      const k = x.ref + "|" + x.pu;
+      const e = m.get(k) || {ref:x.ref, lib:x.lib, pu:x.pu, pw:x.pw, ral:x.ral, q:0};
+      e.q += x.q * l.qte; m.set(k, e);
     });
   });
   return [...m.values()]
@@ -893,24 +1019,55 @@ function nomenclatureDevis(){
     .sort((a,b) => a.ref.localeCompare(b.ref));
 }
 
-function rendreNomenclature(){
-  const t = $("nomen"), lignes = nomenclatureDevis();
-  if(!lignes.length){
-    t.querySelector("tbody").innerHTML =
-      `<tr><td colspan="6" class="vide">La nomenclature se remplit dès qu'un rayonnage est ajouté au devis.</td></tr>`;
-    t.querySelector("tfoot").innerHTML = ""; return;
-  }
-  t.querySelector("tbody").innerHTML = lignes.map(l=>`
-    <tr><td class="ref">${esc(l.ref)}</td><td>${esc(l.lib)}</td>
+// Pastille + code RAL, ou mention galvanisé pour les pièces sans peinture.
+function celluleColoris(code){
+  if(!code) return `<td class="colo-c"><i class="dot galva"></i>Galvanisé</td>`;
+  return `<td class="colo-c"><i class="dot" style="background:${ral(code).hex}"></i>RAL ${esc(code)}</td>`;
+}
+function corpsNomen(lignes){
+  return lignes.map(l=>`
+    <tr><td class="ref">${esc(l.ref)}</td>
+        <td>${esc(l.lib.replace(/ — RAL .*$/, ""))}</td>
+        ${celluleColoris(l.ral)}
         <td class="n">${l.q}</td><td class="n">${eur(l.pu)}</td>
         <td class="n">${eur(l.total)}</td><td class="n">${nb(l.poids,1)} kg</td></tr>`).join("");
-  const q = lignes.reduce((a,l)=>a+l.q,0);
+}
+function piedNomen(lignes, libelle){
+  const q  = lignes.reduce((a,l)=>a+l.q,0);
   const ht = +lignes.reduce((a,l)=>a+l.total,0).toFixed(2);
   const pd = +lignes.reduce((a,l)=>a+l.poids,0).toFixed(1);
-  t.querySelector("tfoot").innerHTML = `
-    <tr><td colspan="2">Total matériel HT — ${lignes.length} référence${lignes.length>1?"s":""}</td>
+  return `<tr><td colspan="3">${libelle} — ${lignes.length} référence${lignes.length>1?"s":""}</td>
         <td class="n">${q}</td><td></td>
         <td class="n">${eur(ht)}</td><td class="n">${nb(pd,1)} kg</td></tr>`;
+}
+
+function rendreNomenclature(){
+  // Rayonnage en cours : affiché tant qu'il n'est pas au devis, pour voir les pièces
+  // se composer en direct. En cours d'édition il est déjà dans le devis, qui se met à jour seul.
+  // Masqué dès que la configuration affichée est déjà au devis à l'identique :
+  // le tableau du devis la montre alors, l'afficher deux fois induirait en erreur.
+  const r = COURANT;
+  const auDevis = PANIER.some(p => memeCfg(p.cfg, cfgCourante()));
+  const enCours = (r && r.ok && !auDevis)
+    ? r.lignes.map(x => ({...x, q:x.q*S.qte, total:+(x.total*S.qte).toFixed(2),
+                          poids:+(x.poids*S.qte).toFixed(2)}))
+    : [];
+  const t = $("nomenCours");
+  t.style.display = enCours.length ? "" : "none";
+  if(enCours.length){
+    t.querySelector("tbody").innerHTML = corpsNomen(enCours);
+    t.querySelector("tfoot").innerHTML = piedNomen(enCours, "Total HT du rayonnage en cours");
+  }
+  $("titreCours").style.display = enCours.length ? "" : "none";
+
+  const d = $("nomen"), lignes = nomenclatureDevis();
+  $("titreDevis").style.display = lignes.length ? "" : "none";
+  d.style.display = lignes.length ? "" : "none";
+  $("nomenVide").style.display = (lignes.length || enCours.length) ? "none" : "";
+  if(lignes.length){
+    d.querySelector("tbody").innerHTML = corpsNomen(lignes);
+    d.querySelector("tfoot").innerHTML = piedNomen(lignes, "Total matériel HT");
+  }
 }
 
 function rendrePanier(){
@@ -1033,7 +1190,8 @@ function ajouterAuDevis(){
 function modifierLigne(i){
   const c = PANIER[i].cfg;
   Object.assign(S, {face:c.face, H:c.H, L:c.L, N:c.N, C:c.C, bays:c.bays.slice(),
-                    bb:c.bb, be:c.be, qte:PANIER[i].qte});
+                    bb:c.bb, be:c.be, qte:PANIER[i].qte,
+                    coloCol:c.coloCol||RAL_STD, coloBras:c.coloBras||RAL_STD});
   EDITION = i;
   $("btnAjouter").textContent = `Mettre à jour la ligne ${repere(i)}`;
   $("btnAnnuler").style.display = "";
@@ -1318,7 +1476,8 @@ async function genererPdf(){
 
 /* ===================== LIEN PARTAGEABLE ===================== */
 function ecrireUrl(){
-  const enc = c => [c.face,c.H,c.L,c.N,c.C,c.bays.join("."),(c.bb?1:0)+""+(c.be?1:0)].join("-");
+  const enc = c => [c.face,c.H,c.L,c.N,c.C,c.bays.join("."),(c.bb?1:0)+""+(c.be?1:0),
+                    (c.coloCol||RAL_STD)+"."+(c.coloBras||RAL_STD)].join("-");
   const parts = [S.dep, "E"+enc(cfgCourante())+"-"+S.qte]
     .concat(PANIER.map(p => enc(p.cfg) + "-" + p.qte));
   history.replaceState(null, "", "?devis=" + parts.join("_"));
@@ -1335,8 +1494,11 @@ function lireUrl(){
     if(!HAUTEURS.includes(+p[1]) || !LONGS.includes(+p[2])) return null;
     const bays = p[5].split(".").map(Number).filter(v => ENTRAXES.includes(v));
     if(!bays.length) return null;
+    // p[7] absent sur un lien émis avant les coloris : on retombe sur le standard
+    const co = (p[7]||"").split(".");
     return {face:p[0], H:+p[1], L:+p[2], N:+p[3], C:+p[4], bays,
-            bb:p[6][0]==="1", be:p[6][1]==="1"};
+            bb:p[6][0]==="1", be:p[6][1]==="1",
+            coloCol:RAL[co[0]]?co[0]:RAL_STD, coloBras:RAL[co[1]]?co[1]:RAL_STD};
   };
   parts.forEach(t => {
     if(t.charAt(0) === "E"){                     // configuration en cours d'édition
@@ -1385,6 +1547,7 @@ async function envoyer(){
       section_bras: l.r.sect, niveaux: l.cfg.N, charge_par_bras_kg: l.cfg.C,
       travees: l.cfg.bays.length, largeurs_travees_mm: l.cfg.bays.slice(),
       longueur_hors_tout_mm: longueurHT(l.cfg, l.r), profondeur_hors_tout_mm: empriseSol(l.cfg, l.r),
+      coloris_colonnes: "RAL "+(l.cfg.coloCol||RAL_STD), coloris_bras: "RAL "+(l.cfg.coloBras||RAL_STD),
       butees_bras: l.cfg.bb, butees_embase: l.cfg.be,
       total_ht: l.totalHT, poids_kg: l.poids,
       nomenclature: l.r.lignes.map(x=>({reference:x.ref, designation:x.lib, quantite:x.q*l.qte,
