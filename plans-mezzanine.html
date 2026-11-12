@@ -507,7 +507,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     // ---------- Ce que seul le DXF contient ----------
     const ents = D ? D.entities : [];
     const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= 2);
-    const solives = [], entretoises = [], gc = [], stair = [], stairDims = [], sas = [], foundLisses = new Set();
+    const solives = [], entretoises = [], gc = [], stair = [], stairDims = [], sas = [], gates = [], foundLisses = new Set();
     let dxfSousLisse = null;
     for (const o of ents) {
       if (o.type === 'LWPOLYLINE' && o.color === 30) {
@@ -528,6 +528,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       } else if (o.type === 'INSERT' && /^(STAIR|RECEPTION)_/.test(o.name || '')) stair.push(o);
       else if (o.type === 'INSERT' && /^MEASURE_/.test(o.name || '')) stairDims.push(o);
       else if (o.type === 'INSERT' && /^SECURITY_LOCK/.test(o.name || '')) sas.push({ c: [o.k10[0], -o.k10[1]], m: insertM(o), L: +((/(\d{4})$/.exec(o.name) || [])[1] || 1500) }); // c : centre de l'ouverture
+      else if (o.type === 'INSERT' && /^GATE_\d{4}/.test(o.name || '')) gates.push({ m: insertM(o), L: +/^GATE_(\d{4})/.exec(o.name)[1] }); // GATE_1500750 : ouverture 1500, vantaux de 750 ouverts vers +Y du bloc
       else if (o.type === 'TEXT' && /sous lisse/i.test(o.text || '')) dxfSousLisse = +((/(\d+)\s*mm/.exec(o.text) || [])[1]);
     }
 
@@ -626,7 +627,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const stairSVG = [], stairDimSVG = [];
     if (D) { drawDXF(stair, D.blocks, ID, stairSVG, bb); drawDXF(stairDims, D.blocks, ID, stairDimSVG, bb); }
 
-    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, sas, landing: landing.poles.length ? landing : null, equip: equipements(J) };
+    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, sas, gates, landing: landing.poles.length ? landing : null, equip: equipements(J) };
   }
 
   // shortcut: une plateforme en U pourrait voir son échancrure remplie (test « entouré dans les 4 directions ») ; passer à un vrai contour si un projet le montre.
@@ -873,6 +874,31 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       const p = sasPivot(T, o); if (p) sasList.push(p);
     }
     g.userData.sas = sasList;
+
+    // Portillon à 2 vantaux posé sur son bloc DXF (GATE_1500750 : ouverture u ±L/2, vantaux ouverts vers +v), mêmes profils que
+    // celui de l'OBJ fournisseur (PEP2606-86) : platine 142 × 180, poteau 27 × 50, vantail 40 d'épaisseur. S'il y a un OBJ, son portillon le remplace.
+    const gateList = [];
+    for (const gt of M.gates || []) {
+      const m = gt.m, half = gt.L / 2;
+      // repère du bloc (u, h, v) -> scène ; w = -v garde l'orientation (pas de miroir, faces dans le bon sens)
+      const W = new T.Matrix4().set(m[0] * K, 0, -m[2] * K, m[4] * K, 0, K, 0, H * K, -m[1] * K, 0, m[3] * K, -m[5] * K, 0, 0, 0, 1);
+      const part = (u0, u1, h0, h1, v0, v1) => new T.BoxGeometry(Math.abs(u1 - u0), h1 - h0, v1 - v0).translate((u0 + u1) / 2, (h0 + h1) / 2, -(v0 + v1) / 2).applyMatrix4(W);
+      const pivots = [];
+      for (const s of [-1, 1]) {
+        const ue = s * (half - 36); // bout du vantail côté charnière
+        add(part(s * (half - 16) - 71, s * (half - 16) + 71, 0, 6, -90, 90), mat('accessoires')); // platine
+        add(part(s * (half - 15.5) - 13.5, s * (half - 15.5) + 13.5, 6, 1106, -45, 5), mat('accessoires')); // poteau, 20 mm côté extérieur
+        const pv = new T.Vector3(ue, 0, 0).applyMatrix4(W), pivot = new T.Group(); pivot.position.copy(pv); g.add(pivot); // charnière : angle du vantail côté ouverture
+        const leaf = [part(ue, ue - s * 35, 6, 1092, -40, 0), part(s * 10, s * 45, 6, 1092, -40, 0), part(s * 45, ue - s * 35, 6, 176, -40, 0),
+          part(s * 45, ue - s * 35, 562, 602, -40, 0), part(s * 45, ue - s * 35, 1027, 1067, -40, 0)]; // montants, soubassement, 2 lisses
+        for (const geo of leaf) { geo.translate(-pv.x, -pv.y, -pv.z); const o = new T.Mesh(geo, mat('accessoires')); o.name = 'GATE-LEAF'; o.castShadow = o.receiveShadow = true; pivot.add(o); }
+        // sens : à +90° autour de la verticale, (x, z) -> (z, -x) ; le vantail fermé pointe vers le centre (-s en u), il doit finir vers +v
+        const d = new T.Vector3(-s, 0, 0).transformDirection(W), o = new T.Vector3(0, 0, -1).transformDirection(W);
+        pivots.push({ pivot, sign: Math.sign(d.z * o.x - d.x * o.z) || 1 });
+      }
+      gateList.push({ left: pivots[0].pivot, leftSign: pivots[0].sign, right: pivots[1].pivot, rightSign: pivots[1].sign });
+    }
+    g.userData.gate = gateList;
 
     // Plancher : caillebotis (code …T00030C…) ajouré, sinon panneau aggloméré
     const cb = /T\d{5}C/.test(M.env.plancher || ''), floor = new T.Group();
