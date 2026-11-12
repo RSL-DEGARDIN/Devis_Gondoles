@@ -209,8 +209,9 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 #dossier .link3d b { font: 700 13pt/1.1 var(--f-display); color: #1f4fa3; }
 #dossier .link3d p { margin: 1.5mm 0 2.5mm; font-size: 9pt; }
 #dossier .link3d a { display: inline-block; font: 600 10pt var(--f-body); color: #fff; background: #1f4fa3; border-radius: 1.5mm; padding: 1.8mm 3.5mm; text-decoration: none; }
-#dossier .planimg { flex: 0 0 98mm; display: flex; justify-content: center; }
-#dossier .planimg svg { width: 100%; height: 98mm; min-width: 0; max-height: none; }
+#dossier .planwrap { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; } /* le plan prend la place laissée par les caractéristiques (équipements en plus) */
+#dossier .planimg { flex: 1 1 0; min-height: 0; display: flex; justify-content: center; }
+#dossier .planimg svg { width: 100%; height: 100%; min-width: 0; max-height: none; }
 #dossier .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
 #dossier .duo img { width: 100%; height: 48mm; object-fit: contain; border-radius: 2mm; background: #f1f4f8; display: block; }
 #dossier figure { margin: 0; }
@@ -427,6 +428,10 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     AI04D44030D000016: 'Protection de poteau H. 440, 4 faces, platine 300', AI04D44030D000116: 'Protection de poteau H. 440, 2 pièces, platine 300',
     AIZ0015011A000016: 'Portillon à retour automatique avec vérins L. 1500 mm', AIZ0020011A000016: 'Portillon à retour automatique avec vérins L. 2000 mm',
   };
+  // Le JSON donne les 15 premiers caractères du code ; les protections de poteau y arrivent en AI0404… pour AI04D4… au catalogue (PEP2611-184).
+  const refOf = code => Object.keys(ACCESSOIRES).find(r => [r.slice(0, 15), r.replace(/^AI04D/, 'AI040').slice(0, 15)].includes((code || '').slice(0, 15)));
+  // Équipements à montrer au client (portillon, sas, protections, plaques), sans code article ; le lien client les porte déjà ainsi.
+  const equipements = J => J.equipements || (J.accessoires || []).flatMap(a => refOf(a.codearticle) ? [{ label: ACCESSOIRES[refOf(a.codearticle)], q: a.count }] : []);
 
   function buildPlan(J, D) {
     let env = J.environement || {};
@@ -453,19 +458,25 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       const int = l.orientation && l.orientation.position === 'interieur';
       if (!DIR[d]) throw new Error(`lisse ${id} : direction « ${d} » inconnue`);
       const H = d === 'nord' || d === 'sud', sg = d === 'sud' || d === 'est' ? 1 : -1;
-      const ends = [l.origine, l.fin].map(e => e.objet === 'poteau' ? { pole: poles[e.id] } : { web: lisse(e.id, seen).web });
+      const sup = [l.origine, l.fin].map(e => e.objet === 'poteau' ? null : lisse(e.id, seen));
+      const ends = [l.origine, l.fin].map((e, i) => sup[i] ? { web: sup[i].web } : { pole: poles[e.id] });
       if (ends.some(e => 'pole' in e && !e.pole)) throw new Error(`lisse ${id} : poteau d'extrémité introuvable`);
       const ref = (ends.find(e => e.pole) || {}).pole;
-      // shortcut: une lisse posée entre deux lisses n'a pas de poteau pour fixer son axe ; à traiter si un projet en contient.
-      if (!ref) throw new Error(`lisse ${id} : aucune extrémité sur un poteau`);
-      const web = (H ? ref.cy : ref.cx) - sg * (int ? (H ? ref.h : ref.w) / 2 : 15), gap = int ? 27.5 : 5;
+      // Lisse posée entre deux lisses (PEP2611-184, lisse 14) : son axe vient de « position » sur chaque lisse d'appui, comptée
+      // depuis le bout où la semelle d'appui est à main droite (y vers le sud), jusqu'au milieu de sa semelle. Les 2 appuis
+      // tombent sur la même cote, au mm près de l'OBJ fournisseur.
+      // shortcut: convention relevée sur une seule lisse ; à revoir si un autre projet donne 2 cotes différentes.
+      const along = [l.origine, l.fin].map((e, i) => sup[i] && e.position != null ? ((sup[i].H ? sup[i].sg > 0 : sup[i].sg < 0) ? sup[i].a0 + e.position : sup[i].a1 - e.position) : null).filter(v => v != null);
+      if (!ref && !along.length) throw new Error(`lisse ${id} : aucune extrémité sur un poteau`);
+      const mid = along.length ? along.reduce((a, b) => a + b) / along.length : null;
+      const web = ref ? (H ? ref.cy : ref.cx) - sg * (int ? (H ? ref.h : ref.w) / 2 : 15) : mid - sg * fl / 2, gap = int ? 27.5 : 5;
       const pos = ends.map(e => e.pole ? (H ? e.pole.cx : e.pole.cy) : e.web);
       const lo = pos[0] <= pos[1] ? 0 : 1, hi = 1 - lo, half = e => (H ? e.pole.w : e.pole.h) / 2;
       const a0 = ends[lo].pole ? pos[lo] + half(ends[lo]) + gap : pos[lo];
       const a1 = ends[hi].pole ? pos[hi] - half(ends[hi]) - gap : pos[hi];
       const b0 = Math.min(web, web + sg * fl), b1 = Math.max(web, web + sg * fl);
       // Pour le plancher et la 3D : lisse prolongée jusqu'à la face extérieure des poteaux, et son axe entre centres d'appui.
-      const e0 = ends[lo].pole ? pos[lo] - half(ends[lo]) : a0, e1 = ends[hi].pole ? pos[hi] + half(ends[hi]) : a1, cr = H ? ref.cy : ref.cx;
+      const e0 = ends[lo].pole ? pos[lo] - half(ends[lo]) : a0, e1 = ends[hi].pole ? pos[hi] + half(ends[hi]) : a1, cr = ref ? (H ? ref.cy : ref.cx) : mid;
       return (lisses[id] = {
         id, def: l, section: l.section, ht, fl, H, sg, web, a0, a1, len: a1 - a0, rect: H ? [a0, b0, a1, b1] : [b0, a0, b1, a1],
         ext: H ? [e0, b0, e1, b1] : [b0, e0, b1, e1], axis: H ? [[pos[lo], cr], [pos[hi], cr]] : [[cr, pos[lo]], [cr, pos[hi]]],
@@ -602,7 +613,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     for (const e of S.escalier || []) rows.push({ g: 'Sécurité et accès', el: `Escalier ${e.modele}`, det: [`emmarchement ${code5(e.modele)} mm`, `sur lisse ${e.lisse}, vers ${/^[eo]/.test(e.orientation) ? "l'" : 'le '}${e.orientation}`].concat(e.options || []).join(' · '), q: 1, src: 'JSON' });
     for (const a of J.accessoires || []) {
       // shortcut: une seule teinte par article au catalogue ; s'il en vient deux, la première l'emporte
-      const ref = Object.keys(ACCESSOIRES).find(r => r.slice(0, 15) === (a.codearticle || '').slice(0, 15));
+      const ref = refOf(a.codearticle);
       const det = ref && `${ref} · ${COLORIS[ref.slice(-2)] || 'coloris ' + ref.slice(-2)}`;
       rows.push({ g: 'Accessoires', el: ref ? ACCESSOIRES[ref] : a.codearticle, det: [det, a === gcAcc && 'modules de garde-corps'].filter(Boolean).join(' · '), q: a.count, src: 'JSON', mono: !ref });
     }
@@ -615,7 +626,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const stairSVG = [], stairDimSVG = [];
     if (D) { drawDXF(stair, D.blocks, ID, stairSVG, bb); drawDXF(stairDims, D.blocks, ID, stairDimSVG, bb); }
 
-    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, sas, landing: landing.poles.length ? landing : null };
+    return { J, env, poles: P, lisses: L, semi, croix, jdf, solives, entretoises, gc, stairSVG, stairDimSVG, rows, checks, warn, bb, sousLisse, ep, D, floor, stairs3d, sas, landing: landing.poles.length ? landing : null, equip: equipements(J) };
   }
 
   // shortcut: une plateforme en U pourrait voir son échancrure remplie (test « entouré dans les 4 directions ») ; passer à un vrai contour si un projet le montre.
@@ -706,7 +717,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     return `<svg xmlns="http://www.w3.org/2000/svg" class="plan" viewBox="${fx(vx)} ${fx(vy)} ${fx(vw)} ${fx(vh)}" role="img" aria-label="Plan de la mezzanine ${esc(ref)}">${out.join('')}<\/svg>`;
   }
 
-  const api = { parseDXF, buildPlan, renderSVG };
+  const api = { parseDXF, buildPlan, renderSVG, equipements };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.MEZZ = api;
 })(this);
 </script>
@@ -1034,10 +1045,20 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     const part = n => /^SAS|SECURITY_LOCK|^GATE/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
       : /RAIL|GUARD|BASEBOARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
     const hasGC = meshes.some(o => /RAIL|GUARD/.test(o.name) && !/^STAIR/.test(o.name));
-    let floorBot = null, gr = null; const sas = [], gate = [];
+    let floorBot = null, gr = null, fm = null; const sas = [], gate = [];
+    floor.traverse(o => { if (o.isMesh && !fm) fm = Array.isArray(o.material) ? o.material[0] : o.material; });
     for (const o of meshes) {
+      // Palier intermédiaire d'escalier (FLOOR-…_LANDING_FLOOR, PEP2611-184 : 600 mm sous une plateforme à 3700) : à sa hauteur à lui,
+      // on garde sa couche du milieu (30 mm) dans la matière de notre plancher ; il ne sert pas de repère de hauteur.
+      if (/^FLOOR-MID_LANDING/.test(o.name) && fm) {
+        o.material = fm; o.castShadow = false; o.receiveShadow = true;
+        const cb = /T\d{5}C/.test(M.env.plancher || ''), pos = o.geometry.attributes.position, uv = new T.BufferAttribute(new Float32Array(pos.count * 2), 2);
+        for (let j = 0; j < pos.count; j++) uv.setXY(j, pos.getX(j) / (cb ? 0.06 : 2.05), pos.getZ(j) / (cb ? 0.038 : 1.82)); // même échelle que notre plancher
+        o.geometry.setAttribute('uv', uv);
+        continue;
+      }
       if (/^FLOOR/.test(o.name)) { // FLOOR-BOT_PART (bois) ou FLOOR-LAYER-n (caillebotis) ; le palier a son propre plancher
-        o.geometry.computeBoundingBox(); if (!/RECEPTION/.test(o.name)) floorBot = Math.min(floorBot ?? Infinity, o.geometry.boundingBox.min.y);
+        o.geometry.computeBoundingBox(); if (!/RECEPTION|LANDING/.test(o.name)) floorBot = Math.min(floorBot ?? Infinity, o.geometry.boundingBox.min.y);
         o.parent.remove(o); o.geometry.dispose(); continue;
       }
       if (/^STAIR-STEP_/.test(o.name)) { // marches en caillebotis, comme le reste de l'escalier (tôle pleine sinon)
@@ -1247,8 +1268,7 @@ function render() {
       <dl><dt>Date</dt><dd>${esc(c.date)}</dd><dt>Code postal</dt><dd>${esc(c.code_region)} ${esc(c.pays)}</dd>
       <dt>Société</dt><dd>${esc(c.societe)}</dd><dt>Dessiné par</dt><dd>${esc([c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' '))}</dd><dt>N° client</dt><dd class="mono">${esc(c.num)}</dd></dl>`;
 
-  $('carac').innerHTML = caracRows(M).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
-  $('couleurs').innerHTML = colorRows(e).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('');
+  fiche(p, M);
 
   $('checks-card').hidden = !M.checks.length;
   $('checks').innerHTML = M.checks.map(k => `<li><span>${esc(k.label)}</span><span class="pill ${k.ok ? 'ok' : 'ko'}">${esc(k.val)}</span></li>`).join('');
@@ -1398,7 +1418,21 @@ function drawPlan(M) {
 }
 
 // Caractéristiques en clair (page, page client et PDF client lisent la même liste).
-function caracRows(M) {
+// Équipements retenus (fiche, PDF, lien client) : un accessoire du JSON dont toutes les lignes du devis client (lignes Manorga
+// ou options) sont décochées n'est pas proposé ; sans devis importé ou sans ligne correspondante, il reste.
+// shortcut: rapprochement par famille (portillon, sas, protection, plaque), pas par modèle ; à affiner si un devis en mélange deux.
+const FAMILLES = [/portillon/i, /\bsas\b/i, /protection/i, /plaque|d[ée]chargement/i];
+function equipRetenus(p, equip) {
+  if (!p.devis) return equip;
+  const rows = devisRows(p.devis);
+  return equip.filter(x => { const f = FAMILLES.find(re => re.test(x.label)), rs = f ? rows.filter(r => f.test(`${r.cat} ${r.des}`)) : []; return !rs.length || rs.some(r => r.on); });
+}
+function fiche(p, M) {
+  const eq = equipRetenus(p, M.equip);
+  $('carac').innerHTML = caracRows(M, eq).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+  $('couleurs').innerHTML = colorRows(p.json.environement || {}, eq).map(r => `<div class="sw"><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('');
+}
+function caracRows(M, equip = M.equip) {
   const e = M.env, P = M.poles, pl = Math.max(...P.map(q => q.pl || q.w)) / 2, n = (v, d) => v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
   const ext = k => Math.max(...P.map(q => q[k])) - Math.min(...P.map(q => q[k])) + 2 * pl;
   const surf = M.floor.reduce((s, r) => s + (r[2] - r[0]) * (r[3] - r[1]), 0) / 1e6;
@@ -1416,9 +1450,11 @@ function caracRows(M) {
     hasJson && ['Flèche maximale', `1/${e.fleche}e`],
     hasJson && ['Plancher', `${/T\d{5}C/.test(e.plancher || '') ? 'caillebotis galvanisé' : 'panneaux aggloméré 2050 × 910'}, ép. ${M.ep} mm`],
     hasJson && ['Structure', [nb(P.length + (M.landing ? M.landing.poles.length : 0), 'poteau', 'poteaux'), nb(M.lisses.length, 'lisse', 'lisses'), M.solives.length && nb(M.solives.length, 'solive', 'solives')].filter(Boolean).join(', ')], // palier compris ; solives seulement avec le DXF
+    hasJson && P.length && ['Section des poteaux', [...new Set(P.map(q => `${q.w} × ${q.h}`))].join(' et ') + ' mm'],
     ['Stabilité', stab],
     esc0 && ['Escalier', [s0 && `${Math.round(Math.atan2(e.hauteur, s0.L) * 180 / Math.PI)}°`, w && `passage ${+w[1]} mm`, M.landing && 'avec palier'].filter(Boolean).join(', ')],
     gcml && ['Garde-corps', `hauteur 1100 mm, ${n(gcml, 1)} ml en bord de plateforme`],
+    ...equip.map((x, i) => [i ? '' : 'Équipements', `${x.q} × ${x.label}`]),
   ];
   if (!CLIENT && hasJson) rows.push(['Code plancher', e.plancher || '—'], ['Solivage', String(e.solivage || '').toLowerCase()]);
   return rows.filter(Boolean);
@@ -1427,9 +1463,9 @@ const DESSOUS = { bois: { code: 'Bois', css: '#b98f5e' }, blanc: { code: 'Blanc'
 // Lettre qui suit l'épaisseur dans le code plancher : A dessous bois, B dessous blanc, C caillebotis.
 // shortcut: déduit de deux exports (PEP2610-846 « 38ACA » bois, PEP2611-04 « 38BCA » blanc) ; revoir si un autre code apparaît.
 const dessousDe = e => /T\d{5}B/.test(e.plancher || '') ? 'blanc' : 'bois';
-function colorRows(e) {
+function colorRows(e, equip) { // coloris des accessoires seulement s'il y a des équipements (portillon, sas, protections…)
   const names = { poteaux: 'Poteaux', lisses: 'Lisses', solives: 'Solives', croisillons: 'Croisillons', escaliers: 'Escalier', rambardes: 'Garde-corps', accessoires: 'Accessoires' };
-  const rows = Object.entries(e.couleurs || {}).filter(([k]) => !CLIENT || k !== 'accessoires')
+  const rows = Object.entries(e.couleurs || {}).filter(([k]) => k !== 'accessoires' || equip.length)
     .map(([k, v]) => ({ name: names[k] || k, code: v === 'GALVA' ? 'Galvanisé' : v.replace(/^RAL/, 'RAL '), css: RAL[v] || 'var(--steel)' }));
   // Dessous du plancher bois : comme le dessus par défaut, parfois peint en blanc (sans objet pour le caillebotis, ni sans JSON : code plancher inconnu)
   if (e.plancher && !/T\d{5}C/.test(e.plancher)) rows.push({ name: 'Dessous du plancher', ...DESSOUS[dessousDe(e)] });
@@ -1832,7 +1868,7 @@ $('dv-body').addEventListener('input', ev => {
   if (!d) return;
   if (t.id === 'dv-marge') { devisRegSave({ ...devisReg(), marge: t.value }); devisCalc(); return; }
   const k = ds.on ?? ds.achat ?? ds.jours ?? ds.pj ?? ds.ar ?? ds.qte ?? ds.pu, ligne = /^\d+$/.test(k || '') ? d.lignes[k] : null, opt = /^o\d+$/.test(k || '') ? d.options[k.slice(1)] : null;
-  if (ds.on != null) { if (ligne) ligne.on = t.checked; else if (opt) opt.on = t.checked; else d.opts[k] = t.checked; }
+  if (ds.on != null) { if (ligne) ligne.on = t.checked; else if (opt) opt.on = t.checked; else d.opts[k] = t.checked; if (projects[cur] === dvp()) fiche(projects[cur], model(projects[cur])); }
   else if (ds.achat != null) { if (ligne) ligne.achat = n; else d.transport = n; }
   else if (ds.jours != null) d.jours[k] = n;
   else if (ds.pj != null) d.pj[k] = n;
@@ -1943,7 +1979,7 @@ function clientPayload(p, nom, projet) {
   J.client = { reference_interne: c.reference_interne, date: c.date, code_region: c.code_region, contact: { prenom: c.contact?.prenom, nom: c.contact?.nom } };
   env.plancher = (/T\d{5}[A-Z]?/.exec(env.plancher || '') || ['T00030'])[0]; // garde la lettre (dessous blanc / caillebotis), pas le reste du code article
   (J.structure?.escalier || []).forEach(s => { s.modele = `T${code(s.modele) || '00800'}`; });
-  delete J.accessoires;
+  J.equipements = equipRetenus(p, MEZZ.equipements(J)); delete J.accessoires; // libellés seuls, sans code article ni accessoire décoché au devis
   let dxf = null;
   const D = p.D || (p.dxf ? MEZZ.parseDXF(p.dxf) : null);
   if (D) {
@@ -2035,7 +2071,7 @@ async function printDossier() {
   if (!p) return;
   if (!(location.protocol === 'file:' || /github\.io$|^localhost$|^127\./.test(location.hostname)))
     return say("Ici, le navigateur bloque l'impression : ouvrez la version publiée sur GitHub pour imprimer ou enregistrer le dossier en PDF.");
-  const M = model(p), e = p.json.environement || {}, c = p.json.client || {};
+  const M = model(p), e = p.json.environement || {}, c = p.json.client || {}, eq = equipRetenus(p, M.equip);
   const nom = CLIENT ? CLIENT.nom : ($('sh-nom').value.trim() || c.reference_client || 'Client'), projet = CLIENT ? CLIENT.projet : $('sh-projet').value.trim();
   const btn = $('print'), label = btn.textContent;
   btn.disabled = true; btn.textContent = 'Préparation…';
@@ -2048,7 +2084,7 @@ async function printDossier() {
     const plan = $('planbox').querySelector('svg').cloneNode(true);
     plan.setAttribute('viewBox', plan.dataset.base || plan.getAttribute('viewBox')); plan.removeAttribute('style');
     const url = CLIENT ? location.href : (!$('sh-out').hidden && $('sh-url').value) || await lien3D(p, nom, projet); // réutilise le lien déjà créé (pas un gist de plus par impression)
-    const carac = Object.fromEntries(caracRows(M)), fr = (k, f = v => v) => esc(f(carac[k] || ''));
+    const carac = Object.fromEntries(caracRows(M, eq)), fr = (k, f = v => v) => esc(f(carac[k] || ''));
     const contact = [c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' ');
     const foot = 'RSL · Rayonnages Services Lorraine · 13 allée des Grands Paquis, 54180 Heillecourt · 03 83 55 49 50 · info@rsl.eu · rsl.eu';
     $('dossier').innerHTML = `
@@ -2063,15 +2099,15 @@ async function printDossier() {
     <div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>
   </div>
   <div class="row">
-    <div><h2>Couleurs</h2><div class="dsw">${colorRows(e).filter(r => r.name !== 'Accessoires').map(r => `<div><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('')}</div></div>
+    <div><h2>Couleurs</h2><div class="dsw">${colorRows(e, eq).map(r => `<div><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('')}</div></div>
     <div class="link3d"><b>Votre plateforme en 3D</b><p>Faites-la tourner, zoomez, affichez les cotes : sur ordinateur, tablette ou téléphone.</p><a href="${esc(url)}">Ouvrir la vue 3D</a></div>
   </div>
   <footer><span>${esc(foot)}</span><span>1 / 2</span></footer>
 </div>
 <div class="page">
-  <div><h2>Plan coté${p.bat ? ' dans le bâtiment' : ''}</h2><div class="planimg" id="dossier-plan"></div></div>
+  <div class="planwrap"><h2>Plan coté${p.bat ? ' dans le bâtiment' : ''}</h2><div class="planimg" id="dossier-plan"></div></div>
   <div class="duo"><figure><img src="${face}" alt="Vue de face"><figcaption>Vue de face</figcaption></figure><figure><img src="${cote}" alt="Vue de côté"><figcaption>Vue de côté</figcaption></figure></div>
-  <div><h2>Caractéristiques</h2><table>${caracRows(M).filter(([k]) => CLIENT || !/^(Code plancher|Solivage)$/.test(k)).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>
+  <div><h2>Caractéristiques</h2><table>${caracRows(M, eq).filter(([k]) => CLIENT || !/^(Code plancher|Solivage)$/.test(k)).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>
   <footer><span>Visuels indicatifs, non contractuels.${contact ? ' Votre contact : ' + esc(contact) + ', RSL.' : ''} ${esc(foot)}</span><span>2 / 2</span></footer>
 </div>`;
     $('dossier-plan').append(plan);
