@@ -779,11 +779,11 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       for (let i = 0; i <= n; i++) { const x = a[0] + (b[0] - a[0]) * i / n, y = a[1] + (b[1] - a[1]) * i / n; obox(V(x, y, base), V(x, y, base + 1100), 40, 40, m); }
       rod(V(a[0], a[1], base + 1100), V(b[0], b[1], base + 1100), 42, m);
       rod(V(a[0], a[1], base + 550), V(b[0], b[1], base + 550), 30, m);
-      // plinthe en galva (couleur des lisses), côté intérieur contre les poteaux : décalée de 20 + 4 mm vers le plancher
+      // plinthe toujours en galva (quel que soit le coloris du JSON), côté intérieur contre les poteaux : décalée de 20 + 4 mm vers le plancher
       const onFloor = (x, y) => M.floor.concat(M.landing ? [M.landing.rect] : []).some(r => x > r[0] && x < r[2] && y > r[1] && y < r[3]);
       let nx = -(b[1] - a[1]) / len, ny = (b[0] - a[0]) / len;
       if (!onFloor((a[0] + b[0]) / 2 + nx * 150, (a[1] + b[1]) / 2 + ny * 150)) { nx = -nx; ny = -ny; }
-      obox(V(a[0] + nx * 24, a[1] + ny * 24, base + 75), V(b[0] + nx * 24, b[1] + ny * 24, base + 75), 8, 150, mat('lisses'));
+      obox(V(a[0] + nx * 24, a[1] + ny * 24, base + 75), V(b[0] + nx * 24, b[1] + ny * 24, base + 75), 8, 150, mat('galva'));
     };
 
     // Poteaux et platines
@@ -1073,7 +1073,7 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     if (off > 0.03) throw new Error(`poteaux décalés de ${Math.round(off * 1000)} mm : ce n'est pas le même projet`);
     // shortcut: noms de pièces relevés sur 3 exports (bois, caillebotis, sas, portillon) ; une pièce inconnue prend la couleur des lisses.
     const part = n => /^SAS|SECURITY_LOCK|^GATE/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
-      : /BASEBOARD/.test(n) ? 'lisses' : /RAIL|GUARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
+      : /BASEBOARD/.test(n) ? 'galva' : /RAIL|GUARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
     const hasGC = meshes.some(o => /RAIL|GUARD/.test(o.name) && !/^STAIR/.test(o.name));
     // Plinthes de l'export passées dans la fente des poteaux : on les pose côté intérieur, contre leur face (côté plancher).
     const tri2 = [], posts = meshes.filter(o => /RAIL/.test(o.name) && /POLE/.test(o.name));
@@ -1771,7 +1771,7 @@ $('imp-mezz').onchange = async ev => {
   } catch (err) { say(`${f.name} : ${err.message}`); }
 };
 
-// ---------- Devis client : devis Word Manorga lu dans le navigateur, vente = achat / (1 - marge), export Excel (onglet WORD) pour le publipostage ----------
+// ---------- Devis client : devis Word Manorga lu dans le navigateur, vente = achat / (1 - marge), export Excel (onglet WORD pour le publipostage, onglet CALCULS) ----------
 // Rien ne quitte le poste : le Word est lu ici, marge et taux sont gardés dans ce navigateur (pas dans le code, public sur GitHub),
 // et clientPayload ne lit jamais p.devis.
 async function docxXML(buf) { // un .docx est un zip : on y prend word/document.xml (zip « deflate », décompressé par le navigateur)
@@ -1948,39 +1948,75 @@ async function zipXlsx(files) {
   set(fin, [[0, 0x06054b50, 4], [8, files.length], [10, files.length], [12, cen.reduce((s, x) => s + x.byteLength, 0), 4], [16, off, 4]]);
   return new Blob([...parts, ...cen, fin], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
-// Classeur d'un seul onglet « WORD » : ligne 1 les noms de champs, ligne 2 les valeurs (nombres en nombres, texte en chaînes partagées)
-function xlsxWord(f) {
+// Classeur à deux onglets : « WORD » pour le publipostage (ligne 1 les noms de champs, ligne 2 les valeurs ; nombres en nombres,
+// texte en chaînes partagées) et « CALCULS », le récap du calcul. Cellule : nombre, texte, ou { v, f, s } — valeur (affichée tant
+// qu'Excel n'a pas recalculé), formule, style (1 gras, 2 €, 3 € gras, 4 %, 5 coefficient).
+function xlsxDevis(f, calc) {
   const x = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
   const col = i => { let t = ''; for (i++; i; i = (i - 1) / 26 | 0) t = String.fromCharCode(65 + (i - 1) % 26) + t; return t; };
   const sst = [], si = t => { let i = sst.indexOf(t); if (i < 0) i = sst.push(t) - 1; return i; };
-  const cell = (v, ref) => typeof v === 'number' ? `<c r="${ref}"><v>${v}</v></c>` : v === '' || v == null ? '' : `<c r="${ref}" t="s"><v>${si(String(v))}</v></c>`;
-  const cles = Object.keys(f), rows = [cles, Object.values(f)].map((r, j) => `<row r="${j + 1}">${r.map((v, i) => cell(v, col(i) + (j + 1))).join('')}</row>`).join('');
+  const cell = (c, ref) => {
+    const o = c !== null && typeof c === 'object' ? c : { v: c }, s = o.s ? ` s="${o.s}"` : '', fx = o.f ? `<f>${x(o.f)}</f>` : '';
+    if (typeof o.v === 'number') return `<c r="${ref}"${s}>${fx}<v>${o.v}</v></c>`;
+    if (o.f) return `<c r="${ref}"${s} t="str">${fx}<v>${x(o.v ?? '')}</v></c>`;
+    return o.v === '' || o.v == null ? '' : `<c r="${ref}"${s} t="s"><v>${si(String(o.v))}</v></c>`;
+  };
   const ns = 'http://schemas.openxmlformats.org/', M = `${ns}spreadsheetml/2006/main`, R = `${ns}officeDocument/2006/relationships`, CT = 'application/vnd.openxmlformats-';
+  const sheets = [['WORD', [Object.keys(f), Object.values(f)], ''], ['CALCULS', calc.rows, calc.cols]];
+  const feuille = ([, rows, cols], k) => `<worksheet xmlns="${M}" xmlns:r="${R}"><dimension ref="A1:${col(Math.max(...rows.map(r => r.length)) - 1)}${rows.length}"/>`
+    + `<sheetViews><sheetView ${k ? '' : 'tabSelected="1" '}workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>${cols}`
+    + `<sheetData>${rows.map((r, j) => `<row r="${j + 1}">${r.map((v, i) => cell(v, col(i) + (j + 1))).join('')}</row>`).join('')}</sheetData>`
+    + `<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`;
   const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n', iso = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const ws = sheets.map((s, k) => [`xl/worksheets/sheet${k + 1}.xml`, xml + feuille(s, k)]); // avant sharedStrings, qu'elles remplissent
+  const police = b => `<font>${b ? '<b/>' : ''}<sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>`;
+  const xf = (fmt, font) => `<xf numFmtId="${fmt}" fontId="${font}" fillId="0" borderId="0" xfId="0"${fmt ? ' applyNumberFormat="1"' : ''}${font ? ' applyFont="1"' : ''}/>`;
   return zipXlsx([
     ['[Content_Types].xml', xml + `<Types xmlns="${ns}package/2006/content-types"><Default Extension="rels" ContentType="${CT}package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>`
-      + `<Override PartName="/xl/workbook.xml" ContentType="${CT}officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${CT}officedocument.spreadsheetml.worksheet+xml"/>`
+      + `<Override PartName="/xl/workbook.xml" ContentType="${CT}officedocument.spreadsheetml.sheet.main+xml"/>`
+      + sheets.map((s, k) => `<Override PartName="/xl/worksheets/sheet${k + 1}.xml" ContentType="${CT}officedocument.spreadsheetml.worksheet+xml"/>`).join('')
       + `<Override PartName="/xl/styles.xml" ContentType="${CT}officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="${CT}officedocument.spreadsheetml.sharedStrings+xml"/>`
       + `<Override PartName="/docProps/core.xml" ContentType="${CT}package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="${CT}officedocument.extended-properties+xml"/></Types>`],
     ['_rels/.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId3" Type="${R}/extended-properties" Target="docProps/app.xml"/>`
       + `<Relationship Id="rId2" Type="${ns}package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId1" Type="${R}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
     ['docProps/app.xml', xml + `<Properties xmlns="${ns}officeDocument/2006/extended-properties" xmlns:vt="${ns}officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>`
-      + `<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Feuilles de calcul</vt:lpstr></vt:variant><vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs>`
-      + `<TitlesOfParts><vt:vector size="1" baseType="lpstr"><vt:lpstr>WORD</vt:lpstr></vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>`],
+      + `<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Feuilles de calcul</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs>`
+      + `<TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map(([n]) => `<vt:lpstr>${n}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>`],
     ['docProps/core.xml', xml + `<cp:coreProperties xmlns:cp="${ns}package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`
       + `<dc:creator>RSL</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${iso}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${iso}</dcterms:modified></cp:coreProperties>`],
     ['xl/workbook.xml', xml + `<workbook xmlns="${M}" xmlns:r="${R}"><fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="27425"/><workbookPr/>`
-      + `<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews><sheets><sheet name="WORD" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029"/></workbook>`],
-    ['xl/_rels/workbook.xml.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${R}/worksheet" Target="worksheets/sheet1.xml"/>`
-      + `<Relationship Id="rId2" Type="${R}/styles" Target="styles.xml"/><Relationship Id="rId3" Type="${R}/sharedStrings" Target="sharedStrings.xml"/></Relationships>`],
-    ['xl/styles.xml', xml + `<styleSheet xmlns="${M}"><fonts count="1"><font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font></fonts>`
+      + `<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews><sheets>${sheets.map(([n], k) => `<sheet name="${n}" sheetId="${k + 1}" r:id="rId${k + 1}"/>`).join('')}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
+    ['xl/_rels/workbook.xml.rels', xml + `<Relationships xmlns="${ns}package/2006/relationships">${sheets.map((s, k) => `<Relationship Id="rId${k + 1}" Type="${R}/worksheet" Target="worksheets/sheet${k + 1}.xml"/>`).join('')}`
+      + `<Relationship Id="rId${sheets.length + 1}" Type="${R}/styles" Target="styles.xml"/><Relationship Id="rId${sheets.length + 2}" Type="${R}/sharedStrings" Target="sharedStrings.xml"/></Relationships>`],
+    ['xl/styles.xml', xml + `<styleSheet xmlns="${M}"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/><numFmt numFmtId="165" formatCode="0.0000"/></numFmts><fonts count="2">${police(0)}${police(1)}</fonts>`
       + `<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>`
-      + `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>`
+      + `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6">${xf(0, 0)}${xf(0, 1)}${xf(164, 0)}${xf(164, 1)}${xf(10, 0)}${xf(165, 0)}</cellXfs>`
       + `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>`],
-    ['xl/worksheets/sheet1.xml', xml + `<worksheet xmlns="${M}" xmlns:r="${R}"><dimension ref="A1:${col(cles.length - 1)}2"/><sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>`
-      + `<sheetFormatPr defaultRowHeight="15"/><sheetData>${rows}</sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`],
+    ...ws,
     ['xl/sharedStrings.xml', xml + `<sst xmlns="${M}" count="${sst.length}" uniqueCount="${sst.length}">${sst.map(t => `<si><t xml:space="preserve">${x(t)}</t></si>`).join('')}</sst>`],
   ]);
+}
+// Onglet CALCULS : toutes les lignes du devis (incluses ou non) avec leur prix d'achat, vente = achat × coefficient de la marge, totaux des lignes incluses
+function devisCalculs(d, rows) {
+  const marge = (parseFloat($('dv-marge')?.value) || 0) / 100, coef = marge > 0 && marge < 1 ? 1 / (1 - marge) : 1, r2 = v => Math.round(v * 100) / 100;
+  const n0 = 4, n1 = n0 + rows.length - 1, nm = n0 + rows.findIndex(r => r.key === 'transport'); // lignes Manorga et transport en tête
+  const t = n1 + 2, tot = t + 1, rm = t + 2, rc = t + 3, somme = (a, b, c) => `SUMIF($A$${a}:$A$${b},"oui",${c}${a}:${c}${b})`;
+  const inc = rows.filter(r => r.on), sa = rows.filter(r => r.on && r.manorga).reduce((s, r) => s + r.achat, 0), ta = inc.reduce((s, r) => s + r.achat, 0);
+  const pu = r => r.saisie === 'option' ? d.options[r.key.slice(1)].pu : r.saisie === 'jours' ? d.pj[r.key] || 0 : '';
+  const qte = r => r.saisie === 'option' ? d.options[r.key.slice(1)].qte : r.saisie === 'jours' ? d.jours[r.key] || 0 : r.qte || '';
+  const det = r => [r.des, r.saisie === 'jours' && r.key !== 'montage' && d.ar[r.key] ? `+ transport A/R ${eurFr(d.ar[r.key])}` : ''].filter(Boolean).join(', ');
+  const b = v => ({ v, s: 1 });
+  return { cols: '<cols>' + [8, 36, 52, 26, 12, 16, 15, 15].map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols>',
+    rows: [[b(`Devis Manorga ${d.ref}${d.projet ? ' · ' + d.projet : ''} : calcul du prix de vente`)], [],
+      ['Inclus', 'Poste', 'Détail', 'Coloris', 'Quantité', 'Prix unitaire HT', 'Achat HT', 'Vente HT'].map(b),
+      ...rows.map((r, i) => [r.on ? 'oui' : 'non', r.cat, det(r), (r.col || '').replace(/\n/g, ' / '), qte(r), pu(r) === '' ? '' : { v: pu(r), s: 2 }, { v: r2(r.achat || 0), s: 2 },
+        { f: `IF(A${n0 + i}="oui",G${n0 + i}*$H$${rc},"")`, v: r.on ? r2((r.achat || 0) * coef) : '', s: 2 }]),
+      [],
+      ['', 'Sous-total devis Manorga (lignes et transport)', '', '', '', '', { f: somme(n0, nm, 'G'), v: r2(sa), s: 2 }, { f: somme(n0, nm, 'H'), v: r2(sa * coef), s: 2 }],
+      ['', b('Total HT'), '', '', '', '', { f: somme(n0, n1, 'G'), v: r2(ta), s: 3 }, { f: `G${tot}*H${rc}`, v: r2(ta * coef), s: 3 }],
+      ['', 'Marge sur la vente', '', '', '', '', '', { v: marge, s: 4 }],
+      ['', 'Coefficient : 1 / (1 − marge)', '', '', '', '', '', { f: `IF(AND(H${rm}>0,H${rm}<1),1/(1-H${rm}),1)`, v: coef, s: 5 }],
+      ['', 'Marge HT', '', '', '', '', '', { f: `H${tot}-G${tot}`, v: r2(ta * coef - ta), s: 2 }]] };
 }
 async function devisXLSX() {
   const p = dvp(), d = p.devis, res = devisCalc();
@@ -2000,7 +2036,7 @@ async function devisXLSX() {
   const [np, nl, ns] = nbStruct(p) || [];
   Object.assign(f, { nb_poteaux: np || '', nb_lisses: nl || '', nb_solives: ns || '' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(await xlsxWord(f));
+  a.href = URL.createObjectURL(await xlsxDevis(f, devisCalculs(d, res.rows)));
   a.download = `Devis client ${d.ref}.xlsx`.replace(/[\\/:*?"<>|]/g, '-'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 $('devis').onclick = () => {
