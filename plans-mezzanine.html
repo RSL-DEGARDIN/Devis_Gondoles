@@ -779,7 +779,11 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       for (let i = 0; i <= n; i++) { const x = a[0] + (b[0] - a[0]) * i / n, y = a[1] + (b[1] - a[1]) * i / n; obox(V(x, y, base), V(x, y, base + 1100), 40, 40, m); }
       rod(V(a[0], a[1], base + 1100), V(b[0], b[1], base + 1100), 42, m);
       rod(V(a[0], a[1], base + 550), V(b[0], b[1], base + 550), 30, m);
-      obox(V(a[0], a[1], base + 75), V(b[0], b[1], base + 75), 8, 150, m);
+      // plinthe en galva (couleur des lisses), côté intérieur contre les poteaux : décalée de 20 + 4 mm vers le plancher
+      const onFloor = (x, y) => M.floor.concat(M.landing ? [M.landing.rect] : []).some(r => x > r[0] && x < r[2] && y > r[1] && y < r[3]);
+      let nx = -(b[1] - a[1]) / len, ny = (b[0] - a[0]) / len;
+      if (!onFloor((a[0] + b[0]) / 2 + nx * 150, (a[1] + b[1]) / 2 + ny * 150)) { nx = -nx; ny = -ny; }
+      obox(V(a[0] + nx * 24, a[1] + ny * 24, base + 75), V(b[0] + nx * 24, b[1] + ny * 24, base + 75), 8, 150, mat('lisses'));
     };
 
     // Poteaux et platines
@@ -1069,8 +1073,31 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     if (off > 0.03) throw new Error(`poteaux décalés de ${Math.round(off * 1000)} mm : ce n'est pas le même projet`);
     // shortcut: noms de pièces relevés sur 3 exports (bois, caillebotis, sas, portillon) ; une pièce inconnue prend la couleur des lisses.
     const part = n => /^SAS|SECURITY_LOCK|^GATE/.test(n) ? 'accessoires' : /^(POLE|CONNECTOR)/.test(n) ? 'poteaux' : /^JOIST/.test(n) ? 'solives' : /^CROSS_BRACE/.test(n) ? 'croisillons'
-      : /RAIL|GUARD|BASEBOARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
+      : /BASEBOARD/.test(n) ? 'lisses' : /RAIL|GUARD|_TUBE/.test(n) ? 'rambardes' : /^STAIR/.test(n) ? 'escaliers' : 'lisses';
     const hasGC = meshes.some(o => /RAIL|GUARD/.test(o.name) && !/^STAIR/.test(o.name));
+    // Plinthes de l'export passées dans la fente des poteaux : on les pose côté intérieur, contre leur face (côté plancher).
+    const tri2 = [], posts = meshes.filter(o => /RAIL/.test(o.name) && /POLE/.test(o.name));
+    for (const o of meshes) if (/^FLOOR/.test(o.name)) { const p = o.geometry.attributes.position; for (let i = 0; i + 2 < p.count; i += 3) tri2.push([0, 1, 2].map(k => [p.getX(i + k), p.getZ(i + k)])); }
+    const onFloor = (x, z) => tri2.some(([a, b, c]) => {
+      const d = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); if (Math.abs(d) < 1e-9) return false;
+      const u = ((x - a[0]) * (c[1] - a[1]) - (z - a[1]) * (c[0] - a[0])) / d, v = ((b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0])) / d;
+      return u >= 0 && v >= 0 && u + v <= 1;
+    });
+    for (const o of meshes) {
+      if (!/BASEBOARD/.test(o.name)) continue;
+      o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox, alongX = b.max.x - b.min.x > b.max.z - b.min.z;
+      const c = alongX ? 'z' : 'x', a = alongX ? 'x' : 'z', mid = (b.min[c] + b.max[c]) / 2, am = (b.min[a] + b.max[a]) / 2;
+      const at = dd => alongX ? onFloor(am, mid + dd) : onFloor(mid + dd, am), s = at(0.4) - at(-0.4); // le plancher fournisseur déborde de ~20 cm à l'extérieur
+      let face = null; // face intérieure des poteaux du même garde-corps, entre la plinthe et la main courante (ni pied, ni support de tube)
+      for (const q of posts) {
+        const p = q.geometry.attributes.position, A = a === 'x' ? i => p.getX(i) : i => p.getZ(i), C = c === 'x' ? i => p.getX(i) : i => p.getZ(i);
+        for (let i = 0; i < p.count; i++) if (p.getY(i) > b.max.y && p.getY(i) < b.max.y + 0.7 && A(i) > b.min[a] - 0.05 && A(i) < b.max[a] + 0.05 && Math.abs(C(i) - mid) < 0.1)
+          face = face == null ? C(i) : s > 0 ? Math.max(face, C(i)) : Math.min(face, C(i));
+      }
+      if (!s || face == null) continue;
+      const shift = face - (s > 0 ? b.min[c] : b.max[c]);
+      o.geometry.translate(alongX ? 0 : shift, 0, alongX ? shift : 0);
+    }
     let floorBot = null, gr = null, fm = null; const sas = [], gate = [];
     floor.traverse(o => { if (o.isMesh && !fm) fm = Array.isArray(o.material) ? o.material[0] : o.material; });
     for (const o of meshes) {
