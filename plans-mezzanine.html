@@ -1256,7 +1256,32 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
     return g;
   }
 
-  const api = { build, dims, building };
+  // Plaques de déchargement (tôle galva anti-dérapante 480 × 1200 × 2, retombée de 100 devant le chant du plancher), n côte à côte
+  // au droit de chaque portillon du DXF : n × 480 le long du bord, centrées sur l'ouverture (1440 entre les poteaux d'un 1500), 1200 vers l'intérieur.
+  // shortcut: les n plaques à chaque portillon ; à répartir si un projet chiffre des plaques pour plusieurs portillons.
+  function plaques(T, M, n) {
+    const g = new T.Group(), H = M.env.hauteur || 3000, deb = /T\d{5}C/.test(M.env.plancher || '') ? 0 : 50; // débord du plancher, comme build
+    const galva = new T.MeshStandardMaterial({ color: '#c5ccd3', metalness: 0.25, roughness: 0.5 });
+    const fr = M.floor.concat(M.landing ? [M.landing.rect] : []), on = (x, y, d) => fr.some(r => x > r[0] - d && x < r[2] + d && y > r[1] - d && y < r[3] + d);
+    const pave = (x, y, a, w, d, h0, h1) => { // w le long de a, d en travers, centré en (x, y)
+      const o = new T.Mesh(new T.BoxGeometry(w * K, (h1 - h0) * K, d * K), galva);
+      o.position.set(x * K, (h0 + h1) / 2 * K, y * K); o.rotation.y = -Math.atan2(a[1], a[0]); o.castShadow = o.receiveShadow = true; o.name = 'PLAQUE'; g.add(o);
+    };
+    for (const gt of n > 0 ? M.gates || [] : []) {
+      const m = gt.m, c = [m[4], -m[5]], l = Math.hypot(m[0], m[1]), a = [m[0] / l, -m[1] / l]; // centre de l'ouverture, axe du bord
+      let b = [-a[1], a[0]]; if (!on(c[0] + b[0] * 300, c[1] + b[1] * 300, 0)) b = [-b[0], -b[1]]; // vers le plancher
+      let e = -400; while (e < 400 && !on(c[0] + b[0] * e, c[1] + b[1] * e, deb)) e++; // chant du plancher (débord compris)
+      if (e >= 400) continue;
+      for (let i = 0; i < n; i++) {
+        const u = (i - (n - 1) / 2) * 480, x = c[0] + a[0] * u, y = c[1] + a[1] * u;
+        pave(x + b[0] * (e + 600), y + b[1] * (e + 600), a, 478, 1200, H, H + 2); // 2 mm de jeu entre plaques
+        pave(x + b[0] * (e - 1), y + b[1] * (e - 1), a, 478, 2, H - 98, H + 2); // retombée de 100
+      }
+    }
+    return g;
+  }
+
+  const api = { build, dims, building, plaques };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.MEZZ3D = api;
 })(this);
 </script>
@@ -1474,11 +1499,26 @@ function drawPlan(M) {
 // Équipements retenus (fiche, PDF, lien client) : un accessoire du JSON dont toutes les lignes du devis client (lignes Manorga
 // ou options) sont décochées n'est pas proposé ; sans devis importé ou sans ligne correspondante, il reste.
 // shortcut: rapprochement par famille (portillon, sas, protection, plaque), pas par modèle ; à affiner si un devis en mélange deux.
-const FAMILLES = [/portillon/i, /\bsas\b/i, /protection/i, /plaque|d[ée]chargement/i];
+const PLAQUE = /plaque|d[ée]chargement|anti.?d[ée]rapant/i; // « TOLE ANTI DERAPANTE 480X1200X100X2 » au devis Manorga
+const FAMILLES = [/portillon/i, /\bsas\b/i, /protection/i, PLAQUE];
 function equipRetenus(p, equip) {
   if (!p.devis) return equip;
   const rows = devisRows(p.devis);
   return equip.filter(x => { const f = FAMILLES.find(re => re.test(x.label)), rs = f ? rows.filter(r => f.test(`${r.cat} ${r.des}`)) : []; return !rs.length || rs.some(r => r.on); });
+}
+// Plaques de déchargement à dessiner : quantité du devis client s'il les chiffre (0 si décochées), sinon celle du JSON
+function nbPlaques(p, M) {
+  const json = M.equip.filter(x => PLAQUE.test(x.label)).reduce((s, x) => s + (+x.q || 0), 0);
+  const rs = p.devis ? devisRows(p.devis).filter(r => PLAQUE.test(`${r.cat} ${r.des}`)) : [];
+  if (!rs.length) return json;
+  return rs.filter(r => r.on).reduce((s, r) => s + (r.saisie === 'option' ? p.devis.options[r.key.slice(1)].qte : parseInt(r.qte) || json), 0);
+}
+function plaques3D() { // refaites seules quand le devis change, sans recharger la 3D
+  if (!V3.model || V3.key !== projects[cur]) return;
+  const n = nbPlaques(V3.key, V3.M);
+  if (V3.plaques && V3.plaques.n === n) return;
+  if (V3.plaques) { V3.plaques.parent.remove(V3.plaques); V3.plaques.traverse(o => o.geometry && o.geometry.dispose()); }
+  V3.plaques = MEZZ3D.plaques(THREE, V3.M, n); V3.plaques.n = n; V3.floor.parent.add(V3.plaques); // à côté du plancher : relevé avec lui sur l'OBJ du fournisseur
 }
 function fiche(p, M) {
   const eq = equipRetenus(p, M.equip);
@@ -1638,7 +1678,7 @@ function draw3D() {
   catch (err) { say(`3D du fournisseur ignorée : ${err.message}.`); p.obj = null; built = MEZZ3D.build(THREE, M, opt); }
   const { group, floor } = built;
   $('hint-est').hidden = !!p.obj;
-  Object.assign(V3, { model: group, floor, key: p, M, sasA: 0, gateA: 0 });
+  Object.assign(V3, { model: group, floor, key: p, M, sasA: 0, gateA: 0, plaques: null }); plaques3D();
   $('sas-wrap').hidden = !(group.userData.sas || []).length; // seulement si l'OBJ du fournisseur contient un sas
   $('gate-wrap').hidden = !(group.userData.gate || []).length; // seulement si l'OBJ du fournisseur contient un portillon
   floor.visible = $('pl3d').checked;
@@ -1907,6 +1947,7 @@ function devisCalc() {
   }
   $('dv-ta').textContent = eurFr(ta); $('dv-tv').textContent = eurFr(tv); $('dv-sa').textContent = eurFr(sa); $('dv-sv').textContent = eurFr(sv);
   $('dv-m').textContent = `marge ${eurFr(tv - ta)}` + (marge ? ` · coef ${coef.toFixed(4).replace('.', ',')}` : '');
+  plaques3D(); // option des plaques cochée, décochée ou quantité changée
   return { rows, tv };
 }
 // boutons − / + : ajoutent ou retirent leur pas (data-pm = « +0.5 », « -10 »…), puis le même traitement qu'une saisie
