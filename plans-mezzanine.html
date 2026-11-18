@@ -2194,8 +2194,8 @@ async function modeleGist(obj) {
   for (let i = 0; i * 9e5 < t.length; i++) files[`modele-${i + 1}.z64`] = { content: t.slice(i * 9e5, (i + 1) * 9e5) };
   return files;
 }
-async function lien3D(p, nom, projet) {
-  const data = JSON.stringify(clientPayload(p, nom, projet)), tok = $('sh-tok').value.trim();
+async function lien3D(p, nom, projet, sansJeton) {
+  const data = JSON.stringify(clientPayload(p, nom, projet)), tok = sansJeton ? '' : $('sh-tok').value.trim();
   const base = /github\.io$/.test(location.hostname) ? location.href.split('#')[0] : URL_PUBLIQUE;
   if (tok) { // lien court (~110 caractères) : le projet va dans un gist secret, le lien ne porte que son numéro
     const r = await fetch('https://api.github.com/gists', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' },
@@ -2320,7 +2320,9 @@ async function printDossier() {
     const face = elev3D(1600, 860, 'z'), cote = elev3D(1600, 860, 'x');
     const plan = $('planbox').querySelector('svg').cloneNode(true);
     plan.setAttribute('viewBox', plan.dataset.base || plan.getAttribute('viewBox')); plan.removeAttribute('style');
-    const url = CLIENT ? location.href : (!$('sh-out').hidden && $('sh-url').value) || await lien3D(p, nom, projet); // réutilise le lien déjà créé (pas un gist de plus par impression)
+    // Lien 3D du dossier : lien court déjà créé, sinon un gist ; si le gist échoue (jeton sans droit « gist »), on bascule sur le lien long et on sort quand même le PDF
+    let url = CLIENT ? location.href : (!$('sh-out').hidden && $('sh-url').value) || '';
+    if (!url) try { url = await lien3D(p, nom, projet); } catch (err) { url = await lien3D(p, nom, projet, true); say('Dossier créé avec le lien 3D long : ' + err.message); }
     const carac = Object.fromEntries(caracRows(M, eq)), fr = (k, f = v => v) => esc(f(carac[k] || ''));
     const contact = [c.contact?.prenom, c.contact?.nom].filter(Boolean).join(' ');
     const foot = 'RSL · Rayonnages Services Lorraine · 13 allée des Grands Paquis, 54180 Heillecourt · 03 83 55 49 50 · info@rsl.eu · rsl.eu';
