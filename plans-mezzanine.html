@@ -226,6 +226,12 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 #dossier td { padding: 1.2mm 0; border-bottom: .25mm solid #d4dae3; vertical-align: top; }
 #dossier td:first-child { color: #5a6577; width: 45mm; }
 #dossier .tiles.trois { grid-template-columns: repeat(3, 1fr); }
+#dossier .roulante { margin: 0; font: 600 11pt var(--f-body); color: #172031; display: flex; justify-content: flex-end; align-items: center; gap: 2mm; }
+#dossier .roulante .opt { font-size: 12pt; line-height: 1; width: 7mm; height: 7mm; display: inline-flex; align-items: center; justify-content: center; border: 1.2pt solid transparent; border-radius: 1.8mm; }
+#dossier .roulante .ok { color: #1a8a3a; }
+#dossier .roulante .no { color: #c0262c; }
+#dossier .roulante .ok.on { border-color: #1a8a3a; background: #e9f6ee; }
+#dossier .roulante .no.on { border-color: #c0262c; background: #fbeaea; }
 #dossier .charge-note { font-size: 8.5pt; color: #5a6577; margin: 2.5mm 0 0; line-height: 1.35; }
 #dossier td:last-child { font-weight: 500; }
 #dossier footer { margin-top: auto; display: flex; justify-content: space-between; gap: 6mm; font-size: 7.5pt; color: #5a6577; border-top: .25mm solid #d4dae3; padding-top: 2.5mm; }
@@ -2338,6 +2344,7 @@ async function printDossier() {
     // Charge maximale par montant et descente de charge par platine : calculées par Manorga, reprises du devis Word importé
     const pr = lib => d ? (d.paires[Object.keys(d.paires).find(k => k.startsWith(lib)) || ''] || '') : '';
     const chargeRows = [['Charge maximale par montant', pr('Charge maximale par montant')], ['Descente de charge maximale par platine', pr('Descente de charge maximale par platine')]].filter(([, v]) => v);
+    const roulante = pr('Charge roulante'); // « Charge roulante (Transpalette manuel) : Oui » dans le devis Word
     // Charge de service descendue avec les deux nouvelles : une 2e rangée de 3 tuiles (le haut passe alors à 3)
     const chargeBloc = chargeRows.length ? `<div class="tiles trois">
     <div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>
@@ -2363,6 +2370,7 @@ async function printDossier() {
     <div><h2>Couleurs</h2><div class="dsw">${colorRows(e, eq).map(r => `<div><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('')}</div></div>
     <div class="link3d"><b>Votre plateforme en 3D</b><p>Faites-la tourner, zoomez, affichez les cotes : sur ordinateur, tablette ou téléphone.</p><a href="${esc(url)}">Ouvrir la vue 3D</a></div>
   </div>
+  ${roulante ? `<p class="roulante">Charge roulante (Transpalette manuel) <span class="opt ok${/oui/i.test(roulante) ? ' on' : ''}">✓</span><span class="opt no${/oui/i.test(roulante) ? '' : ' on'}">✗</span></p>` : ''}
   ${chargeBloc}
   <footer><span>${esc(foot)}</span><span>__PG__</span></footer>
 </div>`);
