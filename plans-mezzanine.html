@@ -225,6 +225,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
 #dossier table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
 #dossier td { padding: 1.2mm 0; border-bottom: .25mm solid #d4dae3; vertical-align: top; }
 #dossier td:first-child { color: #5a6577; width: 45mm; }
+#dossier .tiles.trois { grid-template-columns: repeat(3, 1fr); }
+#dossier .charge-note { font-size: 8.5pt; color: #5a6577; margin: 2.5mm 0 0; line-height: 1.35; }
 #dossier td:last-child { font-weight: 500; }
 #dossier footer { margin-top: auto; display: flex; justify-content: space-between; gap: 6mm; font-size: 7.5pt; color: #5a6577; border-top: .25mm solid #d4dae3; padding-top: 2.5mm; }
 #dossier footer span:last-child { white-space: nowrap; }
@@ -2334,6 +2336,14 @@ async function printDossier() {
       ${ov('left:20mm;top:288.6mm;font-size:10pt', `Offre RSL n°${esc(c.reference_interne)}`)}${ov('left:0;top:288.6mm;width:100%;text-align:center;font-size:10pt', 'page __PG__')}${ov('top:288.6mm;right:20mm;font-size:10pt', new Date().toLocaleDateString('fr-FR'))}</div>`;
     const pgs = [];
     const cli = p.cli || {}, aAtt = [cli.civ, cli.resp].filter(Boolean).join(' ');
+    // Charge maximale par montant et descente de charge par platine : calculées par Manorga, reprises du devis Word importé
+    const pr = lib => d ? (d.paires[Object.keys(d.paires).find(k => k.startsWith(lib)) || ''] || '') : '';
+    const chargeRows = [['Charge maximale par montant', pr('Charge maximale par montant')], ['Descente de charge maximale par platine', pr('Descente de charge maximale par platine')]].filter(([, v]) => v);
+    // Charge de service descendue avec les deux nouvelles : une 2e rangée de 3 tuiles (le haut passe alors à 3)
+    const chargeBloc = chargeRows.length ? `<div class="tiles trois">
+    <div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>
+    ${chargeRows.map(([k, v]) => `<div class="tile"><span>${esc(k)}</span><b>${esc(v)}</b><small></small></div>`).join('')}</div>
+    <p class="charge-note">Le poids des équipements (hors plate-forme) tels que éclairage, sprinklage, autres… sont à déduire de la charge de service.</p>` : '';
     if (d6) pgs.push(`<div class="page copy"><img class="bg" src="${PAGES.lettre}" alt="">
       ${ov('left:121mm;top:67mm;font-weight:700;font-size:12pt', esc(nom.toUpperCase()))}
       ${cli.adresse ? ov('left:121mm;top:73.5mm;font-size:10.5pt;line-height:1.35', esc(cli.adresse).replace(/\n/g, '<br>')) : ''}
@@ -2344,16 +2354,17 @@ async function printDossier() {
   <header><img src="${LOGO}" alt="RSL"><div class="who"><div class="eyebrow">Plateforme de stockage</div><h1>${esc(nom)}</h1>
     <div class="meta">${projet ? 'Projet ' + esc(projet) + ' · ' : ''}Réf. ${esc(c.reference_interne)} · ${esc(c.date)}</div></div></header>
   <img class="hero" src="${hero}" alt="Vue 3D de la plateforme">
-  <div class="tiles">
+  <div class="tiles${chargeRows.length ? ' trois' : ''}">
     <div class="tile"><span>Emprise au sol</span><b>${fr('Emprise au sol', v => v.replace(' hors tout platine', ''))}</b><small>hors tout platine</small></div>
     <div class="tile"><span>Surface de plancher</span><b>${fr('Surface de plancher')}</b><small></small></div>
     <div class="tile"><span>Hauteur sur plancher</span><b>${fr('Hauteur sur plancher')}</b><small>${fr('Hauteur sous lisse')} sous lisse</small></div>
-    <div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>
+    ${chargeRows.length ? '' : `<div class="tile"><span>Charge de service</span><b>${fr('Charge de service')}</b><small>flèche ${fr('Flèche maximale')}</small></div>`}
   </div>
   <div class="row">
     <div><h2>Couleurs</h2><div class="dsw">${colorRows(e, eq).map(r => `<div><i style="background:${r.css}"></i><div><span>${esc(r.name)}</span><b>${esc(r.code)}</b></div></div>`).join('')}</div></div>
     <div class="link3d"><b>Votre plateforme en 3D</b><p>Faites-la tourner, zoomez, affichez les cotes : sur ordinateur, tablette ou téléphone.</p><a href="${esc(url)}">Ouvrir la vue 3D</a></div>
   </div>
+  ${chargeBloc}
   <footer><span>${esc(foot)}</span><span>__PG__</span></footer>
 </div>`);
     pgs.push(`<div class="page">
