@@ -1903,7 +1903,8 @@ function lireDevis(xml) {
   const paires = {};
   for (const t of tables) for (const r of t) { const cs = r.filter(Boolean); if (cs.length >= 2 && cs[0] !== cs[cs.length - 1] && !(cs[0] in paires)) paires[cs[0]] = cs[cs.length - 1]; }
   const val = lib => paires[Object.keys(paires).find(k => k.startsWith(lib))] || '', entete = (tables[0] || []).flat().join('\n');
-  const ref = (/Référence du devis\s*:\s*(\S+)/.exec(entete) || [])[1], prixT = tables.find(t => (t[0]?.[0] || '').startsWith('Installation'));
+  // tableau de prix repéré par son en-tête (Coloris + Sous total), pas par le mot « Installation » : une extension a l'en-tête « extension »
+  const ref = (/Référence du devis\s*:\s*(\S+)/.exec(entete) || [])[1], prixT = tables.find(t => t[0] && t[0].some(c => /Coloris/i.test(c)) && t[0].some(c => /Sous total/i.test(c)));
   if (!ref || !prixT) throw new Error("ce n'est pas un devis de Manorga (référence ou tableau de prix introuvable)");
   const lignes = []; let total = NaN;
   for (const cs of prixT.slice(1)) {
