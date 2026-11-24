@@ -354,8 +354,8 @@ tr.grp td { padding-top: 14px; font: 600 15px var(--f-display); letter-spacing: 
       <div class="card internal" id="bat-card" hidden>
         <h3>Bâtiment</h3>
         <div class="cart-ref" id="bat-name"></div>
-        <p class="note">Position de la mezzanine (angle hors tout platine) depuis l'angle haut gauche du bâtiment, en mm.</p>
-        <div class="share-row"><label>X<input id="bat-x" type="number" step="10"></label><label>Y<input id="bat-y" type="number" step="10"></label></div>
+        <p class="note">Position de la mezzanine (angle hors tout platine) depuis l'angle haut gauche du bâtiment, en mm. Z : hauteur du bâtiment pour le décaler sur la mezzanine plutôt qu'au sol.</p>
+        <div class="share-row"><label>X<input id="bat-x" type="number" step="10"></label><label>Y<input id="bat-y" type="number" step="10"></label><label>Z<input id="bat-z" type="number" step="10"></label></div>
         <div class="share-row"><button class="ghost" id="bat-rot" type="button">Tourner la mezzanine 90°</button><button class="ghost" id="bat-mid" type="button">Centrer</button><button class="ghost" id="bat-del" type="button">Retirer</button></div>
       </div>
       <div class="card"><h3>Caractéristiques</h3><dl id="carac"></dl></div>
@@ -1448,6 +1448,7 @@ function place3D() {
   const pl = placeOf(projects[cur], V3.M);
   V3.place.rotation.y = pl ? -pl.r * Math.PI / 180 : 0;
   V3.place.position.set(pl ? pl.tx / 1000 : 0, 0, pl ? pl.ty / 1000 : 0);
+  if (V3.bat) V3.bat.position.y = (projects[cur]?.bat?.z || 0) / 1000; // hauteur : bâtiment décalé sur la mezzanine, pas au sol
 }
 // Le dessin du bâtiment vient d'un fichier ou d'un lien : on ne recopie que des formes et leurs attributs de dessin (pas de script ni de lien).
 function cleanSVG(str) {
@@ -1468,11 +1469,12 @@ function renderBat(p, M) {
   $('bat-card').hidden = !p.bat;
   if (!p.bat) return;
   $('bat-name').textContent = p.bat.data.name || 'Bâtiment';
-  $('bat-x').value = p.bat.x; $('bat-y').value = p.bat.y;
+  $('bat-x').value = p.bat.x; $('bat-y').value = p.bat.y; $('bat-z').value = p.bat.z || 0;
 }
 const moveBat = f => { const p = projects[cur]; if (!p?.bat) return; f(p, model(p)); render(); place3D(); };
 $('bat-x').onchange = ev => moveBat(p => { p.bat.x = Math.round(+ev.target.value || 0); });
 $('bat-y').onchange = ev => moveBat(p => { p.bat.y = Math.round(+ev.target.value || 0); });
+$('bat-z').onchange = ev => moveBat(p => { p.bat.z = Math.round(+ev.target.value || 0); });
 $('bat-mid').onclick = () => moveBat((p, M) => centrer(p, M));
 $('bat-rot').onclick = () => moveBat((p, M) => { const pl = placeOf(p, M), cx = p.bat.x + pl.w / 2, cy = p.bat.y + pl.h / 2; p.bat.r = (p.bat.r + 90) % 360; centrer(p, M, cx, cy); });
 $('bat-del').onclick = () => { const p = projects[cur]; if (!p) return; p.bat = null; V3.key = null; render(); setMode(mode); };
@@ -1724,7 +1726,7 @@ function faceView(i) {
 function bat3D(p) {
   if (V3.bat) { V3.scene.remove(V3.bat); V3.bat.traverse(o => o.geometry && o.geometry.dispose()); V3.bat = null; }
   const m = $('batmode').value;
-  if (p && p.bat && m !== 'masque') { V3.bat = MEZZ3D.building(THREE, p.bat.data, m); V3.scene.add(V3.bat); }
+  if (p && p.bat && m !== 'masque') { V3.bat = MEZZ3D.building(THREE, p.bat.data, m); V3.bat.position.y = (p.bat.z || 0) / 1000; V3.scene.add(V3.bat); }
 }
 function draw3D() {
   const p = projects[cur];
@@ -1836,7 +1838,7 @@ $('imp-bat').onchange = async ev => {
     if (B.app === 'PlanCoté' && Array.isArray(B.items)) throw new Error("c'est le plan PlanCoté « réouvrable ». Dans PlanCoté, faites Exporter → « Bâtiment pour le plan gondoles » et importez ce fichier-là");
     if (B.kind !== 'batiment' || !batOk(B)) throw new Error("ce n'est pas un bâtiment exporté par PlanCoté");
     if (B.unit && B.unit !== 'mm') throw new Error(`unité « ${B.unit} » non prise en charge (mm attendus)`);
-    p.bat = { data: B, x: 0, y: 0, r: 0 }; centrer(p, model(p));
+    p.bat = { data: B, x: 0, y: 0, z: 0, r: 0 }; centrer(p, model(p));
     V3.key = null; $('msg').hidden = true; render(); setMode(mode);
   } catch (err) { say(`${f.name} : ${err.message}`); }
 };
@@ -1849,7 +1851,7 @@ $('save').onclick = async () => {
   if (!(location.protocol === 'file:' || /github\.io$|^localhost$|^127\./.test(location.hostname)))
     return say("Ici, le navigateur bloque l'enregistrement : ouvrez la version publiée sur GitHub pour enregistrer le dossier.");
   const c = p.json.client || {}, b = p.bat;
-  const dos = { app: 'rsl-mezzanine', v: 1, name: p.name, json: p.json, dxf: p.dxf || null, bat: b ? { data: b.data, x: b.x, y: b.y, r: b.r } : null,
+  const dos = { app: 'rsl-mezzanine', v: 1, name: p.name, json: p.json, dxf: p.dxf || null, bat: b ? { data: b.data, x: b.x, y: b.y, z: b.z || 0, r: b.r } : null,
     nom: $('sh-nom').value.trim(), projet: $('sh-projet').value.trim(), cli: p.cli || null, devis: p.devis || null }; // fichier gardé sur le poste : il peut porter le devis et les coordonnées client
   const a = document.createElement('a');
   a.href = URL.createObjectURL(await gz(JSON.stringify(dos), CompressionStream).blob());
@@ -1866,7 +1868,7 @@ $('imp-mezz').onchange = async ev => {
     const b = d.bat;
     projects.push({ name: d.name || f.name.replace(/\.[^.]+$/, ''), json: d.json, dxf: typeof d.dxf === 'string' ? d.dxf : null,
       cli: d.cli && typeof d.cli === 'object' ? { civ: d.cli.civ || '', resp: d.cli.resp || '', adresse: d.cli.adresse || '' } : null,
-      bat: batOk(b?.data) ? { data: b.data, x: +b.x || 0, y: +b.y || 0, r: [0, 90, 180, 270].includes(b.r) ? b.r : 0 } : null,
+      bat: batOk(b?.data) ? { data: b.data, x: +b.x || 0, y: +b.y || 0, z: +b.z || 0, r: [0, 90, 180, 270].includes(b.r) ? b.r : 0 } : null,
       devis: Array.isArray(d.devis?.lignes) ? { options: [], premium: 15, jours: {}, ar: {}, ...d.devis, pj: { ...DV_PJ, ...d.devis.pj }, // dossier enregistré par une version précédente
         opts: { transport: true, premium: false, montage: true, nacelle: true, chariot: false, ...d.devis.opts } } : null });
     cur = projects.length - 1; V3.key = null; $('msg').hidden = true; render(); setMode(mode);
@@ -2193,7 +2195,7 @@ function clientPayload(p, nom, projet) {
     const ents = D.entities.filter(keep); walk(ents);
     dxf = { entities: ents.map(slim), blocks: Object.fromEntries([...names].map(n => [n, D.blocks[n].filter(o => o.type !== 'POINT').map(slim)])) };
   }
-  const bat = p.bat && { data: { name: p.bat.data.name, bounds: p.bat.data.bounds, svg: p.bat.data.svg, solids: p.bat.data.solids }, x: p.bat.x, y: p.bat.y, r: p.bat.r };
+  const bat = p.bat && { data: { name: p.bat.data.name, bounds: p.bat.data.bounds, svg: p.bat.data.svg, solids: p.bat.data.solids }, x: p.bat.x, y: p.bat.y, z: p.bat.z || 0, r: p.bat.r };
   return { v: 1, nom, projet, json: J, dxf, bat };
 }
 // 3D du fournisseur dans le gist : compressée, en morceaux de moins de 1 Mo (au-delà, l'API GitHub tronque le contenu)
@@ -2234,7 +2236,7 @@ async function lireLien() {
     d = JSON.parse(new TextDecoder().decode(u8));
   } else return null;
   if (!d?.json?.structure) throw new Error('lien incomplet');
-  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, obj: typeof d.obj === 'string' ? d.obj : null, bat: batOk(d.bat?.data) ? { data: d.bat.data, x: +d.bat.x || 0, y: +d.bat.y || 0, r: [0, 90, 180, 270].includes(d.bat.r) ? d.bat.r : 0 } : null } };
+  return { client: { nom: d.nom || 'Client', projet: d.projet || '' }, project: { name: d.json.client?.reference_interne || 'Projet', json: d.json, D: d.dxf, obj: typeof d.obj === 'string' ? d.obj : null, bat: batOk(d.bat?.data) ? { data: d.bat.data, x: +d.bat.x || 0, y: +d.bat.y || 0, z: +d.bat.z || 0, r: [0, 90, 180, 270].includes(d.bat.r) ? d.bat.r : 0 } : null } };
 }
 
 // ---------- Dossier client imprimable (version GitHub ou fichier local : claude.ai bloque l'impression) ----------
